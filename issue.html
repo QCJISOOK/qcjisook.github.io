@@ -889,6 +889,13 @@
     font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit; white-space:nowrap;
   }
   .pf-reset:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .pf-fault::before{
+    content:""; display:inline-block; width:8px; height:8px; border-radius:2px;
+    border:1.5px solid var(--serious); margin-right:5px; vertical-align:-1px;
+  }
+  .pf-fault.on{ background:var(--serious-tint); border-color:var(--serious); color:var(--serious); }
+  .pf-fault.on::before{ background:var(--serious); }
+  .pf-fault.on:hover{ border-color:var(--serious); color:var(--serious); }
   /* 기간설정 — 시작월 ~ 종료월 */
   .pf-range{ display:inline-flex; align-items:center; gap:4px; }
   .pf-mon{
@@ -2107,6 +2114,7 @@
           <input type="month" class="pf-mon" data-pk="to"   min="2023-01" max="2026-12" aria-label="업체별 종료 월" />
         </span>
         <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 이슈제목 · 비고 · 대책 내용" />
+        <button class="pf-reset pf-fault" data-pkf="1" aria-pressed="false" title="제조사 귀책으로 표시된 이슈만 봅니다">제조사 귀책만</button>
         <button class="pf-reset" data-pk-reset="1">초기화</button>
       </div>
       <div class="rank-list" id="issue-company-chart"></div>
@@ -2128,6 +2136,7 @@
           <input type="month" class="pf-mon" data-pk="to"   min="2023-01" max="2026-12" aria-label="유형별 종료 월" />
         </span>
         <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 이슈제목 · 비고 · 대책 내용" />
+        <button class="pf-reset pf-fault" data-pkf="1" aria-pressed="false" title="제조사 귀책으로 표시된 이슈만 봅니다">제조사 귀책만</button>
         <button class="pf-reset" data-pk-reset="1">초기화</button>
       </div>
       <div class="rank-list" id="issue-type-chart"></div>
@@ -7312,7 +7321,7 @@ function initIssueChartFilter(){
 }
 
 /* ===== 패널 전용 필터 — 페이지 대분류 필터 위에 겹쳐 그 패널만 좁힌다 ===== */
-const PF_DEF = { q:"", company:"all", type:"all", year:"all", from:"", to:"" };
+const PF_DEF = { q:"", company:"all", type:"all", year:"all", from:"", to:"", fault:false };
 let icF = Object.assign({}, PF_DEF);  // 업체별 이슈 건수
 let itF = Object.assign({}, PF_DEF);  // 이슈 유형별 건수
 const PF_STATE = { cf:icF, tf:itF };
@@ -7323,6 +7332,7 @@ function issueMonth(d){
   return s ? s.slice(0,7) : null;
 }
 function pMatch(d, f){
+  if(f.fault && !isFault(d)) return false;
   if(f.company !== "all" && d.company !== f.company) return false;
   if(f.type    !== "all" && d.type    !== f.type)    return false;
   if(f.year    !== "all" && issueYear(d) !== f.year) return false;
@@ -7346,6 +7356,7 @@ function pList(f){
   if(f.type    !== "all") t.push(f.type);
   if(f.year    !== "all") t.push(f.year + "년");
   if(f.from || f.to)      t.push(mon(f.from) + " ~ " + mon(f.to));
+  if(f.fault)             t.push("제조사 귀책");
   if(f.q)                 t.push('"' + f.q + '"');
   return t.join(" · ");
 }
@@ -7356,11 +7367,13 @@ function panelPageOn(key){
 }
 function syncPanelFilter(bar, f){
   bar.querySelectorAll("[data-pk]").forEach(inp=>{ inp.value = f[inp.dataset.pk]; });
+  const fb = bar.querySelector("[data-pkf]");
+  if(fb){ fb.classList.toggle("on", !!f.fault); fb.setAttribute("aria-pressed", String(!!f.fault)); }
   bar.classList.toggle("active", pActive(f) || panelPageOn(bar.dataset.pf));
 }
 /* 업체별에서 좁힌 조건을 유형별 패널 입력칸에도 그대로 옮긴다 — 걸린 것이 눈에 보이도록 */
 function mirrorCF(){
-  ["company","year","from","to"].forEach(k=> itF[k] = icF[k]);
+  ["company","year","from","to","fault"].forEach(k=> itF[k] = icF[k]);
   const tb = document.querySelector('[data-pf="tf"]');
   if(tb) syncPanelFilter(tb, itF);
 }
@@ -7406,6 +7419,11 @@ function initPanelFilters(){
         };
         if(ev === "input"){ clearTimeout(timer); timer = setTimeout(set, 180); } else set();
       });
+    });
+    const fb = bar.querySelector("[data-pkf]");
+    if(fb) fb.addEventListener("click", ()=>{
+      f.fault = !f.fault;
+      syncPanelFilter(bar, f); applyPanel(key);
     });
     bar.querySelector("[data-pk-reset]").addEventListener("click", ()=>{
       Object.assign(f, PF_DEF);
