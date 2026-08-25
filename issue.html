@@ -636,7 +636,8 @@
   /* 열 폭을 못 박아 헤더 글자가 잘리거나 칸이 밀리지 않게 한다 */
   #issue-table{ table-layout:fixed; min-width:1020px; }
   #issue-table td, #issue-table th{ padding-left:9px; padding-right:9px; word-break:break-word; }
-  #issue-table col.c-seq{ width:42px; }
+  #issue-table col.c-seq{ width:42px; }
+  #issue-table col.c-dt2{ width:92px; }
   #issue-table col.c-fa{ width:52px; }
   #issue-table .seq-th{ color:var(--muted); font-weight:700; }
   #issue-table .seq-td{ color:var(--muted); font-family:var(--font-mono); font-size:11.5px; font-variant-numeric:tabular-nums; }
@@ -2169,7 +2170,7 @@
       <table id="issue-table">
         <colgroup>
           <col class="c-seq" /><col class="c-fa" /><col class="c-no" /><col class="c-co" /><col class="c-br" /><col class="c-pn" />
-          <col class="c-pr" /><col class="c-dt" /><col class="c-ty" /><col class="c-cl" />
+          <col class="c-pr" /><col class="c-dt2" /><col class="c-dt" /><col class="c-ty" /><col class="c-cl" />
         </colgroup>
         <thead>
           <tr>
@@ -2180,6 +2181,7 @@
             <th data-key="brand">브랜드</th>
             <th data-key="code" class="num">품번</th>
             <th data-key="product">제품명</th>
+            <th data-key="recv" class="date">클레임 접수일자</th>
             <th data-key="reply" class="date">클레임 회신일자</th>
             <th data-key="type">클레임유형</th>
             <th data-key="claim">클레임 내용</th>
@@ -7662,7 +7664,7 @@ function renderCompanyCards(){
   });
 }
 
-let issueSort = {key:"no", dir:1};   // 기본: 제조사별로 묶고 No. 1번부터
+let issueSort = {key:"recv", dir:1};   // 기본: 먼저 접수된 것부터
 let issueFilters = {q:"", type:"", capa:"", company:"", faultOnly:false, year:"", from:"", to:""};
 
 function issueFiltered(){
@@ -7691,6 +7693,14 @@ function issueFiltered(){
     return true;
   }).sort((a,b)=>{
     const k = issueSort.key;
+    if(k === "recv"){                     // 먼저 접수된 것이 앞 — 일자 미상은 맨 뒤로 뺀다
+      const av = issueSortVal(a,"recv"), bv = issueSortVal(b,"recv");
+      if(!av && !bv) return numNo(a) - numNo(b);
+      if(!av) return 1;
+      if(!bv) return -1;
+      if(av !== bv) return (av < bv ? -1 : 1) * issueSort.dir;
+      return numNo(a) - numNo(b);
+    }
     if(k === "no"){                       // 제조사 안에서 No. 1번부터
       const c = String(a.company).localeCompare(String(b.company),"ko");
       if(c) return c * issueSort.dir;
@@ -7781,8 +7791,8 @@ function issueParts(d){
   return out;
 }
 function issueSortVal(d, k){
-  if(k === "recv")  return splitIssueDates(d.date).start || "";
-  if(k === "reply") return splitIssueDates(d.date).end   || "";
+  if(k === "recv")  return issueDatesOf(d).start || "";
+  if(k === "reply") return issueDatesOf(d).end   || "";
   const p = issueParts(d);
   if(k in p) return p[k];
   return d[k];
@@ -7822,11 +7832,12 @@ function renderIssueTable(){
       <td class="brand">${p.brand ? esc(p.brand) : dash}</td>
       <td class="num mono">${p.code ? esc(p.code) : dash}</td>
       <td class="title"><span class="ir-caret">▸</span>${p.product ? esc(p.product) : dash}${tag}</td>
+      <td class="date">${dt.start ? esc(dt.start) : dash}</td>
       <td class="date">${dt.end ? esc(dt.end) : dash}</td>
       <td>${typeBadge2(d.type)}</td>
       <td class="note">${p.claim ? esc(p.claim) : dash}</td>
     </tr>
-    <tr class="idet" data-idet="${i}" hidden><td colspan="10"></td></tr>`; }).join("");
+    <tr class="idet" data-idet="${i}" hidden><td colspan="11"></td></tr>`; }).join("");
 
   tbody.querySelectorAll(".fa-box").forEach(b=>{
     b.addEventListener("click", e=>e.stopPropagation());
