@@ -5202,13 +5202,10 @@ function phaseDuringHTML(key, det){
            </div>
            <div class="sct-tbl">${scoreCompareTable(key, cs)}</div>
          </div>`
-      : scoreCompareTable(key, cs)) + oliveWeakHTML(key) + gapListHTML(key);
+      : scoreCompareTable(key, cs)) + oliveWeakHTML(key);
   } else {
     scoreBlock = `<div class="empty-note">점검시트에 평가 점수 미기입${cs&&cs.note?" — "+esc(cs.note):""}</div>`;
   }
-
-  const crHTML = confirmResultHTML(key);
-  const idHTML = issueDirectHTML(key);
 
   return `<div class="phase during">
     ${phaseHeadHTML(2, "현장 실사 및 평가", "AUDIT 진행 · 제조판매업자 평가리스트 작성")}
@@ -5216,22 +5213,6 @@ function phaseDuringHTML(key, det){
       <div class="doc-block wide">
         ${docLabel("업체평가 점수", "제조업체 자체평가와 올리브 현장평가 비교")}
         ${scoreBlock}
-      </div>
-      <div class="doc-block wide">
-        ${docLabel("확인서", "Audit 진행 후 평가 결과를 정리한 서류")}
-        ${meta && (meta.auditor || meta.auditee) ? `<div class="cr-meta">
-          ${meta.auditor?`<span><i>감사자</i>${esc(meta.auditor)}</span>`:""}
-          ${meta.auditee?`<span><i>피감사자</i>${esc(meta.auditee)}</span>`:""}
-        </div>`:""}
-        ${crHTML ? crHTML
-          : (fd && fd.result ? `<div class="txt-block">${esc(fd.result)}</div>`
-          : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`)}
-      </div>
-      <div class="doc-block wide">
-        ${docLabel("개선지시서", "개선이 필요한 사항을 지시 — 개선 전 상태")}
-        ${idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
-          : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
-          : `<div class="empty-note">개선지시서 내용 없음</div>`)}
       </div>
     </div>
   </div>`;
@@ -5254,6 +5235,10 @@ function evalPagesHTML(key){
 
 /* ===== 3단계 : 시정조치 및 최종평가 (AUDIT 후) ===== */
 function phasePostHTML(key, det){
+  /* 확인서·개선지시서가 이 단계로 옮겨 와서 여기서도 필요하다 */
+  const meta = confirmMeta[key];
+  const crHTML = confirmResultHTML(key);
+  const idHTML = issueDirectHTML(key);
   const imgs = capaImages[key] || [];
   const items = imgs.filter(x=>!/^\[요약\]/.test(x.c));
   const sums  = imgs.map((im,i)=>({im,i})).filter(x=>/^\[요약\]/.test(x.im.c));
@@ -5301,6 +5286,22 @@ function phasePostHTML(key, det){
   return `<div class="phase post">
     ${phaseHeadHTML(3, "시정조치 및 최종평가", "AUDIT 후 · 개선결과 반영")}
     <div class="phase-body" data-phgrp="3" hidden>
+      <div class="doc-block wide">
+        ${docLabel("확인서", "Audit 진행 후 평가 결과를 정리한 서류")}
+        ${meta && (meta.auditor || meta.auditee) ? `<div class="cr-meta">
+          ${meta.auditor?`<span><i>감사자</i>${esc(meta.auditor)}</span>`:""}
+          ${meta.auditee?`<span><i>피감사자</i>${esc(meta.auditee)}</span>`:""}
+        </div>`:""}
+        ${crHTML ? crHTML
+          : (fd && fd.result ? `<div class="txt-block">${esc(fd.result)}</div>`
+          : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`)}
+      </div>
+      <div class="doc-block wide">
+        ${docLabel("개선지시서", "개선이 필요한 사항을 지시 — 개선 전 상태")}
+        ${idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
+          : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
+          : `<div class="empty-note">개선지시서 내용 없음</div>`)}
+      </div>
       <div class="doc-block wide">
         ${docLabel("개선결과서", "제조업자가 개선지시 사항을 시정조치한 결과 — 개선 전 / 개선 후")}
         ${items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:""}
