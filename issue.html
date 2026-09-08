@@ -6183,16 +6183,9 @@ function phasePreHTML(key, det){
   const G = { A:"우수", B:"보통", C:"미흡" };
   const byG = { A: all.filter(x=>x.m==="A"), B: all.filter(x=>x.m==="B"), C: all.filter(x=>x.m==="C") };
   const anyLow = byG.B.length > 0 || byG.C.length > 0;   // 보통·미흡이 없으면 우수를 펼친다
-  const cmpTxt = x => {
-    if(!x.d) return `<span class="sg-d none">올리브 공란</span>`;
-    if(x.d === x.m) return `<span class="sg-d same">올리브도 ${G[x.d]}</span>`;
-    const worse = "ABC".indexOf(x.d) > "ABC".indexOf(x.m);
-    return `<span class="sg-d ${worse?"worse":"better"}">올리브 ${G[x.d]}</span>`;
-  };
   const rows = list => list.map(x=>`<div class="sg-row g-${x.m}">
       <span class="sg-g">${x.m}</span>
       <div class="sg-t"><i>${esc(x.c)}</i>${esc(x.i)}</div>
-      ${cmpTxt(x)}
     </div>`).join("");
 
   const weakBlock = all.length
