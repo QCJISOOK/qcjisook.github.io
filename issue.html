@@ -6379,7 +6379,8 @@ function confirmResultHTML(key){
     <div class="sg-chips">
       ${GRP.map(g=>{
         const n = all.filter(x=>x.v===g.v).length;
-        const open = n > 0 && (g.v !== "양호" || !anyBad);
+        if(!n) return "";   /* 0건인 판정은 칩을 아예 만들지 않는다 */
+        const open = g.v !== "양호" || !anyBad;
         return `<button class="sg-chip cr-${g.cls}${n?"":" zero"}" data-sgtog="cr${g.cls}"
           aria-expanded="${open}"${n?"":" disabled"}>
           <span class="sg-k">${n}</span><span class="sg-l">${g.label}</span>
