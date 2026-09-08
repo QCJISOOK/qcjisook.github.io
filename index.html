@@ -5318,6 +5318,36 @@ function buildSummary(tbl, items) {
   return tbl.slice(0, head.b) + body + tbl.slice(rows[rows.length - 1].b);
 }
 
+/* 요약표는 건수에 따라 길이가 달라진다. 표를 감싸는 빨간 점선 상자와
+   표틀의 높이를 행 수에 맞춰 다시 잡는다 — 서식은 6행 기준으로 굳어 있다. */
+function fitSummaryBox(xml, n){
+  const gf = xml.indexOf("<p:graphicFrame>");
+  if(gf < 0) return xml;
+  const gfEnd = xml.indexOf("</p:graphicFrame>", gf);
+  const seg = xml.slice(gf, gfEnd);
+  const hs = [];
+  const re = /<a:tr h="(\d+)"/g; let m;
+  while((m = re.exec(seg))) hs.push(+m[1]);
+  if(hs.length < 2) return xml;
+  const head = hs[0], row = hs[1];
+  const cy = head + row * n;
+
+  /* 표틀 높이 */
+  const fixExt = s => s.replace(/(<a:ext cx="\d+" cy=")\d+(")/, "$1" + cy + "$2");
+  xml = xml.slice(0, gf) + fixExt(seg) + xml.slice(gfEnd);
+
+  /* 빨간 점선 상자 — 표와 같은 높이로 */
+  const parts = xml.split("<p:sp>");
+  for(let i = 1; i < parts.length; i++){
+    const e = parts[i].indexOf("</p:sp>");
+    const body = parts[i].slice(0, e);
+    if(!/prstDash/.test(body)) continue;
+    if(!/<a:prstGeom prst="roundRect"/.test(body)) continue;
+    parts[i] = fixExt(body) + parts[i].slice(e);
+  }
+  return parts.join("<p:sp>");
+}
+
 /* 상세 장 — 아래 표의 자료 행(맨 끝 행) 하나만 채우고, 위 표는 비운다 */
 function buildDetail(xml, it, no) {
   /* 첫째 표 [현상 | 제조업자 답변] — 답변칸은 업체 몫이라 비워 둔다 */
@@ -5383,6 +5413,7 @@ async function cxBuildPptx(J){
       if(J.year)    xml = xml.replace(/<a:t>2026<\/a:t>/, "<a:t>"+cxEsc(J.year)+"</a:t>");
     } else if(p.kind==="sum"){
       xml = replaceTable(xml, 0, function(t){ return buildSummary(t, p.items); });
+      xml = fitSummaryBox(xml, p.items.length);
     } else if(p.kind==="det"){
       xml = buildDetail(xml, p.it, p.no);
       const m = typeof p.it.photo === "string" && p.it.photo.match(/^data:image\/([a-z]+);base64,(.*)$/i);
@@ -5431,7 +5462,13 @@ async function cxBuildPptx(J){
 async function cxPhoto(d){
   if(typeof issueShots === "undefined") return "";
   const sh = issueShots[issueKeyOf(d)];
-  const srcs = ((sh && sh.shots) || []).slice(0, 2).map(s=>s.d).filter(x=>typeof x === "string");
+  /* 공정·설비·현장을 찍은 것은 「현상」이 아니다 */
+  const NOT = /전경|사출|적재|컨베어|육안|에어건|설비|라인|창고|방충|방서|현장|실사|공정|점검|아웃박스|파레트|비닐 ?포장|세병|충전기|금형/;
+  /* 증상이 드러나는 이름을 먼저 */
+  const YES = /이물|불량|파손|누액|누출|클레임|변색|색상|향취|이상|누락|오염|찍힘|스크래치|곰팡이|벌레/i;
+  const cand = ((sh && sh.shots) || []).filter(s=> typeof s.d === "string" && !NOT.test(s.c || ""));
+  cand.sort((a,b)=> (YES.test(b.c||"")?1:0) - (YES.test(a.c||"")?1:0));
+  const srcs = cand.slice(0, 2).map(s=>s.d);
   if(!srcs.length) return "";
   const imgs = (await Promise.all(srcs.map(src => new Promise(res => {
     const im = new Image(); im.onload = ()=>res(im); im.onerror = ()=>res(null); im.src = src;
