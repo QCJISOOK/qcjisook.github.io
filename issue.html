@@ -634,14 +634,33 @@
   /* 원본에 값이 없는 칸 — 0 이나 공란과 구분되게 옅게 */
   .td-none{ color:var(--muted); opacity:.55; }
   /* 열 폭을 못 박아 헤더 글자가 잘리거나 칸이 밀리지 않게 한다 */
-  #issue-table{ table-layout:fixed; min-width:1180px; }
+  #issue-table{ table-layout:fixed; min-width:1240px; }
   #issue-table td, #issue-table th{ padding-left:9px; padding-right:9px; word-break:break-word; }
   #issue-table col.c-seq{ width:42px; }
   #issue-table col.c-dt2{ width:104px; }
   #issue-table col.c-fa{ width:52px; }
   #issue-table .seq-th{ color:var(--muted); font-weight:700; }
   #issue-table .seq-td{ color:var(--muted); font-family:var(--font-mono); font-size:11.5px; font-variant-numeric:tabular-nums; }
-  #issue-table col.c-no{ width:48px; }
+  #issue-table col.c-st{ width:62px; }
+  /* 협의체 사후/사전 표시 칸 */
+  .st-th{ font-size:10.5px; line-height:1.25; }
+  .st-td{ vertical-align:middle !important; }
+  .st-box{
+    min-width:34px; padding:2px 6px; cursor:pointer; font-family:inherit;
+    font-size:10.5px; font-weight:800; border-radius:6px;
+    background:var(--surface-2); color:var(--muted); border:1px solid var(--border);
+  }
+  .st-box:hover{ border-color:var(--accent); }
+  .st-box[data-v="post"]{ background:var(--warn); color:#fff; border-color:transparent; }
+  .st-box[data-v="pre"]{ background:var(--accent); color:#fff; border-color:transparent; }
+  #cx-count{ color:var(--accent-strong); margin-left:14px; }
+  #cx-count b{ font-size:13px; }
+  .cxs-go{
+    margin-left:8px; padding:3px 10px; cursor:pointer; font-family:inherit;
+    font-size:11px; font-weight:800; color:#fff; background:var(--accent-strong);
+    border:0; border-radius:100px;
+  }
+  .cxs-go:hover{ filter:brightness(1.08); }
   .fa-th{ font-size:10.5px; line-height:1.25; }
   .fa-td{ vertical-align:middle !important; }
   .fa-box{ width:15px; height:15px; cursor:pointer; accent-color:var(--serious); margin:0; }
@@ -657,13 +676,13 @@
   #fault-count{ color:var(--serious); margin-left:auto; }
   #fault-count b{ font-size:13px; }
   #issue-count{ margin-left:10px; }
-  #issue-table col.c-co{ width:96px; }
-  #issue-table col.c-br{ width:84px; }
-  #issue-table col.c-pn{ width:72px; }
+  #issue-table col.c-co{ width:78px; }
+  #issue-table col.c-br{ width:82px; }
+  #issue-table col.c-pn{ width:70px; }
   #issue-table col.c-pr{ width:auto; }
   #issue-table col.c-dt{ width:104px; }
-  #issue-table col.c-ty{ width:150px; }
-  #issue-table col.c-cl{ width:190px; }
+  #issue-table col.c-ty{ width:132px; }
+  #issue-table col.c-cl{ width:230px; }
   #issue-table td.title, #issue-table td.note{ max-width:none; }
   #issue-table th{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #issue-table td.brand{ white-space:normal; display:table-cell; }
@@ -2174,19 +2193,20 @@
       <button class="filter-reset fault-only" id="fault-only" data-faultonly="1" aria-pressed="false">제조사 귀책만</button>
       <button class="filter-reset" id="issue-reset">필터 초기화</button>
       <span class="result-count" id="fault-count"></span>
+      <span class="result-count" id="cx-count"></span>
       <span class="result-count" id="issue-count"></span>
     </div>
     <div class="table-wrap">
       <table id="issue-table">
         <colgroup>
-          <col class="c-seq" /><col class="c-fa" /><col class="c-no" /><col class="c-co" /><col class="c-br" /><col class="c-pn" />
+          <col class="c-seq" /><col class="c-fa" /><col class="c-st" /><col class="c-co" /><col class="c-br" /><col class="c-pn" />
           <col class="c-pr" /><col class="c-dt2" /><col class="c-dt" /><col class="c-ty" /><col class="c-cl" />
         </colgroup>
         <thead>
           <tr>
             <th class="num seq-th" title="지금 보고 있는 목록의 순번 — 필터를 바꾸면 다시 매겨집니다">순번</th>
             <th data-key="fault" class="num fa-th" title="제조사 귀책 여부 — 체크하면 저장됩니다">제조사<br>귀책</th>
-            <th data-key="no" class="num">No.</th>
+            <th data-key="stage" class="num st-th" title="불만협의체에 올릴 건 — 눌러서 사후/사전 지정">사전/사후</th>
             <th data-key="company">업체명</th>
             <th data-key="brand">브랜드</th>
             <th data-key="code" class="num">품번</th>
@@ -7830,6 +7850,7 @@ function typeBadge2(type){
 function renderIssueTable(){
   const rows = issueFiltered();
   renderFaultCount();
+  renderCxCount();
   document.getElementById("issue-count").textContent = rows.length + " / " + issueData.length + "건" + (iF.company!=="all"? " · "+iF.company+" 필터 적용중":"");
   const tbody = document.querySelector("#issue-table tbody");
   const dash = '<span class="td-none">—</span>';
@@ -7842,7 +7863,7 @@ function renderIssueTable(){
     <tr class="irow${i%2?' alt':''}${hasCapaDoc(d)?' has-capa':''}${isFault(d)?' fault':''}" data-irow="${i}" tabindex="0" aria-expanded="false">
       <td class="num seq-td">${i+1}</td>
       <td class="num fa-td"><input type="checkbox" class="fa-box" data-fault="${esc(issueKeyOf(d))}"${isFault(d)?" checked":""} title="제조사 귀책" /></td>
-      <td class="num mono">${d.issueNo && d.issueNo!=="-" ? esc(d.issueNo) : dash}</td>
+      <td class="num st-td"><button class="st-box" data-stage="${esc(issueKeyOf(d))}" data-v="${cxStageOf(d)}" title="눌러서 사후 → 사전 → 해제">${CXS_LABEL[cxStageOf(d)]}</button></td>
       <td><strong>${esc(d.company)}</strong></td>
       <td class="brand">${p.brand ? esc(p.brand) : dash}</td>
       <td class="num mono">${p.code ? esc(p.code) : dash}</td>
@@ -7861,6 +7882,15 @@ function renderIssueTable(){
       setFault(b.dataset.fault, b.checked);
       b.closest("tr").classList.toggle("fault", b.checked);
       if(issueFilters.faultOnly) renderIssueTable();
+    });
+  });
+  tbody.querySelectorAll(".st-box").forEach(b=>{
+    b.addEventListener("click", e=>{
+      e.stopPropagation();
+      const v = CXS_NEXT[b.dataset.v || ""];
+      b.dataset.v = v;
+      b.textContent = CXS_LABEL[v];
+      setCxStage(b.dataset.stage, v);
     });
   });
   tbody.querySelectorAll(".irow").forEach(tr=>{
@@ -7926,7 +7956,90 @@ function setFault(key, on){
     localStorage.setItem(FAULT_OFF_LS, JSON.stringify([...faultOff]));
   } catch(e){}
   renderFaultCount();
+  renderCxCount();
 }
+
+/* 불만협의체에 올릴 건 — 사후/사전 표시. 브라우저에 저장해 새로고침해도 남는다 */
+const CXS_LS = "oi-audit-cxstage-v1";
+let cxStage = (function(){
+  try { return JSON.parse(localStorage.getItem(CXS_LS) || "{}"); }
+  catch(e){ return {}; }
+})();
+const CXS_NEXT = { "": "post", post: "pre", pre: "" };
+const CXS_LABEL = { "": "—", post: "사후", pre: "사전" };
+function cxStageOf(d){
+  const k = issueKeyOf(d);
+  if(cxStage[k]) return cxStage[k];
+  const fx = issueFix[k];                     /* 자료에 구분이 적혀 있으면 그것을 첫 값으로 */
+  if(fx && /사후/.test(fx.stage || "")) return "post";
+  if(fx && /사전/.test(fx.stage || "")) return "pre";
+  return "";
+}
+function setCxStage(key, v){
+  if(v) cxStage[key] = v; else delete cxStage[key];
+  try { localStorage.setItem(CXS_LS, JSON.stringify(cxStage)); } catch(e){}
+  renderCxCount();
+}
+
+/* 불만협의체 자료 내려받기 — build-cx-pptx.js 가 그대로 읽는 짜임 */
+function cxItemOf(d){
+  const p = issueParts(d), dt = issueDatesOf(d);
+  const symptom = d.oldType || d.type || "";
+  const lot = p.lot || "", exp = p.exp || "";
+  return {
+    product: p.product || d.title || "",
+    midType: d.mid && d.mid !== "비클레임" ? d.mid : "",
+    type: symptom,
+    sumDetail: symptom,
+    detail: p.claim || "",
+    lot: lot, exp: exp,
+    lotExp: (lot && exp) ? ("LOT : " + lot + String.fromCharCode(10) + "EXP : " + exp) : (lot || exp || ""),
+    date: dt.start || "",
+    status: dt.end ? "완료" : "진행중",
+    photo: ""
+  };
+}
+function cxExport(){
+  const sel = document.getElementById("issue-company-filter");
+  const co = (sel && sel.value) ? sel.value : null;
+  const pool = co ? issueData.filter(d=>d.company===co) : issueData;
+  const post = pool.filter(d=>cxStageOf(d)==="post").map(cxItemOf);
+  const pre  = pool.filter(d=>cxStageOf(d)==="pre").map(cxItemOf);
+  if(!post.length && !pre.length){ alert("사후/사전으로 표시한 건이 없습니다."); return; }
+  const now = new Date();
+  const ymd = now.getFullYear() + "." + String(now.getMonth()+1).padStart(2,"0") + "." + String(now.getDate()).padStart(2,"0");
+  const half = now.getMonth() < 6 ? "상반기" : "하반기";
+  const J = {
+    company: co || "", year: String(now.getFullYear()), half: half, date: ymd,
+    title: now.getFullYear() + "년도 " + half + " 불만협의체" + (co ? "_" + co : ""),
+    post: post, pre: pre
+  };
+  const blob = new Blob([JSON.stringify(J, null, 1)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "불만협의체_" + (co || "전체") + "_" + ymd.replace(/./g,"") + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+document.addEventListener("click", function(e){
+  if(e.target && e.target.id === "cx-export") cxExport();
+});
+
+function renderCxCount(){
+  const el = document.getElementById("cx-count");
+  if(!el) return;
+  /* 불만협의체는 업체별로 여는 자리라 제조사 필터를 따른다 */
+  const sel = document.getElementById("issue-company-filter");
+  const co = (sel && sel.value) ? sel.value : null;
+  const pool = co ? issueData.filter(d=>d.company===co) : issueData;
+  const post = pool.filter(d=>cxStageOf(d)==="post").length;
+  const pre  = pool.filter(d=>cxStageOf(d)==="pre").length;
+  el.innerHTML = (post||pre)
+    ? (co ? esc(co) + ' ' : '') + '협의체 <b>' + post + '</b>사후 · <b>' + pre + '</b>사전'
+      + ' <button class="cxs-go" id="cx-export">자료 만들기</button>'
+    : "";
+}
+
 function renderFaultCount(){
   const el2 = document.getElementById("fault-count");
   if(!el2) return;
