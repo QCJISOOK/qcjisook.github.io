@@ -1377,6 +1377,58 @@
   .cxi-add:hover, .cxi-off:hover{ border-color:var(--accent); }
   .cxi-off.on{ background:var(--accent-strong); color:#fff; border-color:transparent; }
   .cxi-none{ font-size:11.5px; color:var(--muted); }
+  /* 클레임 등록 */
+  .nc-open{
+    font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:7px 15px; border-radius:100px; border:0;
+    background:var(--accent-strong); color:#fff; margin-left:14px;
+  }
+  .nc-open:hover{ filter:brightness(1.08); }
+  .nc-dump{
+    font-family:inherit; font-size:11px; font-weight:750; cursor:pointer;
+    padding:6px 12px; border-radius:100px; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink-2); margin-left:7px;
+  }
+  .ncw{
+    position:fixed; inset:0; z-index:900; background:rgba(15,18,26,.45);
+    display:flex; align-items:flex-start; justify-content:center; padding:36px 18px; overflow:auto;
+  }
+  .nc-box{
+    width:min(760px,100%); background:var(--surface); border-radius:14px;
+    box-shadow:0 18px 60px rgba(0,0,0,.28); overflow:hidden;
+  }
+  .nc-hd{ display:flex; align-items:baseline; gap:10px; padding:15px 18px; border-bottom:1px solid var(--border); }
+  .nc-hd b{ font-size:15px; }
+  .nc-hd span{ font-size:11px; color:var(--muted); }
+  .nc-x{ margin-left:auto; background:none; border:0; font-size:15px; cursor:pointer; color:var(--muted); }
+  .nc-bd{ padding:16px 18px; }
+  .nc-sec{ font-size:11.5px; font-weight:800; color:var(--accent-strong); margin:15px 0 8px; }
+  .nc-sec:first-child{ margin-top:0; }
+  .nc-sec em{ font-style:normal; font-weight:600; color:var(--muted); margin-left:6px; }
+  .nc-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
+  .nc-box label{ display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:750; color:var(--ink-2); }
+  .nc-box label.nc-full{ margin-top:10px; }
+  .nc-box input[type=text], .nc-box input:not([type]), .nc-box input[type=date],
+  .nc-box select, .nc-box textarea{
+    font-family:inherit; font-size:12.5px; padding:7px 9px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink); width:100%;
+  }
+  .nc-box textarea{ resize:vertical; }
+  .req{ color:var(--critical); }
+  .nc-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .nc-seg{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .nc-sg{ font-family:inherit; font-size:11.5px; font-weight:750; padding:7px 13px;
+    border:0; background:var(--surface-2); color:var(--ink-2); cursor:pointer; }
+  .nc-sg.on{ background:var(--accent-strong); color:#fff; }
+  .nc-chk{ flex-direction:row !important; align-items:center; gap:6px; font-size:12px; }
+  .nc-file{ font-size:11.5px; font-weight:750; cursor:pointer; padding:7px 13px;
+    border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+  .nc-pv img{ height:46px; border-radius:6px; border:1px solid var(--border); }
+  .nc-ft{ display:flex; align-items:center; gap:9px; padding:13px 18px; border-top:1px solid var(--border); }
+  .nc-msg{ margin-right:auto; font-size:11.5px; color:var(--critical); font-weight:700; }
+  .nc-btn{ font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:8px 18px; border-radius:100px; border:1px solid var(--border); background:var(--surface); }
+  .nc-btn.go{ background:var(--accent-strong); color:#fff; border-color:transparent; }
   .doc-label{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--border); }
   .doc-name{ font-size:13px; font-weight:800; }
   .doc-desc{ font-size:10.5px; color:var(--muted); }
@@ -2127,7 +2179,7 @@
 <main class="page" id="page-issue" hidden>
   <div class="page-head">
     <div class="eyebrow">PAGE 02 · MANUFACTURER ISSUE TRACKER</div>
-    <h1>제조업체별 품질 이슈 현황</h1>
+    <h1>제조업체별 품질 이슈 현황<button class="nc-open" id="nc-open">＋ 클레임 등록</button><button class="nc-dump" id="nc-dump" title="등록한 건을 파일로 받아 둡니다">등록분 내려받기</button></h1>
   </div>
 
   <!-- ===== 대분류 필터 — 이 페이지 전체에 적용 ===== -->
@@ -7971,7 +8023,203 @@ function typeBadge2(type){
   return `<span class="tb2"><i>${esc(mid)}</i>${typeBadge(type)}</span>`;
 }
 
+
+/* 손으로 등록한 클레임 — 브라우저에 남는다 */
+const NEWC_LS = "oi-audit-newclaims-v1";
+let _ncOn = 0;                       /* 한 번만 얹는다 */
+let newClaims = (function(){
+  try { return JSON.parse(localStorage.getItem(NEWC_LS) || "[]"); }
+  catch(e){ return []; }
+})();
+function saveNewClaims(){
+  try { localStorage.setItem(NEWC_LS, JSON.stringify(newClaims)); } catch(e){}
+}
+function ncKey(c){ return c.company + "|" + c.issueNo + "|" + c.title; }
+
+/* 원래 자료 위에 얹는다 — 페이지를 열 때 한 번 */
+function applyNewClaims(){
+  newClaims.forEach(function(c){
+    const k = ncKey(c);
+    if(issueData.some(function(d){ return issueKeyOf(d) === k; })) return;
+    issueData.push({
+      company: c.company, issueNo: c.issueNo, title: c.title,
+      date: c.recv || "", rounds: "-", capa: c.action ? "있음" : "없음",
+      mid: c.mid || "", type: c.type || "", oldType: c.type || "",
+      note: "화면에서 등록한 건"
+    });
+    issueFix[k] = {
+      brand: c.brand || "", code: c.code || "", product: c.product || "",
+      claim: c.claim || "", lot: c.lot || "", exp: c.exp || "",
+      recv: c.recv || "", reply: c.reply || "",
+      stage: c.stage || "", mid: c.mid || "", type: c.type || "",
+      fault: !!c.fault
+    };
+    if(c.fault) faultSet.add(k);
+    if(c.photo) issueShots[k] = { n: 1, shots: [{ c: "등록한 현상 사진", d: c.photo }] };
+    if(c.cause || c.action) issueDetails[k] = {
+      cause: c.cause || "", action: c.action || "",
+      by: c.by || "", doc: "화면에서 등록"
+    };
+    if(c.stage){
+      cxStage[k] = (c.stage === "사전") ? "pre" : "post";
+      cxPick.add(k);          /* 구분을 정했으면 협의체에도 담아 둔다 */
+      try { localStorage.setItem(CXP_LS, JSON.stringify([...cxPick])); } catch(e){}
+    }
+  });
+}
+
+/* 같은 업체에서 다음 번호 */
+function nextIssueNo(co){
+  let m = 0;
+  issueData.forEach(function(d){
+    if(d.company !== co) return;
+    const n = parseInt(d.issueNo, 10);
+    if(!isNaN(n) && n > m) m = n;
+  });
+  return String(m + 1);
+}
+
+/* 등록 창 — 표에 쓰는 항목 그대로 받는다 */
+function ncOpen(){
+  const cos = [...new Set(issueData.map(function(d){ return d.company; }))].sort(function(a,b){ return a.localeCompare(b,"ko"); });
+  const brands = (typeof ISSUE_BRANDS !== "undefined") ? ISSUE_BRANDS : [];
+  const opt = function(a){ return a.map(function(x){ return '<option>' + esc(x) + '</option>'; }).join(""); };
+  const mids = CLAIM_TAX.map(function(t){ return '<option value="' + esc(t.mid) + '">' + esc(t.mid) + '</option>'; }).join("");
+
+  const wrap = document.createElement("div");
+  wrap.className = "ncw";
+  wrap.innerHTML =
+    '<div class="nc-box" role="dialog" aria-label="클레임 등록">'
+    + '<div class="nc-hd"><b>클레임 등록</b>'
+    + '<span>표에 바로 반영되고, 불만협의체 PPT 에도 그대로 실립니다</span>'
+    + '<button class="nc-x" data-ncclose="1" aria-label="닫기">✕</button></div>'
+    + '<div class="nc-bd">'
+
+    + '<div class="nc-sec">접수 정보</div>'
+    + '<div class="nc-grid">'
+    +   '<label>제조사 <span class="req">*</span><input list="nc-cos" id="nc-co" placeholder="목록에서 고르거나 새로 입력" /></label>'
+    +   '<datalist id="nc-cos">' + opt(cos) + '</datalist>'
+    +   '<label>클레임 접수일자 <span class="req">*</span><input type="date" id="nc-recv" /></label>'
+    +   '<label>클레임 회신일자<input type="date" id="nc-reply" /></label>'
+    + '</div>'
+
+    + '<div class="nc-sec">품목</div>'
+    + '<div class="nc-grid">'
+    +   '<label>브랜드<input list="nc-brands" id="nc-brand" /></label>'
+    +   '<datalist id="nc-brands">' + opt(brands) + '</datalist>'
+    +   '<label>품번<input id="nc-code" placeholder="예) MC0548" /></label>'
+    +   '<label>Lot No.<input id="nc-lot" /></label>'
+    +   '<label>사용기한<input type="date" id="nc-exp" /></label>'
+    + '</div>'
+    + '<label class="nc-full">제품명 <span class="req">*</span><input id="nc-product" placeholder="예) 바다포도포어리파이닝스킨팩80매(다이소)" /></label>'
+
+    + '<div class="nc-sec">유형과 내용</div>'
+    + '<div class="nc-grid">'
+    +   '<label>유형(중) <span class="req">*</span><select id="nc-mid"><option value="">고르세요</option>' + mids + '</select></label>'
+    +   '<label>유형(소) <span class="req">*</span><select id="nc-type"><option value="">중분류를 먼저</option></select></label>'
+    + '</div>'
+    + '<label class="nc-full">클레임 내용 <span class="req">*</span><textarea id="nc-claim" rows="2" placeholder="예) 캡 내부에 벌레 이물 발견"></textarea></label>'
+
+    + '<div class="nc-sec">불만협의체</div>'
+    + '<div class="nc-row">'
+    +   '<span class="nc-seg"><button class="nc-sg on" data-ncstage="">담지 않음</button>'
+    +   '<button class="nc-sg" data-ncstage="사후">사후</button>'
+    +   '<button class="nc-sg" data-ncstage="사전">사전</button></span>'
+    +   '<label class="nc-chk"><input type="checkbox" id="nc-fault" /> 제조사 귀책</label>'
+    +   '<label class="nc-file">현상 사진<input type="file" accept="image/*" id="nc-photo" hidden /></label>'
+    +   '<span class="nc-pv" id="nc-pv"></span>'
+    + '</div>'
+
+    + '<div class="nc-sec">원인과 대책 <em>나중에 채워도 됩니다</em></div>'
+    + '<label class="nc-full">발생 원인<textarea id="nc-cause" rows="2"></textarea></label>'
+    + '<label class="nc-full">개선 · 재발방지<textarea id="nc-action" rows="2"></textarea></label>'
+    + '</div>'
+    + '<div class="nc-ft">'
+    +   '<span class="nc-msg" id="nc-msg"></span>'
+    +   '<button class="nc-btn ghost" data-ncclose="1">취소</button>'
+    +   '<button class="nc-btn go" id="nc-save">등록</button>'
+    + '</div></div>';
+  document.body.appendChild(wrap);
+
+  /* 중분류를 고르면 소분류가 따라온다 */
+  const mid = wrap.querySelector("#nc-mid"), ty = wrap.querySelector("#nc-type");
+  mid.addEventListener("change", function(){
+    const t = CLAIM_TAX.find(function(x){ return x.mid === mid.value; });
+    ty.innerHTML = t ? t.subs.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join("")
+                     : '<option value="">중분류를 먼저</option>';
+  });
+  wrap.querySelectorAll("[data-ncstage]").forEach(function(b){
+    b.addEventListener("click", function(){
+      wrap.querySelectorAll("[data-ncstage]").forEach(function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+    });
+  });
+  let photo = "";
+  wrap.querySelector("#nc-photo").addEventListener("change", async function(e){
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const fr = new FileReader();
+    fr.onload = async function(){
+      photo = await cxShrink(fr.result, 1100);
+      wrap.querySelector("#nc-pv").innerHTML = photo ? '<img src="' + photo + '" alt="" />' : "";
+    };
+    fr.readAsDataURL(f);
+  });
+  wrap.addEventListener("click", function(e){
+    if(e.target.closest("[data-ncclose]") || e.target === wrap) wrap.remove();
+  });
+
+  wrap.querySelector("#nc-save").addEventListener("click", function(){
+    const v = function(id){ const el = wrap.querySelector(id); return el ? el.value.trim() : ""; };
+    const co = v("#nc-co"), product = v("#nc-product"), claim = v("#nc-claim");
+    const m = v("#nc-mid"), t = v("#nc-type"), recv = v("#nc-recv");
+    const msg = wrap.querySelector("#nc-msg");
+    if(!co || !product || !claim || !m || !t || !recv){
+      msg.textContent = "제조사 · 제품명 · 클레임 내용 · 유형 · 접수일자는 꼭 채워 주세요.";
+      return;
+    }
+    const stageBtn = wrap.querySelector("[data-ncstage].on");
+    const c = {
+      company: co, issueNo: nextIssueNo(co),
+      title: product + " " + claim,
+      brand: v("#nc-brand"), code: v("#nc-code"), product: product, claim: claim,
+      lot: v("#nc-lot"), exp: v("#nc-exp"), recv: recv, reply: v("#nc-reply"),
+      mid: m, type: t, stage: stageBtn ? stageBtn.dataset.ncstage : "",
+      fault: wrap.querySelector("#nc-fault").checked,
+      photo: photo, cause: v("#nc-cause"), action: v("#nc-action"),
+      at: new Date().toISOString().slice(0,10)
+    };
+    newClaims.push(c);
+    saveNewClaims();
+    applyNewClaims();
+    for(const k in _iParts) delete _iParts[k];   /* 품목 쪼갠 값 캐시를 비운다 (const 라 새로 못 준다) */
+    if(typeof _iHay !== "undefined") for(const k in _iHay) delete _iHay[k];
+    wrap.remove();
+    applyIssueFilter();
+    alert("등록했습니다.\n\n· " + co + " " + c.issueNo + "번 · " + product
+      + "\n· 표와 집계에 바로 반영됩니다."
+      + (c.stage ? "\n· 불만협의체 " + c.stage + " 로 담았습니다." : ""));
+  });
+}
+
+/* 등록한 건 내려받기 — 파일에 영구히 넣을 때 쓴다 */
+function ncExport(){
+  if(!newClaims.length){ alert("등록한 클레임이 없습니다."); return; }
+  const blob = new Blob([JSON.stringify(newClaims, null, 1)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "등록한클레임_" + new Date().toISOString().slice(0,10).split("-").join("") + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 6000);
+}
+
+document.addEventListener("click", function(e){
+  if(e.target.closest && e.target.closest("#nc-open")) ncOpen();
+  if(e.target.closest && e.target.closest("#nc-dump")) ncExport();
+});
+
 function renderIssueTable(){
+  if(!_ncOn){ _ncOn = 1; applyNewClaims(); }
   const rows = issueFiltered();
   renderFaultCount();
   renderCxCount();
