@@ -1702,11 +1702,18 @@
   .cr-row2.bad .cr-v2{ color:var(--critical); }
   .ow-sg{ margin-top:13px; }
 
-  /* 항목별 등급 — 업체(채운 칸)와 올리브(테두리 칸)를 한 줄에 */
-  .gc-key{ display:flex; gap:15px; align-items:center; flex-wrap:wrap;
-    font-size:10.5px; font-weight:700; color:var(--muted); margin:0 0 10px; }
-  .gc-key span{ display:flex; align-items:center; gap:5px; }
-  .gc-key i{ font-style:normal; width:19px; padding:2px 0; font-size:10px; }
+  /* 항목별 등급 — 업체·올리브를 각각 토글로, 위아래로 붙여 건수를 견준다 */
+  .gc{ margin-top:14px; padding-top:13px; border-top:1px solid var(--border); }
+  .gc-note{ font-size:11.5px; color:var(--ink-2); margin-bottom:11px; }
+  .gc-note b{ font-family:var(--font-mono); font-size:13px; color:var(--ink); }
+  .gc-part + .gc-part{ margin-top:15px; padding-top:14px; border-top:1px dashed var(--border); }
+  .gc-hd{ display:flex; align-items:baseline; gap:9px; margin-bottom:8px; }
+  .gc-who{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--ink); }
+  .gc-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .gc-dot.m{ background:var(--t8); }
+  .gc-dot.d{ background:var(--accent); }
+  .gc-sc{ font-family:var(--font-mono); font-size:15px; font-weight:800; color:var(--ink-2); }
+  .gc-sc em{ font-style:normal; font-family:var(--font-body,inherit); font-size:10.5px; font-weight:700; color:var(--muted); margin-left:2px; }
   .sg-row2{
     display:grid; grid-template-columns:60px minmax(0,1fr); gap:12px; align-items:center;
     padding:7px 0; border-top:1px solid var(--border);
@@ -1721,7 +1728,6 @@
   .sg-g.ol.g-A{ color:var(--good); }
   .sg-g.ol.g-B{ color:var(--warn); }
   .sg-g.ol.g-C{ color:var(--critical); }
-  .gc{ margin-top:14px; padding-top:13px; border-top:1px solid var(--border); }
   .sg-list{ background:var(--surface-2); border-radius:10px; padding:5px 13px; margin-bottom:8px; }
   .sg-list[hidden]{ display:none; }
   .sg-row{
@@ -3546,18 +3552,8 @@ function gradeCompareHTML(key, cs){
       ? `<div class="sw-none">점검시트 항목별 등급이 추출되지 않았습니다 — 총점만 기입된 건입니다.</div>` : "";
   }
   const G = { A:"우수", B:"보통", C:"미흡" };
-  const both = all.some(x=>x.d);   // 올리브 컬럼이 채워졌는가
+  const both = all.some(x=>x.d);
 
-  const grp = both
-    ? [ { k:"gap", cls:"g-B", n:"평가 갈림", f:x=> x.m!==x.d },
-        { k:"low", cls:"g-C", n:"양쪽 보통 이하", f:x=> x.m===x.d && x.m!=="A" },
-        { k:"ok",  cls:"g-A", n:"양쪽 우수", f:x=> x.m===x.d && x.m==="A" } ]
-    : [ { k:"C", cls:"g-C", n:"미흡", f:x=>x.m==="C" },
-        { k:"B", cls:"g-B", n:"보통", f:x=>x.m==="B" },
-        { k:"A", cls:"g-A", n:"우수", f:x=>x.m==="A" } ];
-
-  /* 앞의 두 묶음(갈림·보통이하)이 있으면 그쪽을 펼친 채로 연다 */
-  const anyLow = grp.slice(0,2).some(g=> all.some(g.f));
   const badge = (g, ol) => g
     ? `<span class="sg-g g-${g}${ol?" ol":""}" title="${ol?"올리브 현장평가":"제조업체 자체평가"} ${G[g]||""}">${g}</span>`
     : `<span class="sg-g none" title="미기입">–</span>`;
@@ -3566,27 +3562,37 @@ function gradeCompareHTML(key, cs){
       <div class="sg-t"><i>${esc(x.c)}</i>${esc(x.i)}</div>
     </div>`).join("");
 
-  return `<div class="sg gc">
-    ${both?`<div class="gc-key">
-      <span><i class="sg-g g-A">A</i>제조업체 자체평가</span>
-      <span><i class="sg-g g-A ol">A</i>올리브 현장평가</span></div>`
-     :`<div class="gc-key"><span><i class="sg-g g-A">A</i>제조업체 자체평가 — 올리브 평가 미기입</span></div>`}
-    <div class="sg-chips">
-      ${grp.map((g,i)=>{
-        const n = all.filter(g.f).length;
-        const open = n>0 && (i<2 || !anyLow);
-        return `<button class="sg-chip ${g.cls}${n?"":" zero"}" data-sgtog="gc${g.k}"
-          aria-expanded="${open}"${n?"":" disabled"}>
-          <span class="sg-n"><b>${n}</b>건</span><span class="sg-l">${g.n}</span>
-        </button>`;
-      }).join("")}
-      <span class="sg-all"><button class="cx-allbtn" data-sgall="1">모두 펼치기</button></span>
-    </div>
-    ${grp.map((g,i)=>{
-      const list = all.filter(g.f);
-      return list.length
-        ? `<div class="sg-list" data-sggrp="gc${g.k}"${(i<2||!anyLow)?"":" hidden"}>${rows(list)}</div>` : "";
-    }).join("")}
+  /* 한 쪽(업체 또는 올리브)의 등급 토글 한 벌 */
+  const part = (who, pick, score, dot, pre) => {
+    const by = { A:[], B:[], C:[] };
+    all.forEach(x=>{ const g = pick(x); if(by[g]) by[g].push(x); });
+    const anyLow = by.B.length > 0 || by.C.length > 0;
+    return `<div class="sg gc-part">
+      <div class="gc-hd">
+        <span class="gc-who"><i class="gc-dot ${dot}"></i>${who}</span>
+        ${score!=null?`<span class="gc-sc">${score.toFixed(2)}<em>점</em></span>`:""}
+      </div>
+      <div class="sg-chips">
+        ${["A","B","C"].map(g=>{
+          const n = by[g].length;
+          const open = n > 0 && (g !== "A" || !anyLow);
+          return `<button class="sg-chip g-${g}${n?"":" zero"}" data-sgtog="${pre}${g}"
+            aria-expanded="${open}"${n?"":" disabled"}>
+            <span class="sg-k">${g}</span><span class="sg-n"><b>${n}</b>건</span><span class="sg-l">${G[g]}</span>
+          </button>`;
+        }).join("")}
+        <span class="sg-all"><button class="cx-allbtn" data-sgall="1">모두 펼치기</button></span>
+      </div>
+      ${["A","B","C"].map(g=> by[g].length
+        ? `<div class="sg-list" data-sggrp="${pre}${g}"${(g!=="A"||!anyLow)?"":" hidden"}>${rows(by[g])}</div>` : "").join("")}
+    </div>`;
+  };
+
+  const gapN = both ? all.filter(x=> x.m!==x.d).length : 0;
+  return `<div class="gc">
+    ${both?`<div class="gc-note">두 평가가 갈린 항목 <b>${gapN}</b>건 — 각 줄 왼쪽이 제조업체, 오른쪽 테두리 칸이 올리브입니다.</div>`:""}
+    ${part("제조업체 자체평가", x=>x.m, cs?cs.mfr:null, "m", "gcm")}
+    ${both?part("올리브 현장평가", x=>x.d, cs?cs.dist:null, "d", "gco"):""}
   </div>`;
 }
 
