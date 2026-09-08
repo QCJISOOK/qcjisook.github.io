@@ -1338,6 +1338,20 @@
   .phase-body{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
   .doc-block{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:13px 15px; }
   .doc-block.wide{ grid-column:1 / -1; }
+  /* 감사 카드의 「작성 중인 협의체」 */
+  .cxd-cap{ font-size:11.5px; color:var(--ink-2); margin-bottom:10px; line-height:1.6; }
+  .cxd-cap b{ color:var(--ink); }
+  .cxd-grp{ margin-top:11px; }
+  .cxd-h{ font-size:11.5px; font-weight:800; color:var(--ink-2); margin-bottom:5px; }
+  .cxd-h b{ font-family:var(--font-mono); color:var(--accent-strong); }
+  .cxd-row{
+    display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:10px; align-items:center;
+    padding:6px 0; border-top:1px solid var(--border);
+  }
+  .cxd-n{ font-family:var(--font-mono); font-size:11px; font-weight:800; color:var(--muted); text-align:center; }
+  .cxd-t{ font-size:12.5px; color:var(--ink); line-height:1.45; min-width:0; }
+  .cxd-t i{ display:block; font-style:normal; font-size:9.5px; font-weight:700; color:var(--muted); }
+  .cxd-ty{ font-size:10.5px; font-weight:700; color:var(--accent-strong); white-space:nowrap; }
   .doc-label{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--border); }
   .doc-name{ font-size:13px; font-weight:800; }
   .doc-desc{ font-size:10.5px; color:var(--muted); }
@@ -6169,6 +6183,78 @@ function complaintBlockHTML(key, det){
   return summary + blocks.join("") + complaintPhotoHTML(key, shots.rest);
 }
 
+
+/* 아직 협의체 자료가 없는 감사 — 이슈 현황에서 표시한 건을 그대로 보여 준다.
+   자료가 이미 있는 감사는 이 함수가 불리지 않는다. */
+function cxDraftOf(key){
+  if(typeof issueData === "undefined" || typeof cxStageOf === "undefined") return null;
+  const co = key.split("|")[2];
+  const pool = issueData.filter(d=>d.company === co);
+  const post = pool.filter(d=>cxStageOf(d)==="post");
+  const pre  = pool.filter(d=>cxStageOf(d)==="pre");
+  if(!post.length && !pre.length) return null;
+  return { co: co, post: post, pre: pre };
+}
+function cxDraftHTML(key){
+  const g = cxDraftOf(key);
+  if(!g) return null;
+  const row = (d, kind, n) => {
+    const p = issueParts(d), dt = issueDatesOf(d);
+    return '<div class="cxd-row">'
+      + '<span class="cxd-n">' + n + '</span>'
+      + '<div class="cxd-t"><i>' + esc(kind) + ' · ' + esc(dt.start || "") + '</i>'
+      + esc(p.product || d.title) + '</div>'
+      + '<span class="cxd-ty">' + esc(d.oldType || d.type || "") + '</span></div>';
+  };
+  const list = (arr, kind) => arr.length
+    ? '<div class="cxd-grp"><div class="cxd-h">' + kind + ' <b>' + arr.length + '</b>건</div>'
+      + arr.map((d,i)=>row(d, kind, i+1)).join("") + '</div>' : "";
+  const canMake = typeof cxBuildPptx === "function";
+  return '<div class="cxd">'
+    + '<div class="cxd-cap">아직 협의체 자료가 없어, <b>이슈 현황에서 표시한 건</b>을 보여 줍니다.'
+    + ' 표시를 바꾸면 여기도 함께 바뀝니다.'
+    + (canMake ? ' <button class="cxs-go" data-cxmake="' + esc(key) + '">PPT 만들기</button>' : '')
+    + '</div>'
+    + list(g.post, "사후") + list(g.pre, "사전")
+    + '</div>';
+}
+document.addEventListener("click", function(e){
+  const b = e.target.closest && e.target.closest("[data-cxmake]");
+  if(!b) return;
+  e.stopPropagation();
+  if(typeof cxExportFor === "function") cxExportFor(b.dataset.cxmake.split("|")[2], b);
+});
+
+/* 감사 카드에서 부르는 내보내기 — 업체 이름으로 골라 담는다 */
+async function cxExportFor(co, btn){
+  const pool = issueData.filter(d=>d.company === co);
+  const dPost = pool.filter(d=>cxStageOf(d)==="post");
+  const dPre  = pool.filter(d=>cxStageOf(d)==="pre");
+  if(!dPost.length && !dPre.length){ alert("표시한 건이 없습니다."); return; }
+  const was = btn ? btn.textContent : "";
+  if(btn){ btn.textContent = "만드는 중…"; btn.disabled = true; }
+  const fill = async list => {
+    const out = [];
+    for(const d of list){ const it = cxItemOf(d); it.photo = await cxPhoto(d); out.push(it); }
+    return out;
+  };
+  const post = await fill(dPost), pre = await fill(dPre);
+  const now = new Date();
+  const ymd = now.getFullYear() + "." + String(now.getMonth()+1).padStart(2,"0") + "." + String(now.getDate()).padStart(2,"0");
+  const half = now.getMonth() < 6 ? "상반기" : "하반기";
+  const J = { company: co, year: String(now.getFullYear()), half: half, date: ymd,
+    title: now.getFullYear() + "년도 " + half + " 불만협의체_" + co, post: post, pre: pre };
+  let blob;
+  try { blob = await cxBuildPptx(J); }
+  catch(err){ if(btn){ btn.textContent = was; btn.disabled = false; } alert("PPT 를 만들지 못했습니다.\n" + (err && err.message ? err.message : err)); return; }
+  if(btn){ btn.textContent = was; btn.disabled = false; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "별첨01. " + J.title.replace(/[\\/:*?"<>|]/g, "") + "_" + ymd.split(".").join("") + ".pptx";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 8000);
+}
+
 function phasePreHTML(key, det){
   const list = det.complaints || [];
   const post = [], pre = [], alt = [];
@@ -6181,6 +6267,7 @@ function phasePreHTML(key, det){
   const openN = list.filter(c=>complaintStatusClass(c.status)==="open").length;
 
   let complaintBlock = complaintBlockHTML(key, det);
+  if(!complaintBlock) complaintBlock = cxDraftHTML(key);   /* 자료가 없으면 표시한 건으로 */
   if(complaintBlock){ /* 새 상세 데이터 사용 */ }
   else if(!list.length){
     complaintBlock = `<div class="empty-note">해당 감사 건의 불만협의체 자료 없음</div>`;
