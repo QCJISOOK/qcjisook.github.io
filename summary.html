@@ -1430,6 +1430,11 @@
   }
   .nc-box textarea{ resize:vertical; }
   .req{ color:var(--critical); }
+  .nc-erp{ display:flex; gap:8px; align-items:flex-start; }
+  .nc-erp textarea{
+    flex:1; font-family:inherit; font-size:11.5px; padding:8px 10px; border-radius:8px;
+    border:1px dashed var(--accent); background:var(--accent-tint); color:var(--ink); resize:vertical;
+  }
   .nc-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .nc-seg{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
   .nc-sg{ font-family:inherit; font-size:11.5px; font-weight:750; padding:7px 13px;
@@ -5627,6 +5632,126 @@ function nextIssueNo(co){
 }
 
 /* 등록 창 — 표에 쓰는 항목 그대로 받는다 */
+
+/* ── ERP 화면 읽기 ────────────────────────────────────────────
+   부적합처리방안등록 화면을 통째로 복사(Ctrl+A → Ctrl+C)해 붙이면
+   라벨을 찾아 값을 뽑는다. 칸 순서가 바뀌어도 라벨만 있으면 읽는다.  */
+
+/* 반품유형·반품원인 → 대시보드 유형 */
+const ERP_TYPE = [
+  { u:/자재|부자재|용기|포장/, r:/용기|병|보틀/,        mid:"부자재",   type:"용기불량" },
+  { u:/자재|부자재/,           r:/캡|뚜껑/,             mid:"부자재",   type:"캡불량" },
+  { u:/자재|부자재/,           r:/펌프|스포이드|디스펜/, mid:"부자재",   type:"펌프불량" },
+  { u:/자재|부자재/,           r:/단상자|박스|지함/,     mid:"부자재",   type:"단상자 불량" },
+  { u:/자재|부자재/,           r:/누액|누수|샘/,        mid:"부자재",   type:"내용물누수" },
+  { u:/내용물|제품/,           r:/이물|먼지|벌레/,       mid:"청결/이물", type:"내용물청결/이물" },
+  { u:/자재|부자재/,           r:/이물|먼지/,           mid:"청결/이물", type:"자재청결/이물" },
+  { u:/내용물|제품/,           r:/색상|변색/,           mid:"내용물",   type:"색상이상" },
+  { u:/내용물|제품/,           r:/성상|분리|층/,        mid:"내용물",   type:"성상이상" },
+  { u:/내용물|제품/,           r:/향취|냄새/,           mid:"내용물",   type:"향취이상" },
+  { u:/내용물|제품/,           r:/파손|깨짐/,           mid:"내용물",   type:"내용물파손" },
+  { u:/생산|공정/,             r:/충전|용량|누락/,       mid:"생산",     type:"공정불량" },
+  { u:/생산|공정/,             r:/표시|착인|압인|라벨/,   mid:"생산",     type:"치명불량" },
+  { u:/트러블|피부/,           r:/./,                   mid:"트러블",   type:"트러블" }
+];
+/* 위에서 못 가리면 이슈 글로 한 번 더 본다 */
+const ERP_WORD = [
+  [/벌레|이물|먼지|곰팡이/, "청결/이물", "내용물청결/이물"],
+  [/누액|누수|새어|샘/,     "부자재",   "내용물누수"],
+  [/깨짐|파손|破|크랙/,     "부자재",   "용기불량"],
+  [/펌프|스포이드/,         "부자재",   "펌프불량"],
+  [/캡|뚜껑/,              "부자재",   "캡불량"],
+  [/단상자|박스/,           "부자재",   "단상자 불량"],
+  [/색상|변색/,            "내용물",   "색상이상"],
+  [/향취|냄새/,            "내용물",   "향취이상"],
+  [/성상|분리|층/,          "내용물",   "성상이상"],
+  [/충전|용량|미충전|누락/, "생산",     "공정불량"],
+  [/착인|압인|표시|라벨/,   "생산",     "치명불량"]
+];
+
+function erpParse(txt){
+  const t = String(txt || "").replace(/\u00a0/g, " ");
+  /* 라벨 뒤의 값 — 같은 줄이든 다음 줄이든 잡는다 */
+  const get = function(label){
+    const re = new RegExp(label + "\\s*[:：]?\\s*([^\\n\\r]*)");
+    const m = t.match(re);
+    if(!m) return "";
+    let v = (m[1] || "").trim();
+    /* 다음 라벨이 같은 줄에 붙어 있으면 잘라 낸다 */
+    v = v.split(/\s{2,}/)[0].trim();
+    return v;
+  };
+  const date = function(s){ const m = String(s).match(/(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+    return m ? m[1] + "-" + ("0"+m[2]).slice(-2) + "-" + ("0"+m[3]).slice(-2) : ""; };
+
+  const out = {};
+  out.product = get("품\\s*명");
+  out.code    = get("품\\s*번");
+  out.brand   = get("브랜드");
+  out.recv    = date(get("발생일")) || date(get("등록일"));
+  out.need    = date(get("처리필요일자"));   /* 처리 기한이지 회신일이 아니다 */
+  out.reply   = date(get("회신일"));
+  out.erpNo   = get("부적합번호");
+  out.dept    = get("등록부서");
+  out.by      = get("등록자");
+  out.channel = get("유통채널");
+  out.customer= get("고객명");
+
+  /* LOT / EXP : FF001 / 2028-12-15 */
+  const le = t.match(/LOT\s*\/?\s*EXP\s*[:：]?\s*([^\n\r]*)/i);
+  if(le){
+    const p = le[1].split("/").map(function(x){ return x.trim(); });
+    out.lot = p[0] || "";
+    out.exp = date(p[1] || "");
+  } else {
+    out.lot = get("LOT");
+    out.exp = date(get("사용기한")) || date(get("EXP"));
+  }
+
+  /* 이슈 — 「이슈:」 뒤 또는 부적합내용 덩어리의 마지막 줄 */
+  const is = t.match(/이\s*슈\s*[:：]\s*([^\n\r]*)/);
+  out.claim = is ? is[1].trim() : "";
+  if(!out.claim){
+    const nb = t.match(/부적합내용\s*([\s\S]{0,300})/);
+    if(nb){
+      const lines = nb[1].split(/\n/).map(function(x){ return x.trim(); })
+        .filter(function(x){ return x && !/^(브랜드|고객명|LOT)/.test(x); });
+      out.claim = lines[0] || "";
+    }
+  }
+
+  /* 유형 고르기 */
+  const u = get("반품유형"), r = get("반품원인");
+  let hit = ERP_TYPE.find(function(x){ return x.u.test(u) && x.r.test(r); });
+  if(!hit && (u || r)){
+    const w = ERP_WORD.find(function(x){ return x[0].test(r + " " + out.claim); });
+    if(w) hit = { mid:w[1], type:w[2] };
+  }
+  if(!hit){
+    const w = ERP_WORD.find(function(x){ return x[0].test(out.claim); });
+    if(w) hit = { mid:w[1], type:w[2] };
+  }
+  if(hit){ out.mid = hit.mid; out.type = hit.type; }
+  out.erpType = (u ? u : "") + (r ? " / " + r : "");
+
+  /* 제조사는 ERP 화면에 없다 — 품번·브랜드로 지난 이슈에서 찾아 준다 */
+  out.company = "";
+  if(out.code){
+    const same = issueData.filter(function(d){ return (issueParts(d).code || "") === out.code; });
+    if(same.length) out.company = same[0].company;
+  }
+  if(!out.company && out.brand){
+    const cnt = {};
+    issueData.forEach(function(d){
+      if((issueParts(d).brand || "") !== out.brand) return;
+      cnt[d.company] = (cnt[d.company] || 0) + 1;
+    });
+    const best = Object.keys(cnt).sort(function(a,b){ return cnt[b]-cnt[a]; })[0];
+    if(best) out.company = best;
+  }
+  return out;
+}
+
 function ncOpen(){
   const cos = [...new Set(issueData.map(function(d){ return d.company; }))].sort(function(a,b){ return a.localeCompare(b,"ko"); });
   const brands = (typeof ISSUE_BRANDS !== "undefined") ? ISSUE_BRANDS : [];
@@ -5641,6 +5766,10 @@ function ncOpen(){
     + '<span>표에 바로 반영되고, 불만협의체 PPT 에도 그대로 실립니다</span>'
     + '<button class="nc-x" data-ncclose="1" aria-label="닫기">✕</button></div>'
     + '<div class="nc-bd">'
+
+    + '<div class="nc-sec">ERP 화면 붙여넣기 <em>부적합처리방안등록 화면을 Ctrl+A → Ctrl+C 해서 붙이면 아래 칸이 채워집니다</em></div>'
+    + '<div class="nc-erp"><textarea id="nc-erp" rows="3" placeholder="여기에 붙여넣기 (Ctrl+V)"></textarea>'
+    + '<button class="nc-btn" id="nc-read">읽어오기</button></div>'
 
     + '<div class="nc-sec">접수 정보</div>'
     + '<div class="nc-grid">'
@@ -5700,6 +5829,33 @@ function ncOpen(){
       wrap.querySelectorAll("[data-ncstage]").forEach(function(x){ x.classList.remove("on"); });
       b.classList.add("on");
     });
+  });
+  /* ERP 화면에서 읽어 칸을 채운다 */
+  const erpBox = wrap.querySelector("#nc-erp");
+  wrap.querySelector("#nc-read").addEventListener("click", function(){
+    const r = erpParse(erpBox.value);
+    const put = function(id, v){ if(v){ const el = wrap.querySelector(id); if(el) el.value = v; } };
+    put("#nc-co", r.company); put("#nc-recv", r.recv); put("#nc-reply", r.reply);
+    put("#nc-brand", r.brand); put("#nc-code", r.code); put("#nc-lot", r.lot);
+    put("#nc-exp", r.exp); put("#nc-product", r.product); put("#nc-claim", r.claim);
+    if(r.mid){
+      mid.value = r.mid; mid.dispatchEvent(new Event("change"));
+      if(r.type) ty.value = r.type;
+    }
+    const got = ["product","code","recv","lot","claim"].filter(function(k){ return r[k]; }).length;
+    const msg = wrap.querySelector("#nc-msg");
+    msg.style.color = got >= 3 ? "var(--good)" : "var(--critical)";
+    msg.textContent = got >= 3
+      ? "읽었습니다 — " + (r.company ? r.company + " · " : "제조사는 직접 골라 주세요 · ")
+        + (r.erpType ? "ERP 유형 " + r.erpType : "") + " · 값을 확인한 뒤 등록하세요."
+      : "읽을 값이 적습니다. 화면 전체를 복사했는지 확인해 주세요.";
+    if(r.erpNo || r.customer || r.channel || r.need){
+      const memo = [r.erpNo ? "부적합번호 " + r.erpNo : "", r.customer ? "고객 " + r.customer : "",
+                    r.channel ? r.channel : "", r.dept ? r.dept : "",
+                    r.need ? "처리필요 " + r.need : ""].filter(Boolean).join(" · ");
+      const ca = wrap.querySelector("#nc-cause");
+      if(ca && !ca.value) ca.value = "[ERP] " + memo;
+    }
   });
   let photo = "";
   wrap.querySelector("#nc-photo").addEventListener("change", async function(e){
