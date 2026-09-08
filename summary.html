@@ -3301,16 +3301,15 @@ function bindLawChips(scope){
 
 /* ---------- expanded body : AUDIT 3단계 흐름 ---------- */
 
-function phaseHeadHTML(n, title, sub){
+function phaseHeadHTML(n, title){
   return `<button class="ph-head" data-phtog="${n}" aria-expanded="false">
     <span class="ph-num">${n}</span>
     <span class="ph-title">${esc(title)}</span>
-    <span class="ph-sub">${esc(sub)}</span>
     <span class="ph-car" aria-hidden="true"></span>
   </button>`;
 }
 function docLabel(name, desc){
-  return `<div class="doc-label"><span class="doc-name">${esc(name)}</span><span class="doc-desc">${esc(desc)}</span></div>`;
+  return `<div class="doc-label"><span class="doc-name">${esc(name)}</span>${desc?`<span class="doc-desc">${esc(desc)}</span>`:""}</div>`;
 }
 
 /* ===== 1단계 : 불만협의체 및 점검시트 (AUDIT 전) ===== */
@@ -3508,7 +3507,7 @@ function checkSheetBlockHTML(key, det){
   const cs = det.checkSheet;
   const selfScore = (cs && cs.mfr!=null)
     ? `<div class="score-big"><span class="sv">${cs.mfr.toFixed(2)}</span><span class="su">점 / 100</span></div>
-       <div class="score-cap">제조업자 자체평가 (38개 항목 · 우수 A 3점 / 보통 B 2점 / 미흡 C 1점)</div>`
+       <div class="score-cap">(38개 항목 · 우수 A 3점 / 보통 B 2점 / 미흡 C 1점)</div>`
     : `<div class="empty-note">점검시트에 업체 자체평가 점수 미기입</div>`;
 
   // 등급별 토글 — A(우수) / B(보통) / C(미흡)
@@ -3579,7 +3578,7 @@ function phasePreHTML(key, det){
   }
 
   return `<div class="phase pre">
-    ${phaseHeadHTML(1, "불만협의체 및 점검시트", "AUDIT 전 · 제조업체 사전 서류 검토")}
+    ${phaseHeadHTML(1, "불만협의체")}
     <div class="phase-body" data-phgrp="1" hidden>
       <div class="doc-block wide">
         ${docLabel("불만협의체", "사후불만(소비자 클레임) · 사전불만(관리품 검토 이슈) 공유")}
@@ -3806,14 +3805,14 @@ function phaseDuringHTML(key, det){
   }
 
   return `<div class="phase during">
-    ${phaseHeadHTML(2, "현장 실사 및 평가", "AUDIT 진행 · 제조판매업자 평가리스트 작성")}
+    ${phaseHeadHTML(2, "현장 실사 및 평가")}
     <div class="phase-body" data-phgrp="2" hidden>
       <div class="doc-block wide">
-        ${docLabel("제조품질관리의 확인서 점검시트", "제조업체가 자체 평가하여 회신")}
+        ${docLabel("제조품질관리의 확인서 점검시트", "")}
         ${checkSheetBlockHTML(key, det)}
       </div>
       <div class="doc-block wide">
-        ${docLabel("업체평가 점수", "제조업체 자체평가와 올리브 현장평가 비교")}
+        ${docLabel("업체평가 점수", "")}
         ${scoreBlock}
       </div>
     </div>
@@ -3886,10 +3885,10 @@ function phasePostHTML(key, det){
     : "";
 
   return `<div class="phase post">
-    ${phaseHeadHTML(3, "시정조치 및 최종평가", "AUDIT 후 · 개선결과 반영")}
+    ${phaseHeadHTML(3, "시정조치 및 최종평가")}
     <div class="phase-body" data-phgrp="3" hidden>
       <div class="doc-block wide">
-        ${docLabel("확인서", "Audit 진행 후 평가 결과를 정리한 서류")}
+        ${docLabel("확인서", "")}
         ${meta && (meta.auditor || meta.auditee) ? `<div class="cr-meta">
           ${meta.auditor?`<span><i>감사자</i>${esc(meta.auditor)}</span>`:""}
           ${meta.auditee?`<span><i>피감사자</i>${esc(meta.auditee)}</span>`:""}
@@ -3899,18 +3898,18 @@ function phasePostHTML(key, det){
           : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`)}
       </div>
       <div class="doc-block wide">
-        ${docLabel("개선지시서", "개선이 필요한 사항을 지시 — 개선 전 상태")}
+        ${docLabel("개선지시서", "")}
         ${idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
           : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
           : `<div class="empty-note">개선지시서 내용 없음</div>`)}
       </div>
       <div class="doc-block wide">
-        ${docLabel("개선결과서", "제조업자가 개선지시 사항을 시정조치한 결과 — 개선 전 / 개선 후")}
+        ${docLabel("개선결과서", "")}
         ${items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:""}
         ${sumBlock}${capaBlock}
       </div>
       <div class="doc-block wide">
-        ${docLabel("평가서", "개선결과까지 반영하여 제조업자를 최종 평가한 서류")}
+        ${docLabel("평가서", "")}
         ${fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : ""}
         ${evalPagesHTML(key)}
         ${(!fd || !fd.capa) && !(evalPages[key]||[]).length ? `<div class="empty-note">평가서 내용 없음</div>` : ""}
