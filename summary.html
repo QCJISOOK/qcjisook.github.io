@@ -5545,13 +5545,50 @@ function cxItemOf(d){
     photo: ""
   };
 }
-function cxExport(){
+/* 클레임 사진 두 장을 가로로 이어 한 장으로 — 서식의 「현상」 칸 모양에 맞춘다 */
+async function cxPhoto(d){
+  if(typeof issueShots === "undefined") return "";
+  const sh = issueShots[issueKeyOf(d)];
+  const srcs = ((sh && sh.shots) || []).slice(0, 2).map(s=>s.d).filter(x=>typeof x === "string");
+  if(!srcs.length) return "";
+  const imgs = (await Promise.all(srcs.map(src => new Promise(res => {
+    const im = new Image();
+    im.onload = ()=>res(im);
+    im.onerror = ()=>res(null);
+    im.src = src;
+  })))).filter(Boolean);
+  if(!imgs.length) return "";
+  const H = 880, GAP = 14;
+  const ws = imgs.map(im => Math.max(1, Math.round(im.width * H / im.height)));
+  const W = ws.reduce((a,b)=>a+b, 0) + (imgs.length - 1) * GAP;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  let x = 0;
+  imgs.forEach((im, i) => { g.drawImage(im, x, 0, ws[i], H); x += ws[i] + GAP; });
+  try { return cv.toDataURL("image/jpeg", 0.82); } catch(e){ return ""; }
+}
+
+async function cxExport(){
   const sel = document.getElementById("issue-company-filter");
   const co = (sel && sel.value) ? sel.value : null;
   const pool = co ? issueData.filter(d=>d.company===co) : issueData;
-  const post = pool.filter(d=>cxStageOf(d)==="post").map(cxItemOf);
-  const pre  = pool.filter(d=>cxStageOf(d)==="pre").map(cxItemOf);
-  if(!post.length && !pre.length){ alert("사후/사전으로 표시한 건이 없습니다."); return; }
+  const dPost = pool.filter(d=>cxStageOf(d)==="post");
+  const dPre  = pool.filter(d=>cxStageOf(d)==="pre");
+  if(!dPost.length && !dPre.length){ alert("사후/사전으로 표시한 건이 없습니다."); return; }
+
+  const btn = document.getElementById("cx-export");
+  const was = btn ? btn.textContent : "";
+  if(btn){ btn.textContent = "사진 담는 중…"; btn.disabled = true; }
+  const fill = async list => {
+    const out = [];
+    for(const d of list){ const it = cxItemOf(d); it.photo = await cxPhoto(d); out.push(it); }
+    return out;
+  };
+  const post = await fill(dPost);
+  const pre  = await fill(dPre);
+  if(btn){ btn.textContent = was; btn.disabled = false; }
   const now = new Date();
   const ymd = now.getFullYear() + "." + String(now.getMonth()+1).padStart(2,"0") + "." + String(now.getDate()).padStart(2,"0");
   const half = now.getMonth() < 6 ? "상반기" : "하반기";
@@ -5565,6 +5602,10 @@ function cxExport(){
   a.href = URL.createObjectURL(blob);
   a.download = "불만협의체_" + (co || "전체") + "_" + ymd.replace(/./g,"") + ".json";
   document.body.appendChild(a); a.click(); a.remove();
+  const withPhoto = post.concat(pre).filter(x=>x.photo).length;
+  alert("불만협의체 자료를 내려받았습니다.\n\n" +
+        "· 사후 " + post.length + "건 · 사전 " + pre.length + "건 (사진 " + withPhoto + "건)\n" +
+        "· 내려받기 폴더의 「불만협의체 만들기」를 실행하면 pptx 가 만들어집니다.");
   setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
 }
 document.addEventListener("click", function(e){
