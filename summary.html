@@ -1317,6 +1317,23 @@
   .phase-body{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
   .doc-block{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:13px 15px; }
   .doc-block.wide{ grid-column:1 / -1; }
+  /* 접었다 펴는 서류 칸 */
+  .dbf{ padding:0; overflow:hidden; }
+  .db-hd{
+    width:100%; display:flex; align-items:center; gap:9px;
+    background:none; border:0; cursor:pointer; font-family:inherit; text-align:left;
+    padding:12px 15px; transition:background .15s;
+  }
+  .db-hd:hover{ background:var(--surface-2); }
+  .db-car{
+    width:10px; height:10px; margin-left:auto; flex:none;
+    border-right:2px solid var(--muted); border-bottom:2px solid var(--muted);
+    transform:rotate(45deg) translate(-2px,-2px); transition:transform .18s;
+  }
+  .db-hd[aria-expanded="true"] .db-car{ transform:rotate(-135deg) translate(-2px,-2px); }
+  .db-body{ padding:0 15px 14px; border-top:1px dashed var(--border); }
+  .db-body[hidden]{ display:none; }
+  .db-body > :first-child{ margin-top:13px; }
   .doc-label{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--border); }
   .doc-name{ font-size:13px; font-weight:800; }
   .doc-desc{ font-size:10.5px; color:var(--muted); }
@@ -1816,8 +1833,6 @@
 
   /* 항목별 등급 — 업체·올리브를 각각 토글로, 위아래로 붙여 건수를 견준다 */
   .gc{ margin-top:14px; padding-top:13px; border-top:1px solid var(--border); }
-  .gc-note{ font-size:11.5px; color:var(--ink-2); margin-bottom:11px; }
-  .gc-note b{ font-family:var(--font-mono); font-size:13px; color:var(--ink); }
   .gc-part + .gc-part{ margin-top:15px; padding-top:14px; border-top:1px dashed var(--border); }
   .gc-hd{ display:flex; align-items:baseline; gap:9px; margin-bottom:8px; }
   .gc-who{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--ink); }
@@ -1827,19 +1842,14 @@
   .gc-sc{ font-family:var(--font-mono); font-size:15px; font-weight:800; color:var(--ink-2); }
   .gc-sc em{ font-style:normal; font-family:var(--font-body,inherit); font-size:10.5px; font-weight:700; color:var(--muted); margin-left:2px; }
   .sg-row2{
-    display:grid; grid-template-columns:60px minmax(0,1fr); gap:12px; align-items:center;
+    display:grid; grid-template-columns:26px minmax(0,1fr); gap:11px; align-items:center;
     padding:7px 0; border-top:1px solid var(--border);
   }
   .sg-row2:first-child{ border-top:none; }
-  .sg-gg{ display:grid; grid-template-columns:1fr 1fr; gap:4px; }
   .sg-g.g-A{ background:var(--good); }
   .sg-g.g-B{ background:var(--warn); }
   .sg-g.g-C{ background:var(--critical); }
   .sg-g.none{ background:var(--surface-2); color:var(--muted); }
-  .sg-g.ol{ background:none; box-shadow:inset 0 0 0 1.5px currentColor; }
-  .sg-g.ol.g-A{ color:var(--good); }
-  .sg-g.ol.g-B{ color:var(--warn); }
-  .sg-g.ol.g-C{ color:var(--critical); }
   .sg-list{ background:var(--surface-2); border-radius:10px; padding:5px 13px; margin-bottom:8px; }
   .sg-list[hidden]{ display:none; }
   .sg-row{
@@ -3386,6 +3396,20 @@ function phaseHeadHTML(n, title){
     <span class="ph-car" aria-hidden="true"></span>
   </button>`;
 }
+/* 접었다 펴는 서류 칸 — 제목을 누르면 본문이 접힌다.
+   id 는 감사마다 달라야 하므로 감사 열쇠를 섞어 만든다. */
+function docFoldHTML(key, id, name, body, open){
+  if(!body) return "";
+  const g = esc(key) + "::" + id;
+  return `<div class="doc-block wide dbf">
+    <button class="db-hd" data-dbtog="${g}" aria-expanded="${open?"true":"false"}">
+      <span class="doc-name">${esc(name)}</span>
+      <span class="db-car" aria-hidden="true"></span>
+    </button>
+    <div class="db-body" data-dbgrp="${g}"${open?"":" hidden"}>${body}</div>
+  </div>`;
+}
+
 function docLabel(name, desc){
   return `<div class="doc-label"><span class="doc-name">${esc(name)}</span>${desc?`<span class="doc-desc">${esc(desc)}</span>`:""}</div>`;
 }
@@ -3668,15 +3692,9 @@ function phasePreHTML(key, det){
   return `<div class="phase pre">
     ${phaseHeadHTML(2, "불만협의체 및 문서 점검 항목")}
     <div class="phase-body" data-phgrp="2" hidden>
-      <div class="doc-block wide">
-        ${docLabel("불만협의체", "사후불만(소비자 클레임) · 사전불만(관리품 검토 이슈) 공유")}
-        ${complaintBlock}
-      </div>
-      ${docCheck[key] ? `<div class="doc-block wide">
-        ${docLabel("문서 점검 항목", "")}
-        ${docCheckHTML(key)}
-        ${origPagesHTML(key, "doccheck", "문서 점검 항목")}
-      </div>` : ""}
+      ${docFoldHTML(key, "cx", "불만협의체", complaintBlock, true)}
+      ${docFoldHTML(key, "dk", "문서 점검 항목",
+        docCheckHTML(key) + origPagesHTML(key, "doccheck", "문서 점검 항목"), false)}
     </div>
   </div>`;
 }
@@ -3838,11 +3856,11 @@ function gradeCompareHTML(key, cs){
   const G = { A:"우수", B:"보통", C:"미흡" };
   const both = all.some(x=>x.d);
 
-  const badge = (g, ol) => g
-    ? `<span class="sg-g g-${g}${ol?" ol":""}" title="${ol?"올리브 현장평가":"제조업체 자체평가"} ${G[g]||""}">${g}</span>`
+  const badge = g => g
+    ? `<span class="sg-g g-${g}">${g}</span>`
     : `<span class="sg-g none" title="미기입">–</span>`;
-  const rows = list => list.map(x=>`<div class="sg-row2">
-      <span class="sg-gg">${badge(x.m)}${both?badge(x.d, true):""}</span>
+  const rows = (list, pick) => list.map(x=>`<div class="sg-row2">
+      ${badge(pick(x))}
       <div class="sg-t"><i>${esc(x.c)}</i>${esc(x.i)}</div>
     </div>`).join("");
 
@@ -3868,13 +3886,11 @@ function gradeCompareHTML(key, cs){
         <span class="sg-all"><button class="cx-allbtn" data-sgall="1">모두 펼치기</button></span>
       </div>
       ${["A","B","C"].map(g=> by[g].length
-        ? `<div class="sg-list" data-sggrp="${pre}${g}"${(g!=="A"||!anyLow)?"":" hidden"}>${rows(by[g])}</div>` : "").join("")}
+        ? `<div class="sg-list" data-sggrp="${pre}${g}"${(g!=="A"||!anyLow)?"":" hidden"}>${rows(by[g], pick)}</div>` : "").join("")}
     </div>`;
   };
 
-  const gapN = both ? all.filter(x=> x.m!==x.d).length : 0;
   return `<div class="gc">
-    ${both?`<div class="gc-note">두 평가가 갈린 항목 <b>${gapN}</b>건 — 각 줄 왼쪽이 제조업체, 오른쪽 테두리 칸이 올리브입니다.</div>`:""}
     ${part("제조업체 자체평가", x=>x.m, cs?cs.mfr:null, "m", "gcm")}
     ${both?part("올리브 현장평가", x=>x.d, cs?cs.dist:null, "d", "gco"):""}
   </div>`;
@@ -6833,6 +6849,16 @@ document.addEventListener("click", function(e){
     lbState.list = list;
     lbShow(+p[2]);
   }
+});
+
+/* 서류 칸 접기 — 카드가 나중에 그려져도 걸리도록 문서 전체에 한 번만 건다 */
+document.addEventListener("click", function(e){
+  const b = e.target.closest && e.target.closest("[data-dbtog]");
+  if(!b) return;
+  const box = b.parentElement.querySelector('[data-dbgrp="' + b.dataset.dbtog + '"]');
+  if(!box) return;
+  box.hidden = !box.hidden;
+  b.setAttribute("aria-expanded", String(!box.hidden));
 });
 
 /* ============================== TABS ============================== */
