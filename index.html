@@ -1749,7 +1749,23 @@
   /* 항목별 등급 — 업체·올리브를 각각 토글로, 위아래로 붙여 건수를 견준다 */
   .gc{ margin-top:14px; padding-top:13px; border-top:1px solid var(--border); }
   .gc-part + .gc-part{ margin-top:15px; padding-top:14px; border-top:1px dashed var(--border); }
-  .gc-hd{ display:flex; align-items:baseline; gap:9px; margin-bottom:8px; }
+  .gc-hd{
+    width:100%; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:none; border:0; cursor:pointer; font-family:inherit; text-align:left;
+    padding:7px 2px; margin-bottom:2px; border-radius:8px; transition:background .15s;
+  }
+  .gc-hd:hover{ background:var(--surface-2); }
+  .gc-hd .db-car{ margin-left:0; }
+  .gc-cnt{ display:flex; gap:5px; margin-left:auto; }
+  .gc-p{
+    font-style:normal; font-family:var(--font-mono); font-size:10px; font-weight:800;
+    color:#fff; border-radius:5px; padding:2px 6px;
+  }
+  .gc-p.g-A{ background:var(--good); }
+  .gc-p.g-B{ background:var(--warn); }
+  .gc-p.g-C{ background:var(--critical); }
+  .gc-body[hidden]{ display:none; }
+  .gc-body{ padding-top:6px; }
   .gc-who{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--ink); }
   .gc-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
   .gc-dot.m{ background:var(--t8); }
@@ -3664,15 +3680,21 @@ function gradeCompareHTML(key, cs){
     </div>`).join("");
 
   /* 한 쪽(업체 또는 올리브)의 등급 토글 한 벌 */
-  const part = (who, pick, score, dot, pre) => {
+  const part = (who, pick, score, dot, pre, open) => {
     const by = { A:[], B:[], C:[] };
     all.forEach(x=>{ const g = pick(x); if(by[g]) by[g].push(x); });
     const anyLow = by.B.length > 0 || by.C.length > 0;
+    const gid = esc(key) + "::" + pre;
     return `<div class="sg gc-part">
-      <div class="gc-hd">
+      <button class="gc-hd" data-dbtog="${gid}" aria-expanded="${open?"true":"false"}">
         <span class="gc-who"><i class="gc-dot ${dot}"></i>${who}</span>
         ${score!=null?`<span class="gc-sc">${score.toFixed(2)}<em>점</em></span>`:""}
-      </div>
+        <span class="gc-cnt">${["A","B","C"].map(function(g){
+          return by[g].length ? '<i class="gc-p g-'+g+'">'+g+' '+by[g].length+'</i>' : "";
+        }).join("")}</span>
+        <span class="db-car" aria-hidden="true"></span>
+      </button>
+      <div class="gc-body" data-dbgrp="${gid}"${open?"":" hidden"}>
       <div class="sg-chips">
         ${["A","B","C"].map(g=>{
           const n = by[g].length;
@@ -3686,12 +3708,13 @@ function gradeCompareHTML(key, cs){
       </div>
       ${["A","B","C"].map(g=> by[g].length
         ? `<div class="sg-list" data-sggrp="${pre}${g}"${(g!=="A"||!anyLow)?"":" hidden"}>${rows(by[g], pick)}</div>` : "").join("")}
+      </div>
     </div>`;
   };
 
   return `<div class="gc">
-    ${part("제조업체 자체평가", x=>x.m, cs?cs.mfr:null, "m", "gcm")}
-    ${both?part("올리브 현장평가", x=>x.d, cs?cs.dist:null, "d", "gco"):""}
+    ${part("제조업체 자체평가", x=>x.m, cs?cs.mfr:null, "m", "gcm", !both)}
+    ${both?part("올리브 현장평가", x=>x.d, cs?cs.dist:null, "d", "gco", true):""}
   </div>`;
 }
 
@@ -3828,37 +3851,33 @@ function phasePostHTML(key, det){
   return `<div class="phase post">
     ${phaseHeadHTML(4, "시정조치 및 최종평가")}
     <div class="phase-body" data-phgrp="4" hidden>
-      <div class="doc-block wide">
-        ${docLabel("확인서", "")}
-        ${meta && (meta.auditor || meta.auditee) ? `<div class="cr-meta">
+      ${docFoldHTML(key, "cf", "확인서",
+        (meta && (meta.auditor || meta.auditee) ? `<div class="cr-meta">
           ${meta.auditor?`<span><i>감사자</i>${esc(meta.auditor)}</span>`:""}
           ${meta.auditee?`<span><i>피감사자</i>${esc(meta.auditee)}</span>`:""}
-        </div>`:""}
-        ${crHTML ? crHTML
+        </div>`:"")
+        + (crHTML ? crHTML
           : (fd && fd.result ? `<div class="txt-block">${esc(fd.result)}</div>`
-          : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`)}
-        ${origPagesHTML(key, "confirm", "확인서")}
-      </div>
-      <div class="doc-block wide">
-        ${docLabel("개선지시서", "")}
-        ${idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
+          : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`))
+        + origPagesHTML(key, "confirm", "확인서"),
+        !!(crHTML || (fd && fd.result)))}
+      ${docFoldHTML(key, "id", "개선지시서",
+        (idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
           : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
-          : `<div class="empty-note">개선지시서 내용 없음</div>`)}
-        ${origPagesHTML(key, "issue", "개선지시서")}
-      </div>
-      <div class="doc-block wide">
-        ${docLabel("개선결과서", "")}
-        ${items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:""}
-        ${sumBlock}${capaBlock}
-        ${origPagesHTML(key, "capa", "개선결과서")}
-      </div>
-      <div class="doc-block wide">
-        ${docLabel("평가서", "")}
-        ${fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : ""}
-        ${evalPagesHTML(key)}
-        ${(!fd || !fd.capa) && !(evalPages[key]||[]).length ? `<div class="empty-note">평가서 내용 없음</div>` : ""}
-        ${origPagesHTML(key, "eval", "평가서")}
-      </div>
+          : `<div class="empty-note">개선지시서 내용 없음</div>`))
+        + origPagesHTML(key, "issue", "개선지시서"),
+        !!(idHTML || (fd && fd.issue)))}
+      ${docFoldHTML(key, "capa", "개선결과서",
+        (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
+        + sumBlock + capaBlock
+        + origPagesHTML(key, "capa", "개선결과서"),
+        items.length > 0)}
+      ${docFoldHTML(key, "ev", "평가서",
+        (fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : "")
+        + evalPagesHTML(key)
+        + ((!fd || !fd.capa) && !(evalPages[key]||[]).length ? `<div class="empty-note">평가서 내용 없음</div>` : "")
+        + origPagesHTML(key, "eval", "평가서"),
+        !!((evalPages[key]||[]).length || (fd && fd.capa)))}
     </div>
   </div>`;
 }
