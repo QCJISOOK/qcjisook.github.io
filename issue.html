@@ -634,13 +634,18 @@
   /* 원본에 값이 없는 칸 — 0 이나 공란과 구분되게 옅게 */
   .td-none{ color:var(--muted); opacity:.55; }
   /* 열 폭을 못 박아 헤더 글자가 잘리거나 칸이 밀리지 않게 한다 */
-  #issue-table{ table-layout:fixed; min-width:1240px; }
+  #issue-table{ table-layout:fixed; min-width:1292px; }
   #issue-table td, #issue-table th{ padding-left:9px; padding-right:9px; word-break:break-word; }
   #issue-table col.c-seq{ width:42px; }
   #issue-table col.c-dt2{ width:104px; }
   #issue-table col.c-fa{ width:52px; }
   #issue-table .seq-th{ color:var(--muted); font-weight:700; }
   #issue-table .seq-td{ color:var(--muted); font-family:var(--font-mono); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  #issue-table col.c-cp{ width:52px; }
+  .cp-th{ font-size:10.5px; line-height:1.25; }
+  .cp-td{ vertical-align:middle !important; }
+  .cp-box{ width:15px; height:15px; cursor:pointer; accent-color:var(--accent-strong); margin:0; }
+  .irow.picked{ background:var(--accent-tint); }
   #issue-table col.c-st{ width:62px; }
   /* 협의체 사후/사전 표시 칸 */
   .st-th{ font-size:10.5px; line-height:1.25; }
@@ -2213,14 +2218,15 @@
     <div class="table-wrap">
       <table id="issue-table">
         <colgroup>
-          <col class="c-seq" /><col class="c-fa" /><col class="c-st" /><col class="c-co" /><col class="c-br" /><col class="c-pn" />
+          <col class="c-seq" /><col class="c-fa" /><col class="c-cp" /><col class="c-st" /><col class="c-co" /><col class="c-br" /><col class="c-pn" />
           <col class="c-pr" /><col class="c-dt2" /><col class="c-dt" /><col class="c-ty" /><col class="c-cl" />
         </colgroup>
         <thead>
           <tr>
             <th class="num seq-th" title="지금 보고 있는 목록의 순번 — 필터를 바꾸면 다시 매겨집니다">순번</th>
             <th data-key="fault" class="num fa-th" title="제조사 귀책 여부 — 체크하면 저장됩니다">제조사<br>귀책</th>
-            <th data-key="stage" class="num st-th" title="불만협의체에 올릴 건 — 눌러서 사후/사전 지정">사전/사후</th>
+            <th data-key="pick" class="num cp-th" title="불만협의체에 올릴 건 — 체크하면 담깁니다">협의체</th>
+            <th data-key="stage" class="num st-th" title="사후 / 사전 구분 — 눌러서 바꿉니다">사전/사후</th>
             <th data-key="company">업체명</th>
             <th data-key="brand">브랜드</th>
             <th data-key="code" class="num">품번</th>
@@ -6189,7 +6195,7 @@ function complaintBlockHTML(key, det){
 function cxDraftOf(key){
   if(typeof issueData === "undefined" || typeof cxStageOf === "undefined") return null;
   const co = key.split("|")[2];
-  const pool = issueData.filter(d=>d.company === co);
+  const pool = issueData.filter(d=>d.company === co && cxPicked(d));
   const post = pool.filter(d=>cxStageOf(d)==="post");
   const pre  = pool.filter(d=>cxStageOf(d)==="pre");
   if(!post.length && !pre.length) return null;
@@ -6213,7 +6219,7 @@ function cxDraftHTML(key){
   return '<div class="cxd">'
     + '<div class="cxd-cap">아직 협의체 자료가 없어, <b>이슈 현황에서 표시한 건</b>을 보여 줍니다.'
     + ' 표시를 바꾸면 여기도 함께 바뀝니다.'
-    + (canMake ? ' <button class="cxs-go" data-cxmake="' + esc(key) + '">PPT 만들기</button>' : '')
+    + (canMake ? ' <button class="cxs-go" data-cxmake="' + esc(key) + '">불만협의체 PPT 추출</button>' : '')
     + '</div>'
     + list(g.post, "사후") + list(g.pre, "사전")
     + '</div>';
@@ -6227,10 +6233,10 @@ document.addEventListener("click", function(e){
 
 /* 감사 카드에서 부르는 내보내기 — 업체 이름으로 골라 담는다 */
 async function cxExportFor(co, btn){
-  const pool = issueData.filter(d=>d.company === co);
+  const pool = issueData.filter(d=>d.company === co && cxPicked(d));
   const dPost = pool.filter(d=>cxStageOf(d)==="post");
   const dPre  = pool.filter(d=>cxStageOf(d)==="pre");
-  if(!dPost.length && !dPre.length){ alert("표시한 건이 없습니다."); return; }
+  if(!dPost.length && !dPre.length){ alert("협의체에 담은 건이 없습니다."); return; }
   const was = btn ? btn.textContent : "";
   if(btn){ btn.textContent = "만드는 중…"; btn.disabled = true; }
   const fill = async list => {
@@ -7962,6 +7968,7 @@ function renderIssueTable(){
     <tr class="irow${i%2?' alt':''}${hasCapaDoc(d)?' has-capa':''}${isFault(d)?' fault':''}" data-irow="${i}" tabindex="0" aria-expanded="false">
       <td class="num seq-td">${i+1}</td>
       <td class="num fa-td"><input type="checkbox" class="fa-box" data-fault="${esc(issueKeyOf(d))}"${isFault(d)?" checked":""} title="제조사 귀책" /></td>
+      <td class="num cp-td"><input type="checkbox" class="cp-box" data-pick="${esc(issueKeyOf(d))}"${cxPicked(d)?" checked":""} title="불만협의체에 담기" /></td>
       <td class="num st-td"><button class="st-box" data-stage="${esc(issueKeyOf(d))}" data-v="${cxStageOf(d)}" title="눌러서 사후 → 사전 → 해제">${CXS_LABEL[cxStageOf(d)]}</button></td>
       <td><strong>${esc(d.company)}</strong></td>
       <td class="brand">${p.brand ? esc(p.brand) : dash}</td>
@@ -7972,7 +7979,7 @@ function renderIssueTable(){
       <td>${typeBadge2(d.type)}</td>
       <td class="note">${p.claim ? esc(p.claim) : dash}</td>
     </tr>
-    <tr class="idet" data-idet="${i}" hidden><td colspan="11"></td></tr>`; }).join("");
+    <tr class="idet" data-idet="${i}" hidden><td colspan="12"></td></tr>`; }).join("");
 
   tbody.querySelectorAll(".fa-box").forEach(b=>{
     b.addEventListener("click", e=>e.stopPropagation());
@@ -7981,6 +7988,21 @@ function renderIssueTable(){
       setFault(b.dataset.fault, b.checked);
       b.closest("tr").classList.toggle("fault", b.checked);
       if(issueFilters.faultOnly) renderIssueTable();
+    });
+  });
+  tbody.querySelectorAll(".cp-box").forEach(b=>{
+    b.addEventListener("click", e=>e.stopPropagation());
+    b.addEventListener("change", e=>{
+      e.stopPropagation();
+      setCxPick(b.dataset.pick, b.checked);
+      const tr = b.closest("tr");
+      tr.classList.toggle("picked", b.checked);
+      const sb = tr.querySelector(".st-box");
+      if(b.checked && sb && !sb.dataset.v){        /* 구분이 없으면 사후로 시작 */
+        sb.dataset.v = "post";
+        sb.textContent = CXS_LABEL.post;
+        setCxStage(sb.dataset.stage, "post");
+      }
     });
   });
   tbody.querySelectorAll(".st-box").forEach(b=>{
@@ -8064,7 +8086,22 @@ let cxStage = (function(){
   try { return JSON.parse(localStorage.getItem(CXS_LS) || "{}"); }
   catch(e){ return {}; }
 })();
-const CXS_NEXT = { "": "post", post: "pre", pre: "" };
+
+/* 협의체에 올릴 건 고르기 — 브라우저에 저장해 새로고침해도 남는다 */
+const CXP_LS = "oi-audit-cxpick-v1";
+let cxPick = (function(){
+  try { return new Set(JSON.parse(localStorage.getItem(CXP_LS) || "[]")); }
+  catch(e){ return new Set(); }
+})();
+function cxPicked(d){ return cxPick.has(issueKeyOf(d)); }
+function setCxPick(key, on){
+  if(on) cxPick.add(key); else cxPick.delete(key);
+  try { localStorage.setItem(CXP_LS, JSON.stringify([...cxPick])); } catch(e){}
+  renderCxCount();
+}
+
+/* 담을지 말지는 체크칸이 맡으므로, 구분은 사후 <-> 사전 만 오간다 */
+const CXS_NEXT = { "": "post", post: "pre", pre: "post" };
 const CXS_LABEL = { "": "—", post: "사후", pre: "사전" };
 function cxStageOf(d){
   const k = issueKeyOf(d);
@@ -8364,9 +8401,10 @@ async function cxExport(){
   const sel = document.getElementById("issue-company-filter");
   const co = (sel && sel.value) ? sel.value : null;
   const pool = co ? issueData.filter(d=>d.company===co) : issueData;
-  const dPost = pool.filter(d=>cxStageOf(d)==="post");
-  const dPre  = pool.filter(d=>cxStageOf(d)==="pre");
-  if(!dPost.length && !dPre.length){ alert("사후/사전으로 표시한 건이 없습니다."); return; }
+  const picked = pool.filter(cxPicked);
+  const dPost = picked.filter(d=>cxStageOf(d)==="post");
+  const dPre  = picked.filter(d=>cxStageOf(d)==="pre");
+  if(!dPost.length && !dPre.length){ alert("협의체에 담은 건이 없습니다.\n표의 「협의체」 칸을 체크해 주세요."); return; }
 
   const btn = document.getElementById("cx-export");
   const was = btn ? btn.textContent : "";
@@ -8420,11 +8458,12 @@ function renderCxCount(){
   const sel = document.getElementById("issue-company-filter");
   const co = (sel && sel.value) ? sel.value : null;
   const pool = co ? issueData.filter(d=>d.company===co) : issueData;
-  const post = pool.filter(d=>cxStageOf(d)==="post").length;
-  const pre  = pool.filter(d=>cxStageOf(d)==="pre").length;
+  const picked = pool.filter(cxPicked);
+  const post = picked.filter(d=>cxStageOf(d)==="post").length;
+  const pre  = picked.filter(d=>cxStageOf(d)==="pre").length;
   el.innerHTML = (post||pre)
     ? (co ? esc(co) + ' ' : '') + '협의체 <b>' + post + '</b>사후 · <b>' + pre + '</b>사전'
-      + ' <button class="cxs-go" id="cx-export">PPT 만들기</button>'
+      + ' <button class="cxs-go" id="cx-export">불만협의체 PPT 추출</button>'
     : "";
 }
 

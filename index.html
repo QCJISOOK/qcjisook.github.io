@@ -3502,7 +3502,7 @@ function docCheckHTML(key){
 function cxDraftOf(key){
   if(typeof issueData === "undefined" || typeof cxStageOf === "undefined") return null;
   const co = key.split("|")[2];
-  const pool = issueData.filter(d=>d.company === co);
+  const pool = issueData.filter(d=>d.company === co && cxPicked(d));
   const post = pool.filter(d=>cxStageOf(d)==="post");
   const pre  = pool.filter(d=>cxStageOf(d)==="pre");
   if(!post.length && !pre.length) return null;
@@ -3526,7 +3526,7 @@ function cxDraftHTML(key){
   return '<div class="cxd">'
     + '<div class="cxd-cap">아직 협의체 자료가 없어, <b>이슈 현황에서 표시한 건</b>을 보여 줍니다.'
     + ' 표시를 바꾸면 여기도 함께 바뀝니다.'
-    + (canMake ? ' <button class="cxs-go" data-cxmake="' + esc(key) + '">PPT 만들기</button>' : '')
+    + (canMake ? ' <button class="cxs-go" data-cxmake="' + esc(key) + '">불만협의체 PPT 추출</button>' : '')
     + '</div>'
     + list(g.post, "사후") + list(g.pre, "사전")
     + '</div>';
@@ -3540,10 +3540,10 @@ document.addEventListener("click", function(e){
 
 /* 감사 카드에서 부르는 내보내기 — 업체 이름으로 골라 담는다 */
 async function cxExportFor(co, btn){
-  const pool = issueData.filter(d=>d.company === co);
+  const pool = issueData.filter(d=>d.company === co && cxPicked(d));
   const dPost = pool.filter(d=>cxStageOf(d)==="post");
   const dPre  = pool.filter(d=>cxStageOf(d)==="pre");
-  if(!dPost.length && !dPre.length){ alert("표시한 건이 없습니다."); return; }
+  if(!dPost.length && !dPre.length){ alert("협의체에 담은 건이 없습니다."); return; }
   const was = btn ? btn.textContent : "";
   if(btn){ btn.textContent = "만드는 중…"; btn.disabled = true; }
   const fill = async list => {
@@ -5158,6 +5158,15 @@ let cxStage = (function(){
   try { return JSON.parse(localStorage.getItem(CXS_LS) || "{}"); }
   catch(e){ return {}; }
 })();
+
+/* 협의체에 올릴 건 고르기 — 이슈 현황에서 체크한 값을 같이 읽는다 */
+const CXP_LS = "oi-audit-cxpick-v1";
+let cxPick = (function(){
+  try { return new Set(JSON.parse(localStorage.getItem(CXP_LS) || "[]")); }
+  catch(e){ return new Set(); }
+})();
+function cxPicked(d){ return cxPick.has(issueKeyOf(d)); }
+
 function cxStageOf(d){
   const k = issueKeyOf(d);
   if(cxStage[k]) return cxStage[k];
