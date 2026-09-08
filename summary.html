@@ -1372,6 +1372,26 @@
   .cxd-t{ font-size:12.5px; color:var(--ink); line-height:1.45; min-width:0; }
   .cxd-t i{ display:block; font-style:normal; font-size:9.5px; font-weight:700; color:var(--muted); }
   .cxd-ty{ font-size:10.5px; font-weight:700; color:var(--accent-strong); white-space:nowrap; }
+  /* 현상 사진 고르기 */
+  .cxi{ margin-top:12px; padding-top:11px; border-top:1px dashed var(--border); }
+  .cxi-hd{ font-size:11.5px; font-weight:800; color:var(--ink-2); margin-bottom:7px; }
+  .cxi-tip{ font-weight:600; color:var(--muted); margin-left:8px; }
+  .cxi-row{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .cxi-th{
+    width:74px; height:74px; padding:0; cursor:pointer; overflow:hidden; line-height:0;
+    background:var(--surface); border:2px solid var(--border); border-radius:8px;
+  }
+  .cxi-th img{ width:100%; height:100%; object-fit:cover; }
+  .cxi-th:hover{ border-color:var(--accent); }
+  .cxi-th.on{ border-color:var(--accent-strong); box-shadow:0 0 0 2px var(--accent-tint); }
+  .cxi-add, .cxi-off{
+    font-family:inherit; font-size:11px; font-weight:750; cursor:pointer;
+    padding:6px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-2);
+  }
+  .cxi-add:hover, .cxi-off:hover{ border-color:var(--accent); }
+  .cxi-off.on{ background:var(--accent-strong); color:#fff; border-color:transparent; }
+  .cxi-none{ font-size:11.5px; color:var(--muted); }
   .doc-label{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--border); }
   .doc-name{ font-size:13px; font-weight:800; }
   .doc-desc{ font-size:10.5px; color:var(--muted); }
@@ -5900,7 +5920,11 @@ async function cxBuildPptx(J){
     let rels = src[p.from].rels;
     if(p.kind==="cover"){
       if(J.date)    xml = xml.replace(/<a:t>\d{4}[.\-]\d{2}[.\-]\d{2}<\/a:t>/, "<a:t>"+cxEsc(J.date)+"</a:t>");
-      if(J.company) xml = xml.replace(/<a:t>이앤씨<\/a:t>/g, "<a:t>"+cxEsc(J.company)+"</a:t>");
+      if(J.company){
+        xml = xml.replace(/<a:t>이앤씨<\/a:t>/g, "<a:t>"+cxEsc(J.company)+"</a:t>");
+        /* 업체 이름에 이미 회사 표기가 있으면 「주식회사 」 앞머리를 지운다 */
+        if(/\(주\)|주식회사|㈜/.test(J.company)) xml = xml.replace(/<a:t>주식회사 <\/a:t>/, "<a:t></a:t>");
+      }
       if(J.half)    xml = xml.replace(/<a:t>년도 (?:상|하)반기 불만협의체<\/a:t>/, "<a:t>년도 "+cxEsc(J.half)+" 불만협의체</a:t>");
       if(J.year)    xml = xml.replace(/<a:t>2026<\/a:t>/, "<a:t>"+cxEsc(J.year)+"</a:t>");
     } else if(p.kind==="sum"){
@@ -5951,7 +5975,110 @@ async function cxBuildPptx(J){
   return z.generateAsync({ type:"blob", compression:"DEFLATE" });
 }
 
+
+/* 현상 사진 직접 고르기 — 이슈별로 고른 값을 남긴다
+   "" 면 사진 없이, "i:3" 이면 그 이슈의 3번째 사진, data:… 면 넣은 파일 */
+const CXI_LS = "oi-audit-cxphoto-v1";
+let cxPhotoPick = (function(){
+  try { return JSON.parse(localStorage.getItem(CXI_LS) || "{}"); }
+  catch(e){ return {}; }
+})();
+function setCxPhoto(key, v){
+  if(v === null) delete cxPhotoPick[key]; else cxPhotoPick[key] = v;
+  try { localStorage.setItem(CXI_LS, JSON.stringify(cxPhotoPick)); } catch(e){}
+}
+/* 자동으로 고르는 규칙 — 사람이 고른 것이 없을 때만 쓴다 */
+function cxAutoShots(d){
+  if(typeof issueShots === "undefined") return [];
+  const sh = issueShots[issueKeyOf(d)];
+  const NOT = /전경|사출|적재|컨베어|육안|에어건|설비|라인|창고|방충|방서|현장|실사|공정|점검|아웃박스|파레트|비닐 ?포장|세병|충전기|금형/;
+  const YES = /이물|파손|누액|누출|클레임|변색|색상|향취|이상|누락|오염|찍힘|스크래치|곰팡이|벌레/i;
+  const cand = ((sh && sh.shots) || []).filter(s=> typeof s.d === "string" && !NOT.test(s.c || ""));
+  cand.sort((a,b)=> (YES.test(b.c||"")?1:0) - (YES.test(a.c||"")?1:0));
+  return cand;
+}
+/* 그림 하나를 판에 맞춰 줄인다 */
+function cxShrink(src, maxW){
+  return new Promise(function(res){
+    const im = new Image();
+    im.onload = function(){
+      const w = Math.min(maxW || 1100, im.width);
+      const h = Math.round(im.height * w / im.width);
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(im, 0, 0, w, h);
+      try { res(cv.toDataURL("image/jpeg", 0.82)); } catch(e){ res(""); }
+    };
+    im.onerror = function(){ res(""); };
+    im.src = src;
+  });
+}
+
+/* 이슈 상세에 「현상 사진」 고르는 칸을 붙인다 */
+function cxPhotoPickHTML(d){
+  const key = issueKeyOf(d);
+  const shots = cxAutoShots(d);
+  const pick = cxPhotoPick[key];
+  const chosen = (pick === "") ? -1
+    : (typeof pick === "string" && pick.indexOf("i:") === 0) ? +pick.slice(2)
+    : (typeof pick === "string" && pick.indexOf("data:") === 0) ? -2
+    : 0;                                   /* 고른 적 없으면 자동 1번 */
+  const th = shots.map(function(s,i){
+    return '<button class="cxi-th' + (chosen===i ? " on" : "") + '" data-cxi="' + esc(key) + '::' + i + '"'
+      + ' title="' + esc(s.c) + '"><img src="' + s.d + '" alt="" loading="lazy" /></button>';
+  }).join("");
+  const own = (chosen === -2)
+    ? '<button class="cxi-th on" data-cxi="' + esc(key) + '::own"><img src="' + pick + '" alt="" /></button>' : "";
+  return '<div class="cxi">'
+    + '<div class="cxi-hd">불만협의체 「현상」 사진'
+    + '<span class="cxi-tip">PPT 에 들어갈 사진입니다. 눌러서 고르세요.</span></div>'
+    + '<div class="cxi-row">'
+    + (shots.length || own ? th + own : '<span class="cxi-none">이 이슈에 실린 사진이 없습니다</span>')
+    + '<label class="cxi-add">파일 넣기<input type="file" accept="image/*" data-cxifile="' + esc(key) + '" hidden /></label>'
+    + '<button class="cxi-off' + (chosen===-1 ? " on" : "") + '" data-cxi="' + esc(key) + '::none">사진 없이</button>'
+    + '</div></div>';
+}
+
+document.addEventListener("click", function(e){
+  const b = e.target.closest && e.target.closest("[data-cxi]");
+  if(!b) return;
+  e.stopPropagation();
+  const p = b.dataset.cxi.split("::");
+  const key = p[0], what = p[1];
+  setCxPhoto(key, what === "none" ? "" : (what === "own" ? cxPhotoPick[key] : "i:" + what));
+  const box = b.closest(".cxi-row");
+  box.querySelectorAll(".cxi-th, .cxi-off").forEach(function(x){ x.classList.remove("on"); });
+  b.classList.add("on");
+});
+document.addEventListener("change", function(e){
+  const inp = e.target.closest && e.target.closest("[data-cxifile]");
+  if(!inp || !inp.files || !inp.files[0]) return;
+  const key = inp.dataset.cxifile;
+  const fr = new FileReader();
+  fr.onload = async function(){
+    const small = await cxShrink(fr.result, 1100);
+    if(!small){ alert("그림을 읽지 못했습니다."); return; }
+    setCxPhoto(key, small);
+    const row = inp.closest(".cxi-row");
+    row.querySelectorAll(".cxi-th, .cxi-off").forEach(function(x){ x.classList.remove("on"); });
+    const b = document.createElement("button");
+    b.className = "cxi-th on"; b.dataset.cxi = key + "::own";
+    b.innerHTML = '<img src="' + small + '" alt="" />';
+    row.insertBefore(b, row.querySelector(".cxi-add"));
+  };
+  fr.readAsDataURL(inp.files[0]);
+});
+
 async function cxPhoto(d){
+  /* 사람이 고른 것이 있으면 그것을 먼저 쓴다 */
+  const _pk = (typeof cxPhotoPick !== "undefined") ? cxPhotoPick[issueKeyOf(d)] : undefined;
+  if(_pk === "") return "";
+  if(typeof _pk === "string" && _pk.indexOf("data:") === 0) return _pk;
+  if(typeof _pk === "string" && _pk.indexOf("i:") === 0){
+    const list = cxAutoShots(d);
+    const one = list[+_pk.slice(2)];
+    if(one) return await cxShrink(one.d, 1100);
+  }
   if(typeof issueShots === "undefined") return "";
   const sh = issueShots[issueKeyOf(d)];
   /* 공정·설비·현장을 찍은 것은 「현상」이 아니다 */
@@ -6001,12 +6128,22 @@ async function cxExport(){
   const post = await fill(dPost);
   const pre  = await fill(dPre);
   if(btn){ btn.textContent = was; btn.disabled = false; }
+  /* 필터를 안 걸었어도 담은 건에서 업체를 알아낸다 — 표지에 이름이 들어가야 한다 */
+  const cos = [...new Set(dPost.concat(dPre).map(function(d){ return d.company; }))];
+  if(cos.length > 1){
+    alert("담은 건에 제조사가 " + cos.length + "곳 섞여 있습니다.\n" +
+          "(" + cos.join(", ") + ")\n\n" +
+          "불만협의체는 업체 하나를 놓고 여는 자리입니다.\n제조사를 골라 다시 담아 주세요.");
+    if(btn){ btn.textContent = was; btn.disabled = false; }
+    return;
+  }
+  const coName = co || cos[0] || "";
   const now = new Date();
   const ymd = now.getFullYear() + "." + String(now.getMonth()+1).padStart(2,"0") + "." + String(now.getDate()).padStart(2,"0");
   const half = now.getMonth() < 6 ? "상반기" : "하반기";
   const J = {
-    company: co || "", year: String(now.getFullYear()), half: half, date: ymd,
-    title: now.getFullYear() + "년도 " + half + " 불만협의체" + (co ? "_" + co : ""),
+    company: coName, year: String(now.getFullYear()), half: half, date: ymd,
+    title: now.getFullYear() + "년도 " + half + " 불만협의체" + (coName ? "_" + coName : ""),
     post: post, pre: pre
   };
   if(btn){ btn.textContent = "PPT 만드는 중…"; btn.disabled = true; }
@@ -6233,6 +6370,7 @@ function issueDetailHTML(d){
     </div>
 
     ${bigStrip}
+    ${cxPhotoPickHTML(d)}
     ${legalChipsHTML(d.type + " " + d.title + " " + cause + " " + action)}
   </div>`;
 }
