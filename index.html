@@ -2261,7 +2261,7 @@
   </div>
 
   <footer class="note">
-    ※ 실사일자·최종산출물여부·보완사항여부는 폴더/파일명 기준 추정치이며, 파일 내용을 직접 열람하여 확인한 것은 아닙니다. 원본: <span class="mono">07_제조사 AUDIT\이력\13. 협력업체 통합관리</span> · 2026-08-03 조사 기준
+    ※ 실사일자는 방문실사 일정안내(별첨00) 기준입니다. 진행 상태는 확인서·개선지시서·평가서 보유 여부로 「완료 / 진행중」만 구분합니다. 원본: <span class="mono">07_제조사 AUDIT\이력\13. 협력업체 통합관리</span> · 2026-08-03 조사 기준
   </footer>
 </main>
 
@@ -3107,16 +3107,13 @@ function auditFiltered(){
   return rows;
 }
 
+/* 카드에는 진행 상태만 둔다 — 산출물·보완사항 구분은 안쪽 단계에서 보면 된다 */
 function statusChip(status){
-  if(status==="완료") return '<span class="chip chip-good">산출물 완료</span>';
-  if(status==="미완료/진행중") return '<span class="chip chip-warn">산출물 미완료</span>';
-  return '<span class="chip chip-muted">'+esc(status)+'</span>';
+  return status==="완료"
+    ? '<span class="chip chip-good">완료</span>'
+    : '<span class="chip chip-warn">진행중</span>';
 }
-function capaChip(capa){
-  if(capa==="있음") return '<span class="chip chip-serious">보완사항 있음</span>';
-  if(capa==="없음") return '<span class="chip chip-muted">보완사항 없음</span>';
-  return '<span class="chip chip-muted">'+esc(capa)+'</span>';
-}
+function capaChip(){ return ""; }
 
 /* ---------- collapsed card: score bars ---------- */
 function scoreBarsHTML(cs){
@@ -5497,7 +5494,7 @@ function openMatrixDetail(key){
   const det = auditDetails[key] || {};
   box.querySelector(".mxd-title").textContent = d.company + " · " + d.year + " " + d.quarter;
   box.querySelector(".mxd-sub").textContent =
-    "실사일 " + String(d.date).replace(/불명확\s*/,"") + " · 최종산출물 " + d.finalOutput + " · 보완사항 " + d.capa;
+    "실사일 " + String(d.date).replace(/불명확\s*/,"") + " · " + (d.finalOutput==="완료" ? "완료" : "진행중");
   box.querySelector(".mxd-body").innerHTML = auditBodyHTML(key, det);
   bindCapaGallery(box, key);
   bindComplaintToggles(box); bindSelfGradeToggles(box); bindFindToggles(box); bindPhaseToggles(box);
