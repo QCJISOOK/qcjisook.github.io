@@ -1377,10 +1377,18 @@
   .cxi-hd{ font-size:11.5px; font-weight:800; color:var(--ink-2); margin-bottom:7px; }
   .cxi-tip{ font-weight:600; color:var(--muted); margin-left:8px; }
   .cxi-row{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .cxi-w{ position:relative; display:inline-block; line-height:0; }
   .cxi-th{
-    width:74px; height:74px; padding:0; cursor:pointer; overflow:hidden; line-height:0;
-    background:var(--surface); border:2px solid var(--border); border-radius:8px;
+    width:132px; height:132px; padding:0; cursor:pointer; overflow:hidden; line-height:0;
+    background:var(--surface); border:2px solid var(--border); border-radius:9px;
   }
+  .cxi-big{
+    position:absolute; right:5px; bottom:5px; z-index:2;
+    width:26px; height:26px; padding:0; line-height:1; font-size:13px; cursor:pointer;
+    border-radius:7px; border:1px solid rgba(255,255,255,.55);
+    background:rgba(0,0,0,.55); color:#fff;
+  }
+  .cxi-big:hover{ background:var(--accent-strong); border-color:transparent; }
   .cxi-th img{ width:100%; height:100%; object-fit:cover; }
   .cxi-th:hover{ border-color:var(--accent); }
   .cxi-th.on{ border-color:var(--accent-strong); box-shadow:0 0 0 2px var(--accent-tint); }
@@ -6703,20 +6711,49 @@ function cxPhotoPickHTML(d){
     : (typeof pick === "string" && pick.indexOf("data:") === 0) ? -2
     : 0;                                   /* 고른 적 없으면 자동 1번 */
   const th = shots.map(function(s,i){
-    return '<button class="cxi-th' + (chosen===i ? " on" : "") + '" data-cxi="' + esc(key) + '::' + i + '"'
-      + ' title="' + esc(s.c) + '"><img src="' + s.d + '" alt="" loading="lazy" /></button>';
+    return '<span class="cxi-w">'
+      + '<button class="cxi-th' + (chosen===i ? " on" : "") + '" data-cxi="' + esc(key) + '::' + i + '"'
+      + ' title="' + esc(s.c) + '"><img src="' + s.d + '" alt="" loading="lazy" /></button>'
+      + '<button class="cxi-big" data-cxibig="' + esc(key) + '::' + i + '" title="크게 보기">⤢</button>'
+      + '</span>';
   }).join("");
   const own = (chosen === -2)
-    ? '<button class="cxi-th on" data-cxi="' + esc(key) + '::own"><img src="' + pick + '" alt="" /></button>' : "";
+    ? '<span class="cxi-w">'
+      + '<button class="cxi-th on" data-cxi="' + esc(key) + '::own"><img src="' + pick + '" alt="" /></button>'
+      + '<button class="cxi-big" data-cxibig="' + esc(key) + '::own" title="크게 보기">⤢</button>'
+      + '</span>' : "";
   return '<div class="cxi">'
     + '<div class="cxi-hd">불만협의체 「현상」 사진'
-    + '<span class="cxi-tip">PPT 에 들어갈 사진입니다. 눌러서 고르세요.</span></div>'
+    + '<span class="cxi-tip">PPT 에 들어갈 사진입니다. 눌러서 고르고, ⤢ 로 크게 봅니다.</span></div>'
     + '<div class="cxi-row">'
     + (shots.length || own ? th + own : '<span class="cxi-none">이 이슈에 실린 사진이 없습니다</span>')
     + '<label class="cxi-add">파일 넣기<input type="file" accept="image/*" data-cxifile="' + esc(key) + '" hidden /></label>'
     + '<button class="cxi-off' + (chosen===-1 ? " on" : "") + '" data-cxi="' + esc(key) + '::none">사진 없이</button>'
     + '</div></div>';
 }
+
+/* ⤢ — 고른 것은 그대로 두고 원래 크기로만 본다 */
+document.addEventListener("click", function(e){
+  const z = e.target.closest && e.target.closest("[data-cxibig]");
+  if(!z) return;
+  e.stopPropagation();
+  e.preventDefault();
+  const p = z.dataset.cxibig.split("::");
+  const key = p[0], what = p[1];
+  if(what === "own"){
+    const own = cxPhotoPick[key];
+    if(typeof own !== "string" || own.indexOf("data:") !== 0) return;
+    lbState.list = [{ d: own, c: "넣은 사진" }];
+    lbShow(0);
+    return;
+  }
+  const d = issueData.find(function(x){ return issueKeyOf(x) === key; });
+  if(!d) return;
+  const list = cxAutoShots(d).map(function(s){ return { d: s.d, c: s.c || "" }; });
+  if(!list.length) return;
+  lbState.list = list;
+  lbShow(+what);
+}, true);
 
 document.addEventListener("click", function(e){
   const b = e.target.closest && e.target.closest("[data-cxi]");
@@ -6740,10 +6777,11 @@ document.addEventListener("change", function(e){
     setCxPhoto(key, small);
     const row = inp.closest(".cxi-row");
     row.querySelectorAll(".cxi-th, .cxi-off").forEach(function(x){ x.classList.remove("on"); });
-    const b = document.createElement("button");
-    b.className = "cxi-th on"; b.dataset.cxi = key + "::own";
-    b.innerHTML = '<img src="' + small + '" alt="" />';
-    row.insertBefore(b, row.querySelector(".cxi-add"));
+    const wrapEl = document.createElement("span");
+    wrapEl.className = "cxi-w";
+    wrapEl.innerHTML = '<button class="cxi-th on" data-cxi="' + key + '::own"><img src="' + small + '" alt="" /></button>'
+      + '<button class="cxi-big" data-cxibig="' + key + '::own" title="크게 보기">⤢</button>';
+    row.insertBefore(wrapEl, row.querySelector(".cxi-add"));
   };
   fr.readAsDataURL(inp.files[0]);
 });
