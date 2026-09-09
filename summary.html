@@ -1422,7 +1422,9 @@
   .nc-sec:first-child{ margin-top:0; }
   .nc-sec em{ font-style:normal; font-weight:600; color:var(--muted); margin-left:6px; }
   .nc-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; }
-  .nc-box label{ display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:750; color:var(--ink-2); }
+  .nc-box label{ display:block; font-size:11px; font-weight:750; color:var(--ink-2); }
+  .nc-box label > input, .nc-box label > select, .nc-box label > textarea{ margin-top:4px; }
+  .nc-box label > datalist + input{ margin-top:4px; }
   .nc-box label.nc-full{ margin-top:10px; }
   .nc-box input[type=text], .nc-box input:not([type]), .nc-box input[type=date],
   .nc-box select, .nc-box textarea{
@@ -1432,7 +1434,6 @@
   .nc-box textarea{ resize:vertical; }
   .req{ color:var(--critical); }
   .nc-kind .nc-sg{ padding:9px 16px; font-size:12px; }
-  .nc-kt{ font-size:11px; color:var(--muted); font-weight:600; }
   .nc-chk b{ color:var(--accent-strong); }
   .nc-grid[hidden]{ display:none; }
   .nc-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -1440,7 +1441,7 @@
   .nc-sg{ font-family:inherit; font-size:11.5px; font-weight:750; padding:7px 13px;
     border:0; background:var(--surface-2); color:var(--ink-2); cursor:pointer; }
   .nc-sg.on{ background:var(--accent-strong); color:#fff; }
-  .nc-chk{ flex-direction:row !important; align-items:center; gap:6px; font-size:12px; }
+  .nc-chk{ display:flex !important; align-items:center; gap:6px; font-size:12px; }
   .nc-file{ font-size:11.5px; font-weight:750; cursor:pointer; padding:7px 13px;
     border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
   .nc-pv img{ height:46px; border-radius:6px; border:1px solid var(--border); }
@@ -5785,11 +5786,10 @@ function ncOpen(){
     + '<button class="nc-x" data-ncclose="1" aria-label="닫기">✕</button></div>'
     + '<div class="nc-bd">'
 
-    + '<div class="nc-sec">클레임 구분 <em>ERP 부적합으로 등록된 건은 모두 사후입니다</em></div>'
+    + '<div class="nc-sec">클레임 구분</div>'
     + '<div class="nc-row nc-kind">'
-    +   '<span class="nc-seg"><button class="nc-sg on" data-nckind="사후">사후 · 시장 클레임</button>'
-    +   '<button class="nc-sg" data-nckind="사전">사전 · 출고 전 발견</button></span>'
-    +   '<span class="nc-kt" id="nc-kt">ERP 부적합처리방안에 올라간 건 — 고객·시장에서 나온 클레임</span>'
+    +   '<span class="nc-seg"><button class="nc-sg on" data-nckind="사후">사후</button>'
+    +   '<button class="nc-sg" data-nckind="사전">사전</button></span>'
     + '</div>'
 
     + '<div class="nc-sec">접수 정보</div>'
@@ -5859,9 +5859,6 @@ function ncOpen(){
       wrap.querySelector("#nc-pre").hidden = !pre;
       wrap.querySelector("#nc-crecv-l").textContent = pre ? "발견일자" : "고객 클레임 접수일자";
       wrap.querySelector("#nc-cxk").textContent = "(" + k + ")";
-      wrap.querySelector("#nc-kt").textContent = pre
-        ? "출고 전에 걸러 낸 건 — ERP 에는 올라가지 않습니다"
-        : "ERP 부적합처리방안에 올라간 건 — 고객·시장에서 나온 클레임";
     });
   });
   let photo = "";
