@@ -6901,6 +6901,8 @@ function applyIssueFix(){
   });
 }
 function initIssuePage(){
+  /* 집계·차트보다 먼저 얹어야 건수가 맞는다 */
+  if(!_ncOn){ _ncOn = 1; applyNewClaims(); }
   applyIssueFix();
   initIssueChartFilter();
   initPanelFilters();
