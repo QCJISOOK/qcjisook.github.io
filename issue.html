@@ -446,6 +446,8 @@
   .ixs.ix-folded{ display:block; }
   .ixs.ix-folded > *{ display:none; }
   .ixs.ix-folded > .ix-fold{ display:block; }
+  .ix-pair.ix-allfold{ grid-template-columns:minmax(0,1fr); }
+  .ix-pair.ix-allfold > .ix-side{ display:none; }
   .ix-shut{
     float:right; font-family:inherit; font-size:10.5px; font-weight:750;
     color:var(--muted); background:none; border:0; cursor:pointer;
@@ -9622,12 +9624,25 @@ function bindIxFold(wrap){
     const flip = function(e){
       e.stopPropagation();
       sec.classList.toggle("ix-folded");
+      syncPair(wrap);
     };
     bar.addEventListener("click", flip);
     if(shut) shut.addEventListener("click", flip);
 
     /* 클레임개요만 펴 둔다 */
     if(i > 0) sec.classList.add("ix-folded");
+  });
+  syncPair(wrap);
+}
+
+/* 발생원인·재발방지가 둘 다 접히면 옆 서류 패널도 접어 폭을 맞춘다 */
+function syncPair(wrap){
+  wrap.querySelectorAll(".ix-pair").forEach(function(p){
+    const list = p.querySelectorAll(".ix-pair-main .ixs");
+    const all = list.length > 0 && [].every.call(list, function(s){
+      return s.classList.contains("ix-folded");
+    });
+    p.classList.toggle("ix-allfold", all);
   });
 }
 
