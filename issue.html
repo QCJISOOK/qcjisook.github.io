@@ -8292,6 +8292,44 @@ function itemFind(q, max){
   return out;
 }
 
+
+/* ── 로트 표 ───────────────────────────────────────────────────
+   품번 → [[로트, 사용기한(yyyymmdd), 제조일], …]
+   ERP 「SCM납품진행조회(담당자)」의 납품 이력에서 왔다.
+   대시보드에 실린 클레임의 로트도 긁어 보태므로 쓸수록 늘어난다.       */
+const LOT_DB = {"SB0375":[["SLZ","20271126","20241127"]],"SB0910":[["QD003","20290519","20260520"],["QD003","20290507","20260508"],["QE004","20290520","20260521"]],"SB1788":[["AHB","20290827","20260828"]],"SB1741":[["2TG0612","20280725",""]],"SB0918":[["2F074G","20290825","20260708"]],"SB1792":[["6I001","20290831","20260901"]],"SB1791":[["6I001","20290831","20260901"]],"YA6724":[["25M010","20281218",""]],"SB0815":[["2F074G","20290825","20260826"]],"SB1716":[["SH01","20290903","20260904"]],"MT1300":[["PI02002","20290902","20260903"]],"SB1285":[["UJB","20290902","20260903"]],"SB1329":[["MJB","20290903","20260904"],["NJB","20290903","20260904"]],"SB1033":[["YJB","20290903","20260904"],["AJB","20290903","20260904"],["ZJB","20290903","20260904"],["BJB","20290903","20260904"],["CJB","20290903","20260904"]],"SB1783":[["2F007I","20290903","20260901"]],"SB1494":[["2F229G","20290906","20260725"]],"MT2139":[["BHF","20290906","20260907"]],"MT2140":[["AFF","20290906","20260907"],["BHF","20290906","20260907"]],"MT2141":[["BHF","20290907","20260908"],["AFF","20290907","20260908"]],"MT2142":[["BHF","20290908","20260909"]],"MC0548":[["2F012I","20290831","20260901"]]};
+
+function lotLookup(){
+  if(lotLookup._done) return LOT_DB;
+  lotLookup._done = 1;
+  try{
+    issueData.forEach(function(d){
+      const p = issueParts(d);
+      const code = (p.code || "").trim();
+      const lot  = (p.lot  || "").trim();
+      if(!code || !lot || /[\s,]/.test(code)) return;
+      /* 로트가 여러 개 적힌 건은 갈라 넣는다 */
+      lot.split(/[,\n]+/).map(function(x){ return x.trim(); }).filter(Boolean).forEach(function(one){
+        const exp = (p.exp || "").replace(/-/g, "");
+        const arr = (LOT_DB[code] = LOT_DB[code] || []);
+        if(!arr.some(function(v){ return v[0] === one; })) arr.push([one, exp, ""]);
+      });
+    });
+  }catch(e){}
+  return LOT_DB;
+}
+function lotsFor(code){
+  const c = String(code || "").trim().toUpperCase();
+  if(!c) return [];
+  const arr = lotLookup()[c] || [];
+  /* 사용기한이 늦은 것(최근 생산)부터 */
+  return arr.slice().sort(function(a,b){ return String(b[1]).localeCompare(String(a[1])); });
+}
+function lotDate(s){
+  const v = String(s || "").replace(/[^0-9]/g, "");
+  return v.length === 8 ? v.slice(0,4) + "-" + v.slice(4,6) + "-" + v.slice(6,8) : "";
+}
+
 function ncOpen(){
   const cos = [...new Set(issueData.map(function(d){ return d.company; }))].sort(function(a,b){ return a.localeCompare(b,"ko"); });
   const brands = (typeof ISSUE_BRANDS !== "undefined") ? ISSUE_BRANDS : [];
@@ -8331,7 +8369,11 @@ function ncOpen(){
     +   '<datalist id="nc-brands">' + opt(brands) + '</datalist>'
     +   '<label>품번<input id="nc-code" placeholder="예) MC0548" />'
     +     '<div class="nc-hit" id="nc-code-hit"></div></label>'
-    +   '<label>Lot No.<input id="nc-lot" /></label>'
+    +   '<div class="nc-find">'
+    +     '<label>Lot No.<input id="nc-lot" autocomplete="off" />'
+    +       '<div class="nc-hit" id="nc-lot-hit"></div></label>'
+    +     '<div class="nc-list" id="nc-llist" hidden></div>'
+    +   '</div>'
     +   '<label>사용기한<input type="date" id="nc-exp" /></label>'
     + '</div>'
     + '<div class="nc-find">'
@@ -8416,6 +8458,44 @@ function ncOpen(){
     codeHit.textContent = up.length >= 4 ? "모르는 품번입니다 — 직접 채워 주세요" : "";
   });
 
+  /* 품번에 맞는 로트를 골라 넣는다 */
+  const lotBox  = wrap.querySelector("#nc-lot");
+  const lotHit  = wrap.querySelector("#nc-lot-hit");
+  const llist   = wrap.querySelector("#nc-llist");
+  const expBox  = wrap.querySelector("#nc-exp");
+  const closeLots = function(){ llist.hidden = true; llist.innerHTML = ""; };
+  const showLots = function(){
+    const all = lotsFor(codeBox.value);
+    const q = lotBox.value.trim().toUpperCase();
+    const hit = q ? all.filter(function(v){ return v[0].toUpperCase().indexOf(q) >= 0; }) : all;
+    if(!hit.length){ closeLots(); return; }
+    llist.innerHTML = hit.slice(0, 20).map(function(v){
+      return '<button type="button" data-lot="' + esc(v[0]) + '"><b>' + esc(v[0]) + '</b>'
+        + '<i>' + (v[1] ? "사용기한 " + esc(lotDate(v[1])) : "사용기한 모름")
+        + (v[2] ? " · 제조 " + esc(lotDate(v[2])) : "") + '</i></button>';
+    }).join("");
+    llist.hidden = false;
+  };
+  const markLots = function(){
+    const n = lotsFor(codeBox.value).length;
+    lotHit.className = "nc-hit" + (n ? "" : " bad");
+    lotHit.textContent = n ? "이 품번의 로트 " + n + "건 — 눌러서 고르세요" : "";
+  };
+  codeBox.addEventListener("input", markLots);
+  lotBox.addEventListener("focus", showLots);
+  lotBox.addEventListener("input", showLots);
+  lotBox.addEventListener("blur", function(){ setTimeout(closeLots, 140); });
+  llist.addEventListener("mousedown", function(e){
+    const b = e.target.closest("[data-lot]");
+    if(!b) return;
+    e.preventDefault();
+    const lot = b.dataset.lot;
+    const one = lotsFor(codeBox.value).find(function(v){ return v[0] === lot; });
+    lotBox.value = lot;
+    if(one && one[1]) expBox.value = lotDate(one[1]);
+    closeLots();
+  });
+
   /* 제품명 일부를 넣으면 품목을 찾아 준다 */
   const closeList = function(){ plist.hidden = true; plist.innerHTML = ""; };
   prodBox.addEventListener("input", function(){
@@ -8435,6 +8515,7 @@ function ncOpen(){
     codeBox.value = code;
     prodBox.value = v[2] || "";
     fillFrom(v);
+    markLots();
     closeList();
   });
   prodBox.addEventListener("blur", function(){ setTimeout(closeList, 140); });
