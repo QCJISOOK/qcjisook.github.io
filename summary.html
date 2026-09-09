@@ -2730,7 +2730,7 @@
             <th class="num seq-th" title="지금 보고 있는 목록의 순번 — 필터를 바꾸면 다시 매겨집니다">순번</th>
             <th data-key="fault" class="num fa-th" title="제조사 귀책 여부 — 체크하면 저장됩니다">제조사<br>귀책</th>
             <th data-key="pick" class="num cp-th" title="불만협의체에 올릴 건 — 체크하면 담깁니다">협의체</th>
-            <th data-key="stage" class="num st-th" title="사후 / 사전 구분 — 눌러서 바꿉니다">사전/사후</th>
+            <th data-key="stage" class="num st-th" title="클레임 구분 — ERP 부적합에 올라간 건은 모두 사후입니다">사전/사후</th>
             <th data-key="company">업체명</th>
             <th data-key="brand">브랜드</th>
             <th data-key="code" class="num">품번</th>
@@ -6126,7 +6126,7 @@ function renderIssueTable(){
       <td class="num seq-td">${i+1}</td>
       <td class="num fa-td"><input type="checkbox" class="fa-box" data-fault="${esc(issueKeyOf(d))}"${isFault(d)?" checked":""} title="제조사 귀책" /></td>
       <td class="num cp-td"><input type="checkbox" class="cp-box" data-pick="${esc(issueKeyOf(d))}"${cxPicked(d)?" checked":""} title="불만협의체에 담기" /></td>
-      <td class="num st-td"><button class="st-box" data-stage="${esc(issueKeyOf(d))}" data-v="${cxStageOf(d)}" title="눌러서 사후 → 사전 → 해제">${CXS_LABEL[cxStageOf(d)]}</button></td>
+      <td class="num st-td"><button class="st-box" data-stage="${esc(issueKeyOf(d))}" data-v="${cxStageOf(d)}" title="클레임 구분 — ERP 부적합에 올라간 건은 모두 사후입니다. 눌러서 바꿀 수 있습니다">${CXS_LABEL[cxStageOf(d)]}</button></td>
       <td><strong>${esc(d.company)}</strong></td>
       <td class="brand">${p.brand ? esc(p.brand) : dash}</td>
       <td class="num mono">${p.code ? esc(p.code) : dash}</td>
@@ -6271,6 +6271,10 @@ function cxStageOf(d){
   const fx = issueFix[k];                     /* 자료에 구분이 적혀 있으면 그것을 첫 값으로 */
   if(fx && /사후/.test(fx.stage || "")) return "post";
   if(fx && /사전/.test(fx.stage || "")) return "pre";
+  /* 협의체에 담지 않았어도 클레임 자체의 구분은 있다.
+     ERP 부적합처리방안에 올라간 건은 모두 사후다. */
+  if(fx && /사후/.test(fx.kind || "")) return "post";
+  if(fx && /사전/.test(fx.kind || "")) return "pre";
   return "";
 }
 function setCxStage(key, v){
