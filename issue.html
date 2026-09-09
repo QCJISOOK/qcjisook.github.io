@@ -604,7 +604,6 @@
 
 
   /* 대책서 확보 건은 행에서 바로 구분되게 */
-  tr.irow.has-capa .title{ box-shadow:inset 3px 0 0 var(--good); padding-left:11px; }
 
   /* ---------- table ---------- */
   .table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
@@ -8652,9 +8651,9 @@ function renderIssueTable(){
     const p  = issueParts(d);
     const dt = issueDatesOf(d);
     const tag = (isRepeat(d)?' <span class="chip chip-serious" style="margin-left:4px">재발</span>':'')
-              + (hasCapaDoc(d)?' <span class="chip chip-good" style="margin-left:4px">대책서</span>':'');
+;
     return `
-    <tr class="irow${i%2?' alt':''}${hasCapaDoc(d)?' has-capa':''}${isFault(d)?' fault':''}" data-irow="${i}" tabindex="0" aria-expanded="false">
+    <tr class="irow${i%2?' alt':''}${isFault(d)?' fault':''}" data-irow="${i}" tabindex="0" aria-expanded="false">
       <td class="num seq-td">${i+1}</td>
       <td class="num fa-td"><input type="checkbox" class="fa-box" data-fault="${esc(issueKeyOf(d))}"${isFault(d)?" checked":""} title="제조사 귀책" /></td>
       <td class="num cp-td"><input type="checkbox" class="cp-box" data-pick="${esc(issueKeyOf(d))}"${cxPicked(d)?" checked":""} title="불만협의체에 담기" /></td>
