@@ -8091,7 +8091,7 @@ function applyNewClaims(){
     if(c.fault) faultSet.add(k);
     if(c.photo) issueShots[k] = { n: 1, shots: [{ c: "등록한 현상 사진", d: c.photo }] };
     const preMemo = (kind === "사전")
-      ? ["[사전] 출고 전 발견", c.found ? "발견 단계 " + c.found : "", c.qty ? "수량 " + c.qty : ""]
+      ? ["[사전] 출고 전 발견", c.qty ? "수량 " + c.qty : ""]
           .filter(Boolean).join(" · ")
       : "";
     if(c.cause || c.action || preMemo) issueDetails[k] = {
@@ -8300,14 +8300,11 @@ function ncOpen(){
     + '<div class="nc-grid">'
     +   '<label>제조사 <span class="req">*</span><input list="nc-cos" id="nc-co" placeholder="목록에서 고르거나 새로 입력" /></label>'
     +   '<datalist id="nc-cos">' + opt(cos) + '</datalist>'
-    +   '<label><span id="nc-crecv-l">고객 클레임 접수일자</span> <span class="req">*</span><input type="date" id="nc-crecv" /></label>'
-    +   '<label>제조사 클레임 접수일자<input type="date" id="nc-recv" /></label>'
+    +   '<label id="nc-crecv-w">고객 클레임 접수일자 <span class="req">*</span><input type="date" id="nc-crecv" /></label>'
+    +   '<label>제조사 클레임 접수일자<span class="req" id="nc-recv-req" hidden> *</span><input type="date" id="nc-recv" /></label>'
     +   '<label>제조사 클레임 회신일자<input type="date" id="nc-reply" /></label>'
     + '</div>'
     + '<div class="nc-grid nc-pre" id="nc-pre" hidden>'
-    +   '<label>발견 단계<select id="nc-found"><option value="">고르세요</option>'
-    +     '<option>입고검사</option><option>보관 중</option><option>생산 전 확인</option>'
-    +     '<option>출고 전 검사</option><option>자체 점검</option><option>기타</option></select></label>'
     +   '<label>발견 수량<input id="nc-qty" placeholder="예) 12 EA · 1 LOT" /></label>'
     + '</div>'
 
@@ -8366,7 +8363,9 @@ function ncOpen(){
       b.classList.add("on");
       const k = b.dataset.nckind, pre = (k === "사전");
       wrap.querySelector("#nc-pre").hidden = !pre;
-      wrap.querySelector("#nc-crecv-l").textContent = pre ? "발견일자" : "고객 클레임 접수일자";
+      /* 사전은 고객이 없다 — 고객 접수일 칸을 감추고 제조사 접수일을 필수로 */
+      wrap.querySelector("#nc-crecv-w").hidden = pre;
+      wrap.querySelector("#nc-recv-req").hidden = !pre;
       wrap.querySelector("#nc-cxk").textContent = "(" + k + ")";
     });
   });
@@ -8434,24 +8433,27 @@ function ncOpen(){
   wrap.querySelector("#nc-save").addEventListener("click", function(){
     const v = function(id){ const el = wrap.querySelector(id); return el ? el.value.trim() : ""; };
     const co = v("#nc-co"), product = v("#nc-product"), claim = v("#nc-claim");
-    const m = v("#nc-mid"), t = v("#nc-type"), recv = v("#nc-crecv");
-    const msg = wrap.querySelector("#nc-msg");
-    if(!co || !product || !claim || !m || !t || !recv){
-      msg.textContent = "제조사 · 제품명 · 클레임 내용 · 유형 · 고객 클레임 접수일자는 꼭 채워 주세요.";
-      return;
-    }
+    const m = v("#nc-mid"), t = v("#nc-type");
     const kindBtn = wrap.querySelector("[data-nckind].on");
     const kind = kindBtn ? kindBtn.dataset.nckind : "사후";
+    const pre = (kind === "사전");
+    /* 사전 건의 기준일은 제조사에 넘긴 날이다 */
+    const recv = pre ? v("#nc-recv") : v("#nc-crecv");
+    const msg = wrap.querySelector("#nc-msg");
+    if(!co || !product || !claim || !m || !t || !recv){
+      msg.textContent = "제조사 · 제품명 · 클레임 내용 · 유형 · "
+        + (pre ? "제조사 클레임 접수일자" : "고객 클레임 접수일자") + "는 꼭 채워 주세요.";
+      return;
+    }
     const c = {
       company: co, issueNo: nextIssueNo(co),
       title: product + " " + claim,
       brand: v("#nc-brand"), code: v("#nc-code"), product: product, claim: claim,
       lot: v("#nc-lot"), exp: v("#nc-exp"),
-      custRecv: recv, recv: v("#nc-recv"), reply: v("#nc-reply"),
+      custRecv: pre ? "" : recv, recv: v("#nc-recv"), reply: v("#nc-reply"),
       mid: m, type: t, kind: kind,
       stage: wrap.querySelector("#nc-cx").checked ? kind : "",
-      found: kind === "사전" ? v("#nc-found") : "",
-      qty:   kind === "사전" ? v("#nc-qty") : "",
+      qty:   pre ? v("#nc-qty") : "",
       fault: wrap.querySelector("#nc-fault").checked,
       photo: photo, cause: v("#nc-cause"), action: v("#nc-action"),
       at: new Date().toISOString().slice(0,10)
