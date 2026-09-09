@@ -434,6 +434,24 @@
     background:var(--surface-2); border-radius:9px; padding:13px 16px;
     border-left:4px solid var(--rail); min-width:0;
   }
+  /* 상세 구획 접기 */
+  .ix-fold{
+    display:none; width:100%; text-align:left; font-family:inherit;
+    font-size:12px; font-weight:800; letter-spacing:-.01em; cursor:pointer;
+    padding:9px 13px; border-radius:9px;
+    border:1px solid var(--border); background:var(--railbg); color:var(--rail);
+  }
+  .ix-fold:hover{ border-color:var(--rail); }
+  .ix-fold .car{ margin-right:7px; display:inline-block; }
+  .ixs.ix-folded{ display:block; }
+  .ixs.ix-folded > *{ display:none; }
+  .ixs.ix-folded > .ix-fold{ display:block; }
+  .ix-shut{
+    float:right; font-family:inherit; font-size:10.5px; font-weight:750;
+    color:var(--muted); background:none; border:0; cursor:pointer;
+    padding:0 0 5px 9px; line-height:1.4;
+  }
+  .ix-shut:hover{ color:var(--rail); }
   .ix-hr{ margin:10px 0 0; padding-top:9px; border-top:1px solid var(--border); }
   /* 발생원인 + 재발방지 가 우측 서류 패널 하나를 함께 쓴다 */
   .ix-pair{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:10px; align-items:start; }
@@ -8109,6 +8127,8 @@ function applyNewClaims(){
       brand: c.brand || "", code: c.code || "", product: c.product || "",
       claim: c.claim || "", lot: c.lot || "", exp: c.exp || "",
       custRecv: c.custRecv || "", recv: c.recv || "", reply: c.reply || "",
+      grade: c.grade || "", prog: c.prog || "", pdept: c.pdept || "",
+      pemp: c.pemp || "", pdone: c.pdone || "", pmemo: c.pmemo || "",
       stage: c.stage || "", kind: kind, mid: c.mid || "", type: c.type || "",
       fault: !!c.fault
     };
@@ -8396,6 +8416,19 @@ function ncOpen(){
     + '</div>'
     + '<label class="nc-full">클레임 내용 <span class="req">*</span><textarea id="nc-claim" rows="2" placeholder="예) 캡 내부에 벌레 이물 발견"></textarea></label>'
 
+    + '<div class="nc-sec" id="nc-fix-sec">처리방안 <em>사후 클레임의 처리 기록입니다</em></div>'
+    + '<div class="nc-grid" id="nc-fix">'
+    +   '<label>불량정도<select id="nc-grade"><option value="">고르세요</option>'
+    +     '<option>경미</option><option>중대</option><option>치명</option></select></label>'
+    +   '<label>처리현황<select id="nc-prog"><option value="">고르세요</option>'
+    +     '<option>진행중</option><option>회수중</option><option>완료</option></select></label>'
+    +   '<label>처리부서<input id="nc-pdept" placeholder="예) 품질팀" /></label>'
+    +   '<label>처리자<input id="nc-pemp" /></label>'
+    +   '<label>처리완료일<input type="date" id="nc-pdone" /></label>'
+    + '</div>'
+    + '<label class="nc-full" id="nc-pmemo-w">처리내용'
+    +   '<textarea id="nc-pmemo" rows="3" placeholder="원인 · 조치 · 추후 계획"></textarea></label>'
+
     + '<div class="nc-sec">불만협의체</div>'
     + '<div class="nc-row">'
     +   '<label class="nc-chk"><input type="checkbox" id="nc-cx" /> 이번 협의체에 담기 <b id="nc-cxk">(사후)</b></label>'
@@ -8439,6 +8472,10 @@ function ncOpen(){
       /* 사전은 고객이 없다 — 고객 접수일 칸을 감추고 제조사 접수일을 필수로 */
       wrap.querySelector("#nc-crecv-w").hidden = pre;
       wrap.querySelector("#nc-recv-req").hidden = !pre;
+      /* 처리방안은 사후에만 */
+      wrap.querySelector("#nc-fix-sec").hidden = pre;
+      wrap.querySelector("#nc-fix").hidden = pre;
+      wrap.querySelector("#nc-pmemo-w").hidden = pre;
       wrap.querySelector("#nc-cxk").textContent = "(" + k + ")";
     });
   });
@@ -8613,6 +8650,12 @@ function ncOpen(){
       mid: m, type: t, kind: kind,
       stage: wrap.querySelector("#nc-cx").checked ? kind : "",
       qty:   pre ? v("#nc-qty") : "",
+      grade: pre ? "" : v("#nc-grade"),
+      prog:  pre ? "" : v("#nc-prog"),
+      pdept: pre ? "" : v("#nc-pdept"),
+      pemp:  pre ? "" : v("#nc-pemp"),
+      pdone: pre ? "" : v("#nc-pdone"),
+      pmemo: pre ? "" : v("#nc-pmemo"),
       fault: wrap.querySelector("#nc-fault").checked,
       photo: photo, cause: v("#nc-cause"), action: v("#nc-action"),
       at: new Date().toISOString().slice(0,10)
@@ -9374,6 +9417,13 @@ function issueDetailHTML(d){
   const extra = issueDetails[key] || {};
   const parts = issueParts(d);
   const fx    = issueFix[key] || {};
+  /* 처리방안 — 한 줄로 모아 보여 준다 */
+  const fxFix = [
+    fx.grade ? "불량정도 " + fx.grade : "",
+    fx.prog  ? "처리현황 " + fx.prog  : "",
+    fx.pdept || "", fx.pemp || "",
+    fx.pdone ? "완료 " + fx.pdone : ""
+  ].filter(Boolean).join(" · ");
   const none  = t => `<span class="ix-none">${esc(t)}</span>`;
   const val   = v => v ? esc(v) : none("미기재");
 
@@ -9498,6 +9548,8 @@ function issueDetailHTML(d){
         </div>
         ${parts.product ? `<div class="ix-hr ix-keep"><i>제품명</i><span>${esc(parts.product)}</span></div>` : ""}
         ${d.note && d.note!=="-" ? `<div class="${parts.product?"":"ix-hr "}ix-keep"><i>보관 자료</i><span>${esc(d.note)}</span></div>` : ""}
+        ${fxFix ? `<div class="ix-hr ix-keep"><i>처리방안</i><span>${esc(fxFix)}</span></div>` : ""}
+        ${fx.pmemo ? `<div class="ix-keep"><i>처리내용</i><span>${esc(fx.pmemo)}</span></div>` : ""}
         ${attA}
       </div>
     </section>
@@ -9543,7 +9595,44 @@ function issueDetailHTML(d){
     ${legalChipsHTML(d.type + " " + d.title + " " + cause + " " + action)}
   </div>`;
 }
+
+/* ── 상세 구획 접기 ─────────────────────────────────────────── */
+function bindIxFold(wrap){
+  wrap.querySelectorAll(".ixs").forEach(function(sec, i){
+    if(sec.dataset.fold) return;
+    sec.dataset.fold = "1";
+    const rail = sec.querySelector(".ix-rail");
+    const name = rail ? rail.textContent.replace(/\s+/g, "") : "내용";
+
+    const bar = document.createElement("button");
+    bar.type = "button";
+    bar.className = "ix-fold";
+    bar.innerHTML = '<span class="car">▸</span>' + esc(name);
+    sec.insertBefore(bar, sec.firstChild);
+
+    const body = sec.querySelector(".ix-body");
+    let shut = null;
+    if(body){
+      shut = document.createElement("button");
+      shut.type = "button";
+      shut.className = "ix-shut";
+      shut.textContent = "접기 ▴";
+      body.insertBefore(shut, body.firstChild);
+    }
+    const flip = function(e){
+      e.stopPropagation();
+      sec.classList.toggle("ix-folded");
+    };
+    bar.addEventListener("click", flip);
+    if(shut) shut.addEventListener("click", flip);
+
+    /* 클레임개요만 펴 둔다 */
+    if(i > 0) sec.classList.add("ix-folded");
+  });
+}
+
 function bindIssuePhotos(wrap, d){
+  bindIxFold(wrap);
   /* 발생원인·재발방지 본문이 길면 접어 둔다 */
   wrap.querySelectorAll(".ixs.s2 .ix-body, .ixs.s3 .ix-body").forEach(body=>{
     if(body.scrollHeight < 190) return;
