@@ -1430,11 +1430,10 @@
   }
   .nc-box textarea{ resize:vertical; }
   .req{ color:var(--critical); }
-  .nc-erp{ display:flex; gap:8px; align-items:flex-start; }
-  .nc-erp textarea{
-    flex:1; font-family:inherit; font-size:11.5px; padding:8px 10px; border-radius:8px;
-    border:1px dashed var(--accent); background:var(--accent-tint); color:var(--ink); resize:vertical;
-  }
+  .nc-kind .nc-sg{ padding:9px 16px; font-size:12px; }
+  .nc-kt{ font-size:11px; color:var(--muted); font-weight:600; }
+  .nc-chk b{ color:var(--accent-strong); }
+  .nc-grid[hidden]{ display:none; }
   .nc-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .nc-seg{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
   .nc-sg{ font-family:inherit; font-size:11.5px; font-weight:750; padding:7px 13px;
@@ -5593,23 +5592,31 @@ function applyNewClaims(){
   newClaims.forEach(function(c){
     const k = ncKey(c);
     if(issueData.some(function(d){ return issueKeyOf(d) === k; })) return;
+    /* 옛 기록에는 구분이 없다 — 협의체 자리로 되짚는다 */
+    const kind = c.kind || (c.stage === "사전" ? "사전" : "사후");
     issueData.push({
       company: c.company, issueNo: c.issueNo, title: c.title,
       date: c.recv || "", rounds: "-", capa: c.action ? "있음" : "없음",
       mid: c.mid || "", type: c.type || "", oldType: c.type || "",
-      note: "화면에서 등록한 건"
+      note: kind === "사전" ? "사전 클레임(출고 전 발견) — 화면에서 등록"
+                            : "사후 클레임 — 화면에서 등록"
     });
     issueFix[k] = {
       brand: c.brand || "", code: c.code || "", product: c.product || "",
       claim: c.claim || "", lot: c.lot || "", exp: c.exp || "",
       recv: c.recv || "", reply: c.reply || "",
-      stage: c.stage || "", mid: c.mid || "", type: c.type || "",
+      stage: c.stage || "", kind: kind, mid: c.mid || "", type: c.type || "",
       fault: !!c.fault
     };
     if(c.fault) faultSet.add(k);
     if(c.photo) issueShots[k] = { n: 1, shots: [{ c: "등록한 현상 사진", d: c.photo }] };
-    if(c.cause || c.action) issueDetails[k] = {
-      cause: c.cause || "", action: c.action || "",
+    const preMemo = (kind === "사전")
+      ? ["[사전] 출고 전 발견", c.found ? "발견 단계 " + c.found : "", c.qty ? "수량 " + c.qty : ""]
+          .filter(Boolean).join(" · ")
+      : "";
+    if(c.cause || c.action || preMemo) issueDetails[k] = {
+      cause: [preMemo, c.cause || ""].filter(Boolean).join("\n"),
+      action: c.action || "",
       by: c.by || "", doc: "화면에서 등록"
     };
     if(c.stage){
@@ -5634,8 +5641,9 @@ function nextIssueNo(co){
 /* 등록 창 — 표에 쓰는 항목 그대로 받는다 */
 
 /* ── ERP 화면 읽기 ────────────────────────────────────────────
-   부적합처리방안등록 화면을 통째로 복사(Ctrl+A → Ctrl+C)해 붙이면
-   라벨을 찾아 값을 뽑는다. 칸 순서가 바뀌어도 라벨만 있으면 읽는다.  */
+   부적합처리방안등록 화면의 글에서 라벨을 찾아 값을 뽑는다.
+   화면에 붙여넣는 칸은 걷어냈고, ERP 에서 받아 온 건을 갈래 짓는 데 쓴다.
+   ERP 에 올라간 건은 모두 사후 클레임이다.                            */
 
 /* 반품유형·반품원인 → 대시보드 유형 */
 const ERP_TYPE = [
@@ -5767,16 +5775,25 @@ function ncOpen(){
     + '<button class="nc-x" data-ncclose="1" aria-label="닫기">✕</button></div>'
     + '<div class="nc-bd">'
 
-    + '<div class="nc-sec">ERP 화면 붙여넣기 <em>부적합처리방안등록 화면을 Ctrl+A → Ctrl+C 해서 붙이면 아래 칸이 채워집니다</em></div>'
-    + '<div class="nc-erp"><textarea id="nc-erp" rows="3" placeholder="여기에 붙여넣기 (Ctrl+V)"></textarea>'
-    + '<button class="nc-btn" id="nc-read">읽어오기</button></div>'
+    + '<div class="nc-sec">클레임 구분 <em>ERP 부적합으로 등록된 건은 모두 사후입니다</em></div>'
+    + '<div class="nc-row nc-kind">'
+    +   '<span class="nc-seg"><button class="nc-sg on" data-nckind="사후">사후 · 시장 클레임</button>'
+    +   '<button class="nc-sg" data-nckind="사전">사전 · 출고 전 발견</button></span>'
+    +   '<span class="nc-kt" id="nc-kt">ERP 부적합처리방안에 올라간 건 — 고객·시장에서 나온 클레임</span>'
+    + '</div>'
 
     + '<div class="nc-sec">접수 정보</div>'
     + '<div class="nc-grid">'
     +   '<label>제조사 <span class="req">*</span><input list="nc-cos" id="nc-co" placeholder="목록에서 고르거나 새로 입력" /></label>'
     +   '<datalist id="nc-cos">' + opt(cos) + '</datalist>'
-    +   '<label>클레임 접수일자 <span class="req">*</span><input type="date" id="nc-recv" /></label>'
+    +   '<label>클레임 <span id="nc-recv-l">접수</span>일자 <span class="req">*</span><input type="date" id="nc-recv" /></label>'
     +   '<label>클레임 회신일자<input type="date" id="nc-reply" /></label>'
+    + '</div>'
+    + '<div class="nc-grid nc-pre" id="nc-pre" hidden>'
+    +   '<label>발견 단계<select id="nc-found"><option value="">고르세요</option>'
+    +     '<option>입고검사</option><option>보관 중</option><option>생산 전 확인</option>'
+    +     '<option>출고 전 검사</option><option>자체 점검</option><option>기타</option></select></label>'
+    +   '<label>발견 수량<input id="nc-qty" placeholder="예) 12 EA · 1 LOT" /></label>'
     + '</div>'
 
     + '<div class="nc-sec">품목</div>'
@@ -5798,9 +5815,7 @@ function ncOpen(){
 
     + '<div class="nc-sec">불만협의체</div>'
     + '<div class="nc-row">'
-    +   '<span class="nc-seg"><button class="nc-sg on" data-ncstage="">담지 않음</button>'
-    +   '<button class="nc-sg" data-ncstage="사후">사후</button>'
-    +   '<button class="nc-sg" data-ncstage="사전">사전</button></span>'
+    +   '<label class="nc-chk"><input type="checkbox" id="nc-cx" /> 이번 협의체에 담기 <b id="nc-cxk">(사후)</b></label>'
     +   '<label class="nc-chk"><input type="checkbox" id="nc-fault" /> 제조사 귀책</label>'
     +   '<label class="nc-file">현상 사진<input type="file" accept="image/*" id="nc-photo" hidden /></label>'
     +   '<span class="nc-pv" id="nc-pv"></span>'
@@ -5824,38 +5839,19 @@ function ncOpen(){
     ty.innerHTML = t ? t.subs.map(function(s){ return '<option>' + esc(s) + '</option>'; }).join("")
                      : '<option value="">중분류를 먼저</option>';
   });
-  wrap.querySelectorAll("[data-ncstage]").forEach(function(b){
+  /* 사후 ↔ 사전 — 라벨과 칸이 따라 바뀐다 */
+  wrap.querySelectorAll("[data-nckind]").forEach(function(b){
     b.addEventListener("click", function(){
-      wrap.querySelectorAll("[data-ncstage]").forEach(function(x){ x.classList.remove("on"); });
+      wrap.querySelectorAll("[data-nckind]").forEach(function(x){ x.classList.remove("on"); });
       b.classList.add("on");
+      const k = b.dataset.nckind, pre = (k === "사전");
+      wrap.querySelector("#nc-pre").hidden = !pre;
+      wrap.querySelector("#nc-recv-l").textContent = pre ? "발견" : "접수";
+      wrap.querySelector("#nc-cxk").textContent = "(" + k + ")";
+      wrap.querySelector("#nc-kt").textContent = pre
+        ? "출고 전에 걸러 낸 건 — ERP 에는 올라가지 않습니다"
+        : "ERP 부적합처리방안에 올라간 건 — 고객·시장에서 나온 클레임";
     });
-  });
-  /* ERP 화면에서 읽어 칸을 채운다 */
-  const erpBox = wrap.querySelector("#nc-erp");
-  wrap.querySelector("#nc-read").addEventListener("click", function(){
-    const r = erpParse(erpBox.value);
-    const put = function(id, v){ if(v){ const el = wrap.querySelector(id); if(el) el.value = v; } };
-    put("#nc-co", r.company); put("#nc-recv", r.recv); put("#nc-reply", r.reply);
-    put("#nc-brand", r.brand); put("#nc-code", r.code); put("#nc-lot", r.lot);
-    put("#nc-exp", r.exp); put("#nc-product", r.product); put("#nc-claim", r.claim);
-    if(r.mid){
-      mid.value = r.mid; mid.dispatchEvent(new Event("change"));
-      if(r.type) ty.value = r.type;
-    }
-    const got = ["product","code","recv","lot","claim"].filter(function(k){ return r[k]; }).length;
-    const msg = wrap.querySelector("#nc-msg");
-    msg.style.color = got >= 3 ? "var(--good)" : "var(--critical)";
-    msg.textContent = got >= 3
-      ? "읽었습니다 — " + (r.company ? r.company + " · " : "제조사는 직접 골라 주세요 · ")
-        + (r.erpType ? "ERP 유형 " + r.erpType : "") + " · 값을 확인한 뒤 등록하세요."
-      : "읽을 값이 적습니다. 화면 전체를 복사했는지 확인해 주세요.";
-    if(r.erpNo || r.customer || r.channel || r.need){
-      const memo = [r.erpNo ? "부적합번호 " + r.erpNo : "", r.customer ? "고객 " + r.customer : "",
-                    r.channel ? r.channel : "", r.dept ? r.dept : "",
-                    r.need ? "처리필요 " + r.need : ""].filter(Boolean).join(" · ");
-      const ca = wrap.querySelector("#nc-cause");
-      if(ca && !ca.value) ca.value = "[ERP] " + memo;
-    }
   });
   let photo = "";
   wrap.querySelector("#nc-photo").addEventListener("change", async function(e){
@@ -5881,13 +5877,17 @@ function ncOpen(){
       msg.textContent = "제조사 · 제품명 · 클레임 내용 · 유형 · 접수일자는 꼭 채워 주세요.";
       return;
     }
-    const stageBtn = wrap.querySelector("[data-ncstage].on");
+    const kindBtn = wrap.querySelector("[data-nckind].on");
+    const kind = kindBtn ? kindBtn.dataset.nckind : "사후";
     const c = {
       company: co, issueNo: nextIssueNo(co),
       title: product + " " + claim,
       brand: v("#nc-brand"), code: v("#nc-code"), product: product, claim: claim,
       lot: v("#nc-lot"), exp: v("#nc-exp"), recv: recv, reply: v("#nc-reply"),
-      mid: m, type: t, stage: stageBtn ? stageBtn.dataset.ncstage : "",
+      mid: m, type: t, kind: kind,
+      stage: wrap.querySelector("#nc-cx").checked ? kind : "",
+      found: kind === "사전" ? v("#nc-found") : "",
+      qty:   kind === "사전" ? v("#nc-qty") : "",
       fault: wrap.querySelector("#nc-fault").checked,
       photo: photo, cause: v("#nc-cause"), action: v("#nc-action"),
       at: new Date().toISOString().slice(0,10)
@@ -5901,7 +5901,8 @@ function ncOpen(){
     applyIssueFilter();
     alert("등록했습니다.\n\n· " + co + " " + c.issueNo + "번 · " + product
       + "\n· 표와 집계에 바로 반영됩니다."
-      + (c.stage ? "\n· 불만협의체 " + c.stage + " 로 담았습니다." : ""));
+      + "\n· " + kind + " 클레임"
+      + (c.stage ? " · 불만협의체에 담았습니다." : ""));
   });
 }
 
