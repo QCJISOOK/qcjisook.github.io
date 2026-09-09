@@ -1418,6 +1418,22 @@
   }
   .nc-box textarea{ resize:vertical; }
   .req{ color:var(--critical); }
+  /* 품번·제품명으로 품목 찾기 */
+  .nc-hit{ font-size:10.5px; font-weight:700; color:var(--good); margin-top:3px; min-height:13px; }
+  .nc-hit.bad{ color:var(--muted); font-weight:600; }
+  .nc-find{ position:relative; }
+  .nc-list{
+    position:absolute; left:0; right:0; top:100%; z-index:5; max-height:236px; overflow:auto;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    box-shadow:0 12px 28px rgba(0,0,0,.18); margin-top:3px; padding:3px;
+  }
+  .nc-list button{
+    display:block; width:100%; text-align:left; font-family:inherit; font-size:11.5px;
+    padding:6px 9px; border:0; border-radius:6px; background:none; cursor:pointer; color:var(--ink);
+  }
+  .nc-list button:hover{ background:var(--accent-tint); }
+  .nc-list b{ font-weight:750; }
+  .nc-list i{ font-style:normal; color:var(--muted); margin-left:7px; font-size:10.5px; }
   .nc-kind .nc-sg{ padding:9px 16px; font-size:12px; }
   .nc-chk b{ color:var(--accent-strong); }
   .nc-grid[hidden]{ display:none; }
@@ -8224,6 +8240,41 @@ function erpParse(txt){
   return out;
 }
 
+
+/* ── 품목 표 ───────────────────────────────────────────────────
+   품번 → [제조사, 브랜드, 제품명]. ERP 「품목조회」의 구매처·브랜드에서 왔다.
+   대시보드에 실린 클레임에서도 품번을 긁어 보태므로 쓸수록 늘어난다.      */
+const ITEM_DB = {"BP0021":["서울화장품","비프로젝트","비긴브라이트닝생크림수면팩80ml"],"BP0029":["지엘스탠다드","비프로젝트","비긴케이프알로에카밍워터밤크림50ml(리필용)"],"BP0070":["지엘스탠다드","비프로젝트","스테이글로우쿠션13호12g(리필)"],"BP0125":["코스모코스","비프로젝트","스테이헤어워터트리트먼트400ml R2"],"BP0139":["엔코스","비프로젝트","비긴카밍워터밤마스크패드165ml"],"BP0150":["코스모코스","비프로젝트","스테이헤어워터트리트먼트400ml R3"],"BP0152":["지엘스탠다드","비프로젝트","바이포어클레이딥클렌징폼130ml.A"],"BP0165":["지엘스탠다드","비프로젝트","스테이헤어딥클렌징샴푸500ml.A"],"MC0034":["코스모코스","마미케어","황유자고마쥬클렌저"],"MC0044":["리봄","마미케어","들깨미백크림50g.R2"],"MC0046":["리봄","마미케어","바다포도포어리프팅앰플50ml.R2(GS)"],"MC0075":["아이피어리스","마미케어","율무패드220g"],"MC0103":["나우코스","마미케어","녹두멜팅클렌저200ml"],"MC0119":["이앤씨","마미케어","팥효소클렌저50g"],"MC0121":["리봄","마미케어","바다포도포어리프팅앰플50ml*2개입"],"MC0194":["한국콜마","마미케어","오쏘타민비타민C앰플15ml"],"MC0221":["엠앤코스","마미케어","마미케어 아이스플랜트 마그네슘스프레이"],"MC0246":["이앤씨","마미케어","연꽃잎시카앰플마스크25g*7매.A"],"MC0271":["한국콜마","마미케어","오쏘타민비타민C앰플15ml.A"],"MC0300":["코스모코스","마미케어","애사비클렌저120ml.A1"],"MC0301":["코스모코스","마미케어","애사비클렌저200ml.A1"],"MC0302":["리봄","마미케어","바다포도포어리프팅레티놀앰플50ml.A"],"MC0308":["그린코스","마미케어","생율무크림50ml.R1 2개+율무크림15g 2개(쿠팡)"],"MC0319":["이앤씨","마미케어","들깨미백앰플마스크23g*1매.A"],"MC0355":["한국콜마","마미케어","오쏘타민비타민C앰플15ml.A1"],"MC0366":["한국콜마","마미케어","오쏘타민비타민C앰플15ml.A2"],"MC0402":["한국콜마","마미케어","오쏘타민비타민C크림50ml"],"MC0403":["리봄","마미케어","바다포도포어리파이닝앰플50ml.A"],"MC0506":["리봄","마미케어","바다포도포어리파이닝앰플50ml(핑구콜라보)"],"MC0508":["코스모코스","마미케어","애사비클렌저120ml.A3(리뉴얼)"],"MC0509":["코스모코스","마미케어","애사비클렌저200ml.A3(리뉴얼)"],"MC0511":["코스모코스","마미케어","애사비클렌저190ml.A"],"MC0522":["코스모코스","마미케어","애사비클렌저120ml.A2+10ml (쿠팡)"],"MC0546":["이앤씨","마미케어","바다포도포어리파이닝세럼30ml(다이소)"],"MC0547":["리봄","마미케어","바다포도포어리파이닝젤리미스트100ml(다이소)"],"MC0548":["이앤씨","마미케어","바다포도포어리파이닝스킨팩80매(다이소)"],"MC0744":["한국콜마","마미케어","바다포도포어리파이닝쿨링미스트100ml.A"],"MC0783":["이앤씨","마미케어","바다포도포어리파이닝쿨링스킨팩260g(120매).A"],"MC0806":["한국콜마","마미케어","오쏘타민비타민C앰플15ml.A3"],"MC0824":["리봄","마미케어","바다포도포어리파이닝레틴에이앰플50ml+50ml기획세트(인어공주)"],"MT0573":["에치엔지","밀크터치","서양송악그린히알루론6초수분크림50g"],"MT0575":["이앤씨","밀크터치","서양자두핑크글루타치온데일리스페셜마스크(30매입)330g"],"MT0579":["이앤씨","밀크터치","산삼골드PDRN데일리스페셜마스크(30매입)330g(일본용)"],"MT0580":["씨엔에프","밀크터치","서양송악그린히알루론6초수분진정패드270g"],"MT0602":["코스맥스","밀크터치","톤온섀도우팔레트#01투데이시리얼보울7.8g"],"MT0605":["코코","밀크터치","젤리핏틴티드글로우틴트#02피치온탑4g"],"MT0636":["이앤씨","밀크터치","산삼골드PDRN데일리스페셜마스크(7매입)100g"],"MT0669":["코스메카","밀크터치","올데이스킨핏펄글로우쿠션 02바닐라아이보리(일본용)"],"MT0683":["코스메카","밀크터치","올데이스킨핏밀키글로우쿠션#19C로지아이보리15g(북미향)"],"MT0752":["코스맥스","밀크터치","톤온섀도우팔레트#03마이페이보릿어텀7.8g"],"MT0756":["코코","밀크터치","젤리핏틴티드글로우틴트#08로지브리즈4g"],"MT0760":["코코","밀크터치","젤리핏틴티드글로우틴트#08로지브리즈4g(일본용)"],"MT0777":["코스맥스","밀크터치","디어씽울트라롱컬링마스카라#01클리어블랙7g(다이소용)"],"MT0884":["코디","밀크터치","듀스테인쉬어오로라글로스#01허니듀"],"MT1004":["뉴앤뉴","밀크터치","블랙필오프립타투#04블랙애프리콧4.5g"],"MT1917":["코코","밀크터치","젤리핏틴티드글로우틴트#01뉴피치베어4g(글로벌통합용)"],"SB0028":["리봄","성분에디터","그린토마토포어리프팅앰플토너350ml R1"],"SB0039":["코스모코스","성분에디터","그린토마토포어리프팅앰플플러스30ml R1"],"SB0091":["나우코스","성분에디터","머루포도비타C다크스팟앰플더블기획세트30ml+30ml(올영)"],"SB0275":["코스메카","성분에디터","그린토마토포어필링점보패드180ml.R3"],"SB0285":["케이알텍","성분에디터","그린토마토포어리프팅앰플플러스리미티드세트"],"SB0355":["씨앤텍","성분에디터","그린토마토포어퓨리파잉워시오프마스크(다이소용)"],"SB0358":["리봄","성분에디터","애플필매끈결수딩워시오프마스크(다이소용)"],"SB0419":["리봄","성분에디터","액티브마린아스타잔틴캡슐세럼30ml.R2"],"SB0465":["나우코스","성분에디터","콜라겐볼륨글로이립밤10g"],"SB0590":["지엘스탠다드","성분에디터","그린토마토딥포어클렌징울트라휘핑폼120g.A"],"SB0615":["리봄","성분에디터","그린토마토엔앰엔포어하이드로수딩토너350g"],"SB0622":["이앤씨","성분에디터","그린토마토엔앰엔포어필링패드170ml"],"SB0657":["이앤씨","성분에디터","실크펩타이드인텐시브리프팅앰플60ml(리브랜딩).A(CH)"],"SB0675":["코스모코스","성분에디터","그린토마토포어리프팅앰플플러스(중국향)40ml"],"SB0738":["이앤씨","성분에디터","딥콜라겐베리어세럼미스트115ml(국내).A"],"SB0954":["이앤씨","성분에디터","레드어성초바하리노릴리프앰플40ml"],"SB0971":["코스모코스","성분에디터","그린토마토엔앰엔포어리프팅앰플더블기획40ml*2ea(산리오콜라보)"],"SB0992":["이앤씨","성분에디터","그린토마토포어리프팅세럼플레인(다이소용).A"],"SB1633":["그린코스","성분에디터","레드어성초바하리노클리어바디미스트150ml(국내)"],"SM0043":["콜마스크","시모먼트","아이리프팅롤러세럼15ml"]};
+
+function itemLookup(){
+  if(itemLookup._done) return ITEM_DB;
+  itemLookup._done = 1;
+  try{
+    issueData.forEach(function(d){
+      const p = issueParts(d);
+      const code = (p.code || "").trim();
+      /* 품번이 여러 개 적힌 건은 건너뛴다 */
+      if(!code || /[\s,]/.test(code) || ITEM_DB[code]) return;
+      ITEM_DB[code] = [d.company, p.brand || "", p.product || ""];
+    });
+  }catch(e){}
+  return ITEM_DB;
+}
+
+function itemFind(q, max){
+  const s = String(q || "").trim().toLowerCase();
+  if(s.length < 2) return [];
+  const db = itemLookup(), out = [];
+  for(const code in db){
+    const v = db[code];
+    if((v[2] || "").toLowerCase().indexOf(s) >= 0 || code.toLowerCase().indexOf(s) >= 0){
+      out.push([code, v[0], v[1], v[2]]);
+      if(out.length >= (max || 12)) break;
+    }
+  }
+  return out;
+}
+
 function ncOpen(){
   const cos = [...new Set(issueData.map(function(d){ return d.company; }))].sort(function(a,b){ return a.localeCompare(b,"ko"); });
   const brands = (typeof ISSUE_BRANDS !== "undefined") ? ISSUE_BRANDS : [];
@@ -8264,11 +8315,16 @@ function ncOpen(){
     + '<div class="nc-grid">'
     +   '<label>브랜드<input list="nc-brands" id="nc-brand" /></label>'
     +   '<datalist id="nc-brands">' + opt(brands) + '</datalist>'
-    +   '<label>품번<input id="nc-code" placeholder="예) MC0548" /></label>'
+    +   '<label>품번<input id="nc-code" placeholder="예) MC0548" />'
+    +     '<div class="nc-hit" id="nc-code-hit"></div></label>'
     +   '<label>Lot No.<input id="nc-lot" /></label>'
     +   '<label>사용기한<input type="date" id="nc-exp" /></label>'
     + '</div>'
-    + '<label class="nc-full">제품명 <span class="req">*</span><input id="nc-product" placeholder="예) 바다포도포어리파이닝스킨팩80매(다이소)" /></label>'
+    + '<div class="nc-find">'
+    +   '<label class="nc-full">제품명 <span class="req">*</span>'
+    +     '<input id="nc-product" autocomplete="off" placeholder="제품명 일부만 넣어도 찾아 줍니다 — 예) 바다포도" /></label>'
+    +   '<div class="nc-list" id="nc-plist" hidden></div>'
+    + '</div>'
 
     + '<div class="nc-sec">유형과 내용</div>'
     + '<div class="nc-grid">'
@@ -8314,6 +8370,52 @@ function ncOpen(){
       wrap.querySelector("#nc-cxk").textContent = "(" + k + ")";
     });
   });
+  /* 품번을 넣으면 제조사·브랜드·제품명이 따라온다 */
+  const codeBox = wrap.querySelector("#nc-code");
+  const codeHit = wrap.querySelector("#nc-code-hit");
+  const prodBox = wrap.querySelector("#nc-product");
+  const plist   = wrap.querySelector("#nc-plist");
+
+  const fillFrom = function(v){
+    const co = wrap.querySelector("#nc-co"), br = wrap.querySelector("#nc-brand");
+    if(v[0]) co.value = v[0];
+    if(v[1]) br.value = v[1];
+    if(v[2] && !prodBox.value.trim()) prodBox.value = v[2];
+    codeHit.className = "nc-hit";
+    codeHit.textContent = "✓ " + (v[0] || "제조사 미상") + (v[1] ? " · " + v[1] : "");
+  };
+  codeBox.addEventListener("input", function(){
+    const up = codeBox.value.trim().toUpperCase();
+    if(up !== codeBox.value) codeBox.value = up;
+    const v = itemLookup()[up];
+    if(v){ fillFrom(v); return; }
+    codeHit.className = "nc-hit bad";
+    codeHit.textContent = up.length >= 4 ? "모르는 품번입니다 — 직접 채워 주세요" : "";
+  });
+
+  /* 제품명 일부를 넣으면 품목을 찾아 준다 */
+  const closeList = function(){ plist.hidden = true; plist.innerHTML = ""; };
+  prodBox.addEventListener("input", function(){
+    const hits = itemFind(prodBox.value, 12);
+    if(!hits.length){ closeList(); return; }
+    plist.innerHTML = hits.map(function(h){
+      return '<button type="button" data-pick="' + esc(h[0]) + '"><b>' + esc(h[3] || h[0]) + '</b>'
+        + '<i>' + esc(h[0]) + (h[1] ? " · " + esc(h[1]) : "") + (h[2] ? " · " + esc(h[2]) : "") + '</i></button>';
+    }).join("");
+    plist.hidden = false;
+  });
+  plist.addEventListener("mousedown", function(e){
+    const b = e.target.closest("[data-pick]");
+    if(!b) return;
+    e.preventDefault();
+    const code = b.dataset.pick, v = itemLookup()[code] || ["","",""];
+    codeBox.value = code;
+    prodBox.value = v[2] || "";
+    fillFrom(v);
+    closeList();
+  });
+  prodBox.addEventListener("blur", function(){ setTimeout(closeList, 140); });
+
   let photo = "";
   wrap.querySelector("#nc-photo").addEventListener("change", async function(e){
     const f = e.target.files && e.target.files[0];
