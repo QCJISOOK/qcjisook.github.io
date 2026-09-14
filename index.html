@@ -2911,7 +2911,11 @@ function refsForText(text){
   legalRules.forEach(r=>{
     if(r.kw.test(text)) r.refs.forEach(x=>{ if(out.indexOf(x)<0) out.push(x); });
   });
-  return out.slice(0,4);
+  /* CGMP 조항은 카드에 붙이지 않는다 — 2026-09-14 지시 */
+  return out.filter(function(id){
+    const r = legalRefs[id];
+    return r && r.law !== "CGMP";
+  }).slice(0,4);
 }
 
 
