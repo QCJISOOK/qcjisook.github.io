@@ -4072,7 +4072,7 @@ function renderAuditCards(){
 }
 
 /* ---------- 사진 확대 뷰어 — 전체화면 + 확대/이동 ---------- */
-let lbState = { list:[], idx:0, z:1, tx:0, ty:0, drag:null };
+let lbState = { list:[], idx:0, z:1, tx:0, ty:0, drag:null, moved:false };
 const LB_MIN = 1, LB_MAX = 6;
 
 function lbApply(){
@@ -4131,7 +4131,11 @@ function ensureLightbox(){
     if(act==="zout"){ lbZoom(1/1.4); return; }
     if(act==="fit"){  lbReset(); return; }
     // 배경 클릭은 닫기, 이미지 클릭은 확대 토글
-    if(e.target.tagName === "IMG"){ lbState.z>1 ? lbReset() : lbZoom(2.2); return; }
+    if(e.target.tagName === "IMG"){
+      if(lbState.moved){ lbState.moved = false; return; }   /* 옮긴 뒤의 누름은 넘긴다 */
+      lbState.z>1 ? lbReset() : lbZoom(2.2);
+      return;
+    }
     if(e.target.classList.contains("lb-stage") || e.target===lb){
       lb.hidden = true; document.body.classList.remove("lb-open");
     }
@@ -4146,16 +4150,21 @@ function ensureLightbox(){
   stage.addEventListener("mousedown", e=>{
     if(lbState.z<=1 || e.button!==0) return;
     e.preventDefault();
+    lbState.moved = false;
     lbState.drag = { x:e.clientX, y:e.clientY, tx:lbState.tx, ty:lbState.ty };
     lbApply();
   });
   window.addEventListener("mousemove", e=>{
     if(!lbState.drag) return;
-    lbState.tx = lbState.drag.tx + (e.clientX - lbState.drag.x);
-    lbState.ty = lbState.drag.ty + (e.clientY - lbState.drag.y);
+    const dx = e.clientX - lbState.drag.x, dy = e.clientY - lbState.drag.y;
+    if(Math.abs(dx) > 3 || Math.abs(dy) > 3) lbState.moved = true;
+    lbState.tx = lbState.drag.tx + dx;
+    lbState.ty = lbState.drag.ty + dy;
     lbApply();
   });
   window.addEventListener("mouseup", ()=>{ if(lbState.drag){ lbState.drag=null; lbApply(); } });
+  /* 끌어 옮기는 동안 그림이 잡히지 않게 */
+  stage.addEventListener("dragstart", e=>{ if(lbState.z>1) e.preventDefault(); });
 
   document.addEventListener("keydown", e=>{
     if(lb.hidden) return;
