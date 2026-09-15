@@ -1179,11 +1179,17 @@
     font-family:inherit; font-size:11.5px; padding:4px 8px; width:104px;
     border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
   }
-  .aev-go{
-    margin-left:auto; font-family:inherit; font-size:11px; font-weight:750; cursor:pointer;
-    padding:5px 11px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--ink-2);
+  .aev-foot{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--border);
   }
-  .aev-go:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .aev-go{
+    margin-left:auto; font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+    padding:9px 20px; border-radius:9px;
+    border:1px solid var(--accent); background:var(--accent-tint); color:var(--accent-strong);
+  }
+  .aev-go:hover{ background:var(--accent); color:#fff; border-color:transparent; }
+  .aev-go.ok{ background:#1e7f4f; border-color:transparent; color:#fff; }
   .aev-borrow{
     font-size:10px; font-weight:750; color:var(--rail);
     padding:2px 7px; border-radius:20px; background:var(--railbg);
@@ -3483,11 +3489,13 @@ function aEvalHTML(key){
     +   '<span class="aev-sum"><i>100점 환산</i><b data-aevconv>' + r.conv.toFixed(2) + '</b></span>'
     +   '<label class="aev-by">평가자<input data-aevmeta="by" value="' + esc(meta.evBy || "") + '" placeholder="이름" /></label>'
     +   '<label class="aev-by">평가일<input type="date" data-aevmeta="at" value="' + esc(meta.evAt || "") + '" /></label>'
-    +   '<button type="button" class="aev-go" data-aevdraw="1">점수판 다시 그리기</button>'
     + '</div>'
-    + '<div class="aev-tip">A 우수 3점 · B 보통 2점 · C 미흡 1점 — 누르면 바로 저장됩니다. 비고는 칸을 벗어날 때 저장됩니다.'
-    +   '<span class="aev-left" data-aevleft>' + (left ? "아직 " + left + "항목 남았습니다 — 다 매기면 위쪽 점수판에 올라갑니다." : "전 항목 평가 완료") + '</span></div>'
+    + '<div class="aev-tip">A 우수 3점 · B 보통 2점 · C 미흡 1점 — 누르면 바로 저장됩니다. 비고는 칸을 벗어날 때 저장됩니다.</div>'
     + '<div class="aev-list">' + rows + '</div>'
+    + '<div class="aev-foot">'
+    +   '<span class="aev-left" data-aevleft>' + (left ? "아직 " + left + "항목 남았습니다 — 다 매기면 점수판에 올라갑니다." : "전 항목 평가 완료") + '</span>'
+    +   '<button type="button" class="aev-go" data-aevdraw="1">평가 완료</button>'
+    + '</div>'
     + '</div>';
 }
 
@@ -3498,6 +3506,18 @@ function aRefresh(key){
   const body = card.querySelector(".acard-body");
   if(!body || body.hidden) return;
   const det = (typeof auditDetails !== "undefined" && auditDetails[key]) || {};
+
+  /* 펼쳐 둔 자리와 보고 있던 높이를 기억한다 */
+  const openOf = function(sel, at){
+    return [].slice.call(body.querySelectorAll(sel))
+      .filter(function(x){ return x.getAttribute("aria-expanded") === "true"; })
+      .map(function(x){ return x.dataset[at]; });
+  };
+  const wasPh = openOf("[data-phtog]", "phtog");
+  const wasDb = openOf("[data-dbtog]", "dbtog");
+  const foot = body.querySelector(".aev-foot");
+  const wasY = foot ? foot.getBoundingClientRect().top : null;
+
   aEvalApply(key);
   body.innerHTML = auditBodyHTML(key, det);
   body.dataset.filled = "1";
@@ -3507,6 +3527,22 @@ function aRefresh(key){
     bindLawChips(body);
   } catch(e){}
   aScoreBar(card, key);
+
+  /* 다시 펴 준다 */
+  const reopen = function(sel, at, list){
+    list.forEach(function(v){
+      const q = String(v).replace(/[\\"]/g, "\\$&");   /* 따옴표·역슬래시만 막아 준다 */
+      const b = body.querySelector(sel + '[data-' + at + '="' + q + '"]');
+      if(b && b.getAttribute("aria-expanded") !== "true") b.click();
+    });
+  };
+  try { reopen("", "phtog", wasPh); reopen("", "dbtog", wasDb); } catch(e){}
+  body.querySelectorAll(".aev-n").forEach(aGrow);
+
+  /* 보고 있던 자리로 되돌린다 */
+  const f2 = body.querySelector(".aev-foot");
+  if(f2 && wasY != null) window.scrollBy(0, f2.getBoundingClientRect().top - wasY);
+  return f2;
 }
 function aScoreBar(card, key){
   const sb = card && card.querySelector(".acard-score");
@@ -3639,7 +3675,7 @@ document.addEventListener("click", function(e){
     set("[data-aevpt]", r.sum);
     set("[data-aevconv]", r.conv.toFixed(2));
     const left = r.items.length - r.done;
-    set("[data-aevleft]", left ? "아직 " + left + "항목 남았습니다 — 다 매기면 위쪽 점수판에 올라갑니다." : "전 항목 평가 완료");
+    set("[data-aevleft]", left ? "아직 " + left + "항목 남았습니다 — 다 매기면 점수판에 올라갑니다." : "전 항목 평가 완료");
     aScoreBar(wrap.closest(".acard"), key);
     return;
   }
@@ -3648,7 +3684,21 @@ document.addEventListener("click", function(e){
   if(db){
     e.preventDefault(); e.stopPropagation();
     const wrap = db.closest(".aev");
-    if(wrap) aRefresh(wrap.dataset.aevkey);
+    if(!wrap) return;
+    const key = wrap.dataset.aevkey;
+    const r = aEvalSum(key);
+    const left = r.items.length - r.done;
+    if(left){
+      alert("아직 " + left + "항목을 매기지 않았습니다.\n"
+        + "전 항목을 매겨야 100점 환산 점수가 점수판에 올라갑니다.");
+    }
+    const f2 = aRefresh(key);
+    const b2 = f2 && f2.querySelector(".aev-go");
+    if(b2 && !left){
+      b2.textContent = "반영했습니다";
+      b2.classList.add("ok");
+      setTimeout(function(){ b2.textContent = "평가 완료"; b2.classList.remove("ok"); }, 1800);
+    }
     return;
   }
 }, true);
