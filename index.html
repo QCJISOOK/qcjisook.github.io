@@ -1195,7 +1195,7 @@
     color:var(--rail); padding:4px 9px; border-radius:6px; background:var(--railbg); display:inline-block;
   }
   .aev-row{
-    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(150px,.7fr) auto;
+    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(180px,.8fr);
     gap:9px; align-items:center; padding:6px 8px; border-radius:8px;
   }
   .aev-row + .aev-row{ border-top:1px solid var(--border); }
@@ -1217,14 +1217,13 @@
   .aev-b.clr{ font-size:13px; }
   .aev-b.clr.off{ opacity:.35; }
   .aev-n{
-    font-family:inherit; font-size:11.5px; padding:5px 9px; min-width:0;
+    font-family:inherit; font-size:11.5px; line-height:1.55; padding:6px 9px; min-width:0;
+    min-height:30px; resize:vertical; overflow:hidden; white-space:pre-wrap;
     border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
   }
-  .aev-n:focus{ outline:none; border-color:var(--accent); }
-  .aev-self{ font-family:var(--font-mono); font-size:10px; color:var(--muted); white-space:nowrap; }
+  .aev-n:focus{ outline:none; border-color:var(--accent); overflow:auto; }
   @media (max-width:900px){
     .aev-row{ grid-template-columns:1fr; gap:6px; }
-    .aev-self{ justify-self:start; }
   }
   .acard-top{
     width:100%; background:none; border:none; cursor:pointer; font-family:inherit; text-align:left;
@@ -3471,8 +3470,7 @@ function aEvalHTML(key){
           }).join("")
       +   '<button type="button" class="aev-b clr' + (g ? "" : " off") + '" data-aevg="' + i + '::" title="지우기">\u00d7</button>'
       + '</div>'
-      + '<input class="aev-n" data-aevn="' + i + '" value="' + esc(n) + '" placeholder="비고 — 근거 자료 · 지적 사항" />'
-      + '<div class="aev-self">자체 <b>' + esc(it.m || "\u2013") + '</b></div>'
+      + '<textarea class="aev-n" data-aevn="' + i + '" rows="1" placeholder="비고 — 근거 자료 · 지적 사항">' + esc(n) + '</textarea>'
       + '</div>';
   }).join("");
 
@@ -3654,6 +3652,22 @@ document.addEventListener("click", function(e){
     return;
   }
 }, true);
+
+/* 줄이 늘면 칸도 늘린다 */
+function aGrow(el){
+  if(!el || el.offsetParent === null) return;   /* 접혀 있으면 아직 재지 않는다 */
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight + 2, 400) + "px";
+}
+document.addEventListener("input", function(e){
+  if(e.target && e.target.classList && e.target.classList.contains("aev-n")) aGrow(e.target);
+});
+/* 카드를 펼칠 때 이미 적혀 있던 것도 한 번 맞춘다 */
+document.addEventListener("click", function(e){
+  if(!e.target || !e.target.closest) return;
+  if(!e.target.closest(".acard-top") && !e.target.closest("[data-aevdraw]") && !e.target.closest("[data-phtog]")) return;
+  setTimeout(function(){ document.querySelectorAll(".aev-n").forEach(aGrow); }, 60);
+});
 
 document.addEventListener("change", function(e){
   const t = e.target;
