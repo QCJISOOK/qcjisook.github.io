@@ -1145,6 +1145,87 @@
   }
   .acard:hover{ border-color:var(--border-strong); box-shadow:var(--shadow-md); }
   .acard.open{ border-color:var(--accent); }
+  /* 감사 현장에서 적는 칸 */
+  .anote-btn{ border-style:dashed; }
+  .amemo{ margin-top:8px; flex-basis:100%; }
+  .amemo-btn{
+    display:inline-flex; align-items:center; gap:6px; font-family:inherit;
+    font-size:11px; font-weight:750; cursor:pointer; color:var(--muted);
+    padding:4px 9px; border-radius:7px; border:1px dashed var(--border); background:transparent;
+  }
+  .amemo-btn:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .amemo.has .amemo-btn{ border-style:solid; border-color:var(--accent); color:var(--accent-strong); }
+  .amemo-dot{
+    font-family:var(--font-mono); font-size:9px; font-weight:800; letter-spacing:.02em;
+    padding:1px 5px; border-radius:20px; background:var(--accent-strong); color:#fff;
+  }
+  .amemo-in{
+    display:block; width:100%; box-sizing:border-box; margin-top:7px; resize:vertical;
+    font-family:inherit; font-size:12px; line-height:1.65; color:var(--ink);
+    padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--surface);
+  }
+  .amemo-in[hidden]{ display:none; }
+  .amemo-in:focus{ outline:none; border-color:var(--accent); }
+
+  /* 현장평가 입력 */
+  .aev{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+  .aev-none{ font-size:12px; color:var(--muted); }
+  .aev-hd{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+  .aev-hd > b{ font-size:12.5px; font-weight:800; }
+  .aev-sum{ display:inline-flex; align-items:baseline; gap:5px; font-size:11px; color:var(--muted); }
+  .aev-sum b{ font-family:var(--font-mono); font-size:13px; color:var(--ink); }
+  .aev-by{ display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+  .aev-by input{
+    font-family:inherit; font-size:11.5px; padding:4px 8px; width:104px;
+    border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
+  }
+  .aev-go{
+    margin-left:auto; font-family:inherit; font-size:11px; font-weight:750; cursor:pointer;
+    padding:5px 11px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--ink-2);
+  }
+  .aev-go:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .aev-borrow{
+    font-size:10px; font-weight:750; color:var(--rail);
+    padding:2px 7px; border-radius:20px; background:var(--railbg);
+  }
+  .aev-tip{ font-size:10.5px; color:var(--muted); margin-bottom:9px; }
+  .aev-left{ margin-left:8px; font-weight:750; color:var(--accent-strong); }
+  .aev-cat{
+    margin:12px 0 5px; font-size:11px; font-weight:800; letter-spacing:-.01em;
+    color:var(--rail); padding:4px 9px; border-radius:6px; background:var(--railbg); display:inline-block;
+  }
+  .aev-row{
+    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(150px,.7fr) auto;
+    gap:9px; align-items:center; padding:6px 8px; border-radius:8px;
+  }
+  .aev-row + .aev-row{ border-top:1px solid var(--border); }
+  .aev-row.on{ background:var(--surface-2); }
+  .aev-q{ font-size:11.5px; line-height:1.5; color:var(--ink-2); }
+  .aev-no{
+    display:inline-block; min-width:18px; margin-right:6px; text-align:right;
+    font-family:var(--font-mono); font-size:10px; color:var(--muted);
+  }
+  .aev-g{ display:inline-flex; gap:4px; }
+  .aev-b{
+    width:26px; height:26px; padding:0; font-family:var(--font-mono); font-size:11.5px; font-weight:800;
+    cursor:pointer; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--muted);
+  }
+  .aev-b:hover{ border-color:var(--accent); }
+  .aev-b.g-A.on{ background:#1e7f4f; color:#fff; border-color:transparent; }
+  .aev-b.g-B.on{ background:#b7791f; color:#fff; border-color:transparent; }
+  .aev-b.g-C.on{ background:#c0392b; color:#fff; border-color:transparent; }
+  .aev-b.clr{ font-size:13px; }
+  .aev-b.clr.off{ opacity:.35; }
+  .aev-n{
+    font-family:inherit; font-size:11.5px; padding:5px 9px; min-width:0;
+    border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
+  }
+  .aev-n:focus{ outline:none; border-color:var(--accent); }
+  .aev-self{ font-family:var(--font-mono); font-size:10px; color:var(--muted); white-space:nowrap; }
+  @media (max-width:900px){
+    .aev-row{ grid-template-columns:1fr; gap:6px; }
+    .aev-self{ justify-self:start; }
+  }
   .acard-top{
     width:100%; background:none; border:none; cursor:pointer; font-family:inherit; text-align:left;
     display:grid; grid-template-columns:132px minmax(0,1fr) 300px auto; gap:18px; align-items:center;
@@ -2289,6 +2370,9 @@
         <option value="company">업체명순</option>
       </select>
       <button class="filter-reset" id="audit-reset">필터 초기화</button>
+      <button class="filter-reset anote-btn" id="anote-out" title="적어 둔 협의 내용 \u00b7 품목 메모 \u00b7 현장평가를 파일로 내려받습니다">기록 내보내기</button>
+      <button class="filter-reset anote-btn" id="anote-in" title="남이 보내 준 감사기록.json 을 얹습니다">기록 불러오기</button>
+      <input type="file" id="anote-file" accept=".json,application/json" hidden />
       <span class="result-count" id="audit-count"></span>
     </div>
     <div class="audit-cards" id="audit-cards"></div>
@@ -3259,6 +3343,371 @@ function docLabel(name, desc){
   return `<div class="doc-label"><span class="doc-name">${esc(name)}</span>${desc?`<span class="doc-desc">${esc(desc)}</span>`:""}</div>`;
 }
 
+
+/* ── 감사 현장에서 적는 것 ─────────────────────────────────────
+   협의 내용 · 문서 점검 메모 · 현장평가(A/B/C + 비고).
+   브라우저에 남고 「기록 내보내기」로 서로 주고받는다.               */
+const ANOTE_LS = "oi-audit-anote-v1";
+let aNote = (function(){
+  try { return JSON.parse(localStorage.getItem(ANOTE_LS) || "{}") || {}; }
+  catch(e){ return {}; }
+})();
+function aNoteOf(key){ return aNote[key] || (aNote[key] = {}); }
+function aNoteBag(key, sec){ const a = aNoteOf(key); return a[sec] || (a[sec] = {}); }
+function aNoteSave(){
+  try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); return true; }
+  catch(e){ alert("브라우저에 더 담을 자리가 없습니다."); return false; }
+}
+
+/* 접었다 펴는 적는 칸 */
+function aMemoHTML(key, sec, id, label, ph){
+  const v = String(aNoteBag(key, sec)[id] || "");
+  const has = v.trim().length > 0;
+  return '<div class="amemo' + (has ? " has" : "") + '">'
+    + '<button type="button" class="amemo-btn" data-amemo="1" aria-expanded="false">'
+    +   '<span class="car">\u25b8</span>' + esc(label)
+    +   (has ? '<span class="amemo-dot">적어 둠</span>' : '')
+    + '</button>'
+    + '<textarea class="amemo-in" data-anote="' + esc(sec) + '::' + esc(id) + '" rows="4" hidden'
+    +   ' placeholder="' + esc(ph || "여기에 적으면 이 브라우저에 남습니다.") + '">'
+    + esc(v) + '</textarea></div>';
+}
+
+/* ── 현장평가 — 자가점검 시트와 같은 틀 ── */
+const AEV_V = { A:3, B:2, C:1 };
+/* 표준 틀 — 항목이 가장 많은 시트를 그대로 빌린다 */
+let _aStd = null;
+function aStdFrame(){
+  if(_aStd) return _aStd;
+  let best = [];
+  if(typeof selfAll !== "undefined"){
+    Object.keys(selfAll).forEach(function(k){
+      const v = selfAll[k] || [];
+      if(v.length > best.length) best = v;
+    });
+  }
+  return (_aStd = best);
+}
+const aFrames = {};
+function aSelf(key){
+  const s = (typeof selfAll !== "undefined" && selfAll[key]) || [];
+  if(s.length) return s;
+  if(aFrames[key]) return aFrames[key];
+  return (aFrames[key] = aStdFrame().map(function(x){ return { c:x.c, i:x.i, m:"", d:"" }; }));
+}
+/* 이미 들어와 있던 올리브 등급은 한 번만 따로 챙겨 둔다 — 덮어쓰지 않기 위해 */
+function aSeed(key){
+  const items = aSelf(key);
+  items.forEach(function(it){ if(it._d0 === undefined) it._d0 = it.d || ""; });
+  return items;
+}
+function aGrade(items, ev, i){
+  const c = ev[i];
+  if(c && c.g !== undefined) return c.g;
+  return items[i]._d0 || "";
+}
+function aEvalSum(key){
+  const items = aSeed(key), ev = aNoteBag(key, "ev");
+  let sum = 0, done = 0;
+  const sc = {}, cn = {};
+  items.forEach(function(it, i){
+    const g = aGrade(items, ev, i);
+    if(!g) return;
+    sum += AEV_V[g]; done++;
+    sc[it.c] = (sc[it.c] || 0) + AEV_V[g];
+    cn[it.c] = (cn[it.c] || 0) + 1;
+  });
+  return { items: items, ev: ev, sum: sum, done: done, sc: sc, cn: cn,
+           conv: items.length ? (sum * 100 / (items.length * 3)) : 0 };
+}
+/* 매긴 것을 화면이 쓰는 자리(selfAll.d · categoryScores · checkSheet)에 얹는다 */
+function aEvalApply(key){
+  const r = aEvalSum(key);
+  if(!r.items.length) return 0;
+  r.items.forEach(function(it, i){ it.d = aGrade(r.items, r.ev, i); });
+  if(typeof categoryScores !== "undefined"){
+    const c = categoryScores[key] || (categoryScores[key] = { m:{}, d:{} });
+    const d = {};
+    Object.keys(r.sc).forEach(function(k){ d[k] = Math.round(r.sc[k] * 100 / (r.cn[k] * 3)); });
+    c.d = d;
+  }
+  /* 전 항목을 다 매겼을 때만 점수판을 바꾼다 — 매기는 중에 점수가 낮게 보이면 안 된다 */
+  if(typeof auditDetails !== "undefined" && r.done === r.items.length){
+    const det = auditDetails[key] || (auditDetails[key] = {});
+    const cs = det.checkSheet || (det.checkSheet = { mfr:null, dist:null, note:"" });
+    cs.dist = +r.conv.toFixed(2);
+  }
+  return r.done;
+}
+function aEvalApplyAll(){
+  if(typeof selfAll === "undefined") return;
+  const seen = {};
+  Object.keys(selfAll).concat(Object.keys(aNote)).forEach(function(k){
+    if(seen[k]) return;
+    seen[k] = 1;
+    if(aSelf(k).length) aEvalApply(k);
+  });
+}
+
+function aEvalHTML(key){
+  const r = aEvalSum(key);
+  const items = r.items, ev = r.ev;
+  if(!items.length){
+    return '<div class="aev"><div class="aev-none">자가점검 시트 항목이 없어 평가표를 세울 수 없습니다.</div></div>';
+  }
+  const meta = aNoteOf(key);
+  const left = items.length - r.done;
+  let cat = "";
+  const rows = items.map(function(it, i){
+    const g = aGrade(items, ev, i);
+    const n = (ev[i] && ev[i].n) || "";
+    const head = (it.c !== cat) ? (cat = it.c, '<div class="aev-cat">' + esc(it.c) + '</div>') : "";
+    return head + '<div class="aev-row' + (g ? " on" : "") + '">'
+      + '<div class="aev-q"><span class="aev-no">' + (i + 1) + '</span>' + esc(it.i) + '</div>'
+      + '<div class="aev-g">'
+      +   ["A","B","C"].map(function(x){
+            return '<button type="button" class="aev-b g-' + x + (g === x ? " on" : "") + '"'
+              + ' data-aevg="' + i + '::' + x + '" title="' + (x === "A" ? "우수 3점" : x === "B" ? "보통 2점" : "미흡 1점") + '">' + x + '</button>';
+          }).join("")
+      +   '<button type="button" class="aev-b clr' + (g ? "" : " off") + '" data-aevg="' + i + '::" title="지우기">\u00d7</button>'
+      + '</div>'
+      + '<input class="aev-n" data-aevn="' + i + '" value="' + esc(n) + '" placeholder="비고 — 근거 자료 · 지적 사항" />'
+      + '<div class="aev-self">자체 <b>' + esc(it.m || "\u2013") + '</b></div>'
+      + '</div>';
+  }).join("");
+
+  return '<div class="aev" data-aevkey="' + esc(key) + '">'
+    + '<div class="aev-hd">'
+    +   '<b>올리브 현장평가 입력</b>'
+    +   (aFrames[key] ? '<span class="aev-borrow">자가점검 시트가 없어 표준 항목표를 빌려 씁니다</span>' : '')
+    +   '<span class="aev-sum"><i>매긴 항목</i><b data-aevdone>' + r.done + '</b> / ' + items.length + '</span>'
+    +   '<span class="aev-sum"><i>총점</i><b data-aevpt>' + r.sum + '</b> / ' + (items.length * 3) + '</span>'
+    +   '<span class="aev-sum"><i>100점 환산</i><b data-aevconv>' + r.conv.toFixed(2) + '</b></span>'
+    +   '<label class="aev-by">평가자<input data-aevmeta="by" value="' + esc(meta.evBy || "") + '" placeholder="이름" /></label>'
+    +   '<label class="aev-by">평가일<input type="date" data-aevmeta="at" value="' + esc(meta.evAt || "") + '" /></label>'
+    +   '<button type="button" class="aev-go" data-aevdraw="1">점수판 다시 그리기</button>'
+    + '</div>'
+    + '<div class="aev-tip">A 우수 3점 · B 보통 2점 · C 미흡 1점 — 누르면 바로 저장됩니다. 비고는 칸을 벗어날 때 저장됩니다.'
+    +   '<span class="aev-left" data-aevleft>' + (left ? "아직 " + left + "항목 남았습니다 — 다 매기면 위쪽 점수판에 올라갑니다." : "전 항목 평가 완료") + '</span></div>'
+    + '<div class="aev-list">' + rows + '</div>'
+    + '</div>';
+}
+
+/* 카드 한 장만 다시 세운다 */
+function aRefresh(key){
+  const card = [].slice.call(document.querySelectorAll(".acard")).filter(function(c){ return c.dataset.key === key; })[0];
+  if(!card) return;
+  const body = card.querySelector(".acard-body");
+  if(!body || body.hidden) return;
+  const det = (typeof auditDetails !== "undefined" && auditDetails[key]) || {};
+  aEvalApply(key);
+  body.innerHTML = auditBodyHTML(key, det);
+  body.dataset.filled = "1";
+  try {
+    bindCapaGallery(body, key);
+    bindComplaintToggles(body); bindSelfGradeToggles(body); bindFindToggles(body); bindPhaseToggles(body);
+    bindLawChips(body);
+  } catch(e){}
+  aScoreBar(card, key);
+}
+function aScoreBar(card, key){
+  const sb = card && card.querySelector(".acard-score");
+  if(sb && typeof scoreBarsHTML === "function"){
+    sb.innerHTML = scoreBarsHTML(((typeof auditDetails !== "undefined" && auditDetails[key]) || {}).checkSheet);
+  }
+}
+
+/* ── 기록 주고받기 ── */
+function aNoteMerge(src){
+  if(!src || typeof src !== "object") return 0;
+  let n = 0;
+  Object.keys(src).forEach(function(k){
+    const b = src[k];
+    if(!b || typeof b !== "object") return;
+    const a = aNoteOf(k);
+    ["cx","doc"].forEach(function(sec){
+      if(!b[sec]) return;
+      const mine = a[sec] || (a[sec] = {});
+      Object.keys(b[sec]).forEach(function(id){
+        if(String(mine[id] || "").trim()) return;      /* 내가 적은 것이 먼저다 */
+        mine[id] = b[sec][id]; n++;
+      });
+    });
+    if(b.ev){
+      const mine = a.ev || (a.ev = {});
+      Object.keys(b.ev).forEach(function(i){
+        if(mine[i]) return;
+        mine[i] = b.ev[i]; n++;
+      });
+    }
+    if(b.evBy && !a.evBy) a.evBy = b.evBy;
+    if(b.evAt && !a.evAt) a.evAt = b.evAt;
+  });
+  return n;
+}
+function aNoteExport(){
+  const out = {
+    version: 1,
+    savedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+    notes: aNote
+  };
+  const blob = new Blob([JSON.stringify(out)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "감사기록.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 8000);
+  let cx = 0, doc = 0, ev = 0;
+  Object.keys(aNote).forEach(function(k){
+    const b = aNote[k] || {};
+    cx += Object.keys(b.cx || {}).length;
+    doc += Object.keys(b.doc || {}).length;
+    ev += Object.keys(b.ev || {}).length;
+  });
+  alert("감사기록.json 을 내려받았습니다.\n"
+    + "· 협의 내용 " + cx + "건 · 품목 메모 " + doc + "건 · 평가 " + ev + "항목\n\n"
+    + "이 파일을 대시보드 HTML 과 같은 자리에 덮어 두면\n다음에 여는 사람부터 함께 보입니다.");
+}
+async function aNoteImport(file){
+  let j = null;
+  try { j = JSON.parse(await file.text()); } catch(e){ alert("파일을 읽지 못했습니다."); return; }
+  const n = aNoteMerge((j && j.notes) || j);
+  if(!n){ alert("새로 얹을 기록이 없습니다."); return; }
+  aNoteSave();
+  alert("받아 얹었습니다 — " + n + "건");
+  location.reload();
+}
+async function aNoteLoad(){
+  /* 여기서 따져야 한다 — 위쪽에서는 IXSHARE_URL 이 아직 서지 않았을 수 있다 */
+  let urls = ["감사기록.json"];
+  try { if(typeof IXSHARE_URL !== "undefined") urls.push(IXSHARE_URL); } catch(e){}
+  if(urls.length === 1) urls.push("공유자료.json");
+  let n = 0;
+  for(const u of urls){
+    try {
+      const r = await fetch(u, { cache: "no-store" });
+      if(!r.ok) continue;
+      const j = await r.json();
+      n += aNoteMerge(j && j.notes);
+    } catch(e){}
+  }
+  return n;
+}
+
+/* ── 누르기 · 적기 ── */
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t || !t.closest) return;
+
+  if(t.closest("#anote-out")){ e.preventDefault(); aNoteExport(); return; }
+  if(t.closest("#anote-in")){ e.preventDefault(); document.getElementById("anote-file").click(); return; }
+
+  const mb = t.closest("[data-amemo]");
+  if(mb){
+    e.preventDefault(); e.stopPropagation();
+    const box = mb.parentElement.querySelector(".amemo-in");
+    if(!box) return;
+    box.hidden = !box.hidden;
+    mb.setAttribute("aria-expanded", String(!box.hidden));
+    if(!box.hidden) box.focus();
+    return;
+  }
+
+  const gb = t.closest("[data-aevg]");
+  if(gb){
+    e.preventDefault(); e.stopPropagation();
+    const wrap = gb.closest(".aev"); if(!wrap) return;
+    const key = wrap.dataset.aevkey;
+    const p = gb.dataset.aevg.split("::");
+    const i = p[0], g = p[1] || "";
+    const ev = aNoteBag(key, "ev");
+    const cell = ev[i] || (ev[i] = {});
+    cell.g = g;
+    if(!g && !String(cell.n || "").trim()) delete ev[i];
+    aNoteSave();
+
+    const row = gb.closest(".aev-row");
+    row.classList.toggle("on", !!g);
+    row.querySelectorAll(".aev-b").forEach(function(b){
+      const x = b.dataset.aevg.split("::")[1] || "";
+      if(x) b.classList.toggle("on", x === g);
+      else b.classList.toggle("off", !g);
+    });
+
+    aEvalApply(key);
+    const r = aEvalSum(key);
+    const set = function(sel, v){ const el = wrap.querySelector(sel); if(el) el.textContent = v; };
+    set("[data-aevdone]", r.done);
+    set("[data-aevpt]", r.sum);
+    set("[data-aevconv]", r.conv.toFixed(2));
+    const left = r.items.length - r.done;
+    set("[data-aevleft]", left ? "아직 " + left + "항목 남았습니다 — 다 매기면 위쪽 점수판에 올라갑니다." : "전 항목 평가 완료");
+    aScoreBar(wrap.closest(".acard"), key);
+    return;
+  }
+
+  const db = t.closest("[data-aevdraw]");
+  if(db){
+    e.preventDefault(); e.stopPropagation();
+    const wrap = db.closest(".aev");
+    if(wrap) aRefresh(wrap.dataset.aevkey);
+    return;
+  }
+}, true);
+
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(!t || !t.dataset) return;
+
+  if(t.id === "anote-file"){
+    if(t.files && t.files[0]) aNoteImport(t.files[0]);
+    t.value = "";
+    return;
+  }
+
+  if(t.dataset.anote){
+    const card = t.closest(".acard"); if(!card) return;
+    const p = t.dataset.anote.split("::");
+    aNoteBag(card.dataset.key, p[0])[p.slice(1).join("::")] = t.value;
+    aNoteSave();
+    const box = t.closest(".amemo");
+    if(!box) return;
+    const on = t.value.trim().length > 0;
+    box.classList.toggle("has", on);
+    const dot = box.querySelector(".amemo-dot");
+    if(on && !dot){
+      const s = document.createElement("span"); s.className = "amemo-dot"; s.textContent = "적어 둠";
+      box.querySelector(".amemo-btn").appendChild(s);
+    } else if(dot && !on) dot.remove();
+    return;
+  }
+
+  if(t.dataset.aevn !== undefined){
+    const wrap = t.closest(".aev"); if(!wrap) return;
+    const ev = aNoteBag(wrap.dataset.aevkey, "ev");
+    const cell = ev[t.dataset.aevn] || (ev[t.dataset.aevn] = {});
+    cell.n = t.value;
+    if(!cell.g && !String(cell.n || "").trim()) delete ev[t.dataset.aevn];
+    aNoteSave();
+    return;
+  }
+
+  if(t.dataset.aevmeta){
+    const wrap = t.closest(".aev"); if(!wrap) return;
+    aNoteOf(wrap.dataset.aevkey)[t.dataset.aevmeta === "by" ? "evBy" : "evAt"] = t.value;
+    aNoteSave();
+    return;
+  }
+});
+
+/* 같은 자리에 놓인 기록 파일을 열 때 함께 읽는다 */
+(async function(){
+  if(!(await aNoteLoad())) return;
+  if(document.getElementById("audit-cards") && typeof renderAuditCards === "function"){
+    try { renderAuditCards(); } catch(e){}
+  }
+})();
+
 /* ===== 1단계 : 불만협의체 및 점검시트 (AUDIT 전) ===== */
 /* 처리상태를 색으로 구분 — 미결/대기는 감사 현장에서 반드시 확인해야 할 건 */
 function complaintStatusClass(s){
@@ -3290,6 +3739,7 @@ function complaintRowHTML(c, kind, no, shots){
         <span class="cx-st ${st}">${esc(c.status)}</span>
         ${legalChipsHTML(c.type + " " + c.detail)}
       </div>
+      ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "협의 내용", "업체 설명 \u00b7 개선 방식 \u00b7 협의 결과를 적습니다.")}
     </div>
     ${pics}
   </div>`;
@@ -3367,6 +3817,7 @@ function complaintRowHTML2(c, kind, no, shots){
         <div class="c3-line col"><i>제조업체 회신</i>
           <div class="rp">${replyLinesHTML(c.reply)}</div></div>
         ${capaToggleHTML(_cxKey, c.slide)}
+        ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "협의 내용", "업체 설명 \u00b7 개선 방식 \u00b7 협의 결과를 적습니다.")}
       </div>
 
     </div>
@@ -3491,11 +3942,13 @@ function docCheckHTML(key){
         return '<li><span class="dk-t">'+esc(p.t)+'</span><span class="dk-d">'+esc(p.d)+'</span></li>';
       }).join("")}</ol>`:""}
     ${(d.items||[]).length?`<div class="dk-h">점검 품목 <b>${d.items.length}</b>건</div>
-      <div class="dk-items">${d.items.map(function(x){
+      <div class="dk-items">${d.items.map(function(x, i){
         return '<div class="dk-i"><span class="dk-code">'+esc(x.code)+'</span>'
           + '<span class="dk-nm">'+esc(x.name)+'</span>'
           + '<span class="dk-lot">Lot '+esc(x.lot)+'</span>'
-          + '<span class="dk-exp">~'+esc(x.exp)+'</span></div>';
+          + '<span class="dk-exp">~'+esc(x.exp)+'</span>'
+          + aMemoHTML(key, "doc", i + "::" + x.code, "메모", "문서를 보다 걸린 문제 \u00b7 문의 사항을 적습니다.")
+          + '</div>';
       }).join("")}</div>`:""}
   </div>`;
 }
@@ -3598,6 +4051,7 @@ function phasePreHTML(key, det){
       ${openN?       pill("open","미결·대기",openN,"현장에서 확인 필요") : ""}
     </div>`;
 
+    _cxKey = key;
     const shots = complaintShots(key, post.length, pre.length);
     let n = 0;
     const blocks = [];
@@ -3866,6 +4320,7 @@ function phaseDuringHTML(key, det){
       <div class="doc-block wide">
         ${docLabel("제조품질관리의 확인서 점검시트", "")}
         ${scoreBlock}
+        ${aEvalHTML(key)}
       </div>
     </div>
   </div>`;
@@ -4005,6 +4460,7 @@ function gapListHTML(key){
 
 /* ---------- main render ---------- */
 function renderAuditCards(){
+  aEvalApplyAll();
   const rows = auditFiltered();
   document.getElementById("audit-count").textContent = rows.length + " / " + auditData.length + "건";
   const wrap = document.getElementById("audit-cards");
