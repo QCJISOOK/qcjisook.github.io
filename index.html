@@ -1216,7 +1216,6 @@
     display:block; margin-top:2px; font-style:normal;
     font-size:9.5px; font-weight:600; color:var(--muted);
   }
-  .ae-bas{ line-height:1.5; color:var(--ink-2); background:var(--surface-2); }
   .aev-t thead th{
     position:sticky; top:0; z-index:2; background:var(--surface-2); color:var(--ink);
     font-size:11px; font-weight:800; text-align:center; line-height:1.35; white-space:nowrap;
@@ -1253,14 +1252,16 @@
   }
   .ae-pt.self{ color:var(--muted); background:var(--surface-2); }
   .ae-pt.olive b{ color:var(--accent-strong); }
-  .ae-none{ color:var(--border-strong); font-weight:400; }
-  .ae-x{
-    display:block; margin:2px auto 0; width:16px; height:16px; padding:0; line-height:1;
-    font-family:var(--font-mono); font-size:11px; cursor:pointer; color:var(--muted);
-    border:1px solid var(--border); border-radius:5px; background:var(--surface);
+  .ae-res{
+    width:100%; box-sizing:border-box; text-align:center; font-family:var(--font-mono);
+    font-size:14px; font-weight:800; color:var(--accent-strong); padding:4px 2px;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface);
   }
-  .ae-x:hover{ border-color:#c0392b; color:#c0392b; }
+  .ae-res::placeholder{ color:var(--border-strong); font-weight:400; }
+  .ae-res:focus{ outline:none; border-color:var(--accent); background:var(--accent-tint); }
   .ae-in{ padding:4px 5px; }
+  .aev-n.bas{ background:var(--surface-2); }
+  .aev-n.bas:focus{ background:var(--surface); }
   .aev-n{
     display:block; width:100%; box-sizing:border-box;
     font-family:inherit; font-size:11px; line-height:1.55; padding:5px 7px; min-width:0;
@@ -3511,6 +3512,7 @@ function aEvalHTML(key){
     const g = aGrade(items, ev, i);
     const st = aStdOf(it);
     const cell = ev[i] || {};
+    const base = aBasisOf(key, it);
     const first = span[i] ? '<td class="ae-cat" rowspan="' + span[i] + '">' + esc(it.c) + '</td>' : "";
     return '<tr' + (g ? ' class="on"' : '') + ' data-aevrow="' + i + '">'
       + first
@@ -3522,10 +3524,12 @@ function aEvalHTML(key){
             + '<i class="ae-gl">' + x + '</i>' + esc(txt) + '</td>';
         }).join("")
       + '<td class="ae-pt self">' + (it.m ? AEV_V[it.m] : "") + '</td>'
-      + '<td class="ae-pt olive" data-aevres="' + i + '">'
-      +   (g ? '<b>' + AEV_V[g] + '</b><button type="button" class="ae-x" data-aevg="' + i + '::" title="지우기">\u00d7</button>' : '<span class="ae-none">–</span>')
-      + '</td>'
-      + '<td class="ae-bas">' + esc(aBasisOf(key, it)) + '</td>'
+      + '<td class="ae-pt olive"><input class="ae-res" data-aevres="' + i + '" maxlength="1"'
+      +   ' value="' + (g ? AEV_V[g] : "") + '" placeholder="–"'
+      +   ' title="A·B·C 또는 3·2·1 을 적습니다. 왼쪽 평가기준 칸을 눌러도 됩니다." /></td>'
+      + '<td class="ae-in"><textarea class="aev-n bas" data-aevb="' + i + '" rows="1" placeholder="근거 자료"'
+      +   (base ? ' title="업체 기입 원문 — ' + esc(base) + '"' : '') + '>'
+      +   esc(cell.b !== undefined ? cell.b : base) + '</textarea></td>'
       + '<td class="ae-in"><textarea class="aev-n" data-aevn2="' + i + '" rows="1" placeholder="개선 지적 사항">' + esc(cell.n2 || cell.n || "") + '</textarea></td>'
       + '</tr>';
   }).join("");
@@ -3542,7 +3546,7 @@ function aEvalHTML(key){
     +     '<th colspan="3">평가기준</th>'
     +     '<th rowspan="2">제조업자<br>평가결과</th>'
     +     '<th rowspan="2">제조판매업자<br>평가결과</th>'
-    +     '<th rowspan="2">근거 자료<i>업체 기입</i></th>'
+    +     '<th rowspan="2">근거 자료<i>업체 기입 · 고칠 수 있음</i></th>'
     +     '<th rowspan="2">개선 지적 사항<i>현장 기록</i></th></tr>'
     +   '<tr><th class="g-A">A (우수)</th><th class="g-B">B (보통)</th><th class="g-C">C (미흡)</th></tr>'
     + '</thead><tbody>' + rows + '</tbody></table></div>';
@@ -3557,7 +3561,7 @@ function aEvalHTML(key){
     +   '<label class="aev-by">평가자<input data-aevmeta="by" value="' + esc(meta.evBy || "") + '" placeholder="이름" /></label>'
     +   '<label class="aev-by">평가일<input type="date" data-aevmeta="at" value="' + esc(meta.evAt || "") + '" /></label>'
     + '</div>'
-    + '<div class="aev-tip">기준 : A(3점), B(2점), C(1점) — 평가기준 칸을 누르면 그 등급으로 매겨집니다. 적은 것은 칸을 벗어날 때 저장됩니다.</div>'
+    + '<div class="aev-tip">기준 : A(3점), B(2점), C(1점) — 평가기준 칸을 누르거나, 제조판매업자 평가결과 칸에 A·B·C 또는 3·2·1 을 적습니다. 적은 것은 칸을 벗어날 때 저장됩니다.</div>'
     + table
     + '<div class="aev-foot">'
     +   '<button type="button" class="aev-go" data-aevdraw="1">평가 완료</button>'
@@ -3610,6 +3614,50 @@ function aRefresh(key){
   if(f2 && wasY != null) window.scrollBy(0, f2.getBoundingClientRect().top - wasY);
   return f2;
 }
+/* 적은 글을 등급으로 읽는다 — A·B·C 도 3·2·1 도 받는다 */
+function aGradeRead(v){
+  const s = String(v == null ? "" : v).trim().toUpperCase();
+  if(s === "A" || s === "3") return "A";
+  if(s === "B" || s === "2") return "B";
+  if(s === "C" || s === "1") return "C";
+  return "";
+}
+/* 손댄 적이 없는 줄만 곳간에서 지운다 — 「비움」은 손댄 것이다 */
+function aEvTidy(ev, i){
+  const c = ev[i];
+  if(!c) return;
+  if(c.g === undefined && c.b === undefined
+     && !String(c.n || "").trim() && !String(c.n2 || "").trim()) delete ev[i];
+}
+/* 한 줄의 등급을 세우고 표·머리줄·점수판을 함께 고친다 */
+function aSetGrade(wrap, i, g){
+  if(!wrap) return;
+  const key = wrap.dataset.aevkey;
+  const ev = aNoteBag(key, "ev");
+  const cell = ev[i] || (ev[i] = {});
+  cell.g = g;
+  aEvTidy(ev, i);
+  aNoteSave();
+
+  const row = wrap.querySelector('tr[data-aevrow="' + i + '"]');
+  if(row){
+    row.classList.toggle("on", !!g);
+    row.querySelectorAll(".ae-std").forEach(function(b){
+      b.classList.toggle("on", (b.dataset.aevg.split("::")[1] || "") === g);
+    });
+    const res = row.querySelector("[data-aevres]");
+    if(res && document.activeElement !== res) res.value = g ? AEV_V[g] : "";
+  }
+
+  aEvalApply(key);
+  const r = aEvalSum(key);
+  const set = function(sel, v){ const el = wrap.querySelector(sel); if(el) el.textContent = v; };
+  set("[data-aevdone]", r.done);
+  set("[data-aevpt]", r.sum);
+  set("[data-aevconv]", r.conv.toFixed(2));
+  aScoreBar(wrap.closest(".acard"), key);
+}
+
 function aScoreBar(card, key){
   const sb = card && card.querySelector(".acard-score");
   if(sb && typeof scoreBarsHTML === "function"){
@@ -3716,35 +3764,8 @@ document.addEventListener("click", function(e){
   const gb = t.closest("[data-aevg]");
   if(gb){
     e.preventDefault(); e.stopPropagation();
-    const wrap = gb.closest(".aev"); if(!wrap) return;
-    const key = wrap.dataset.aevkey;
     const p = gb.dataset.aevg.split("::");
-    const i = p[0], g = p[1] || "";
-    const ev = aNoteBag(key, "ev");
-    const cell = ev[i] || (ev[i] = {});
-    cell.g = g;
-    if(!g && !String(cell.n || "").trim() && !String(cell.n2 || "").trim()) delete ev[i];
-    aNoteSave();
-
-    const row = gb.closest("tr");
-    row.classList.toggle("on", !!g);
-    row.querySelectorAll(".ae-std").forEach(function(b){
-      b.classList.toggle("on", (b.dataset.aevg.split("::")[1] || "") === g);
-    });
-    const res = row.querySelector("[data-aevres]");
-    if(res){
-      res.innerHTML = g
-        ? '<b>' + AEV_V[g] + '</b><button type="button" class="ae-x" data-aevg="' + i + '::" title="지우기">\u00d7</button>'
-        : '<span class="ae-none">–</span>';
-    }
-
-    aEvalApply(key);
-    const r = aEvalSum(key);
-    const set = function(sel, v){ const el = wrap.querySelector(sel); if(el) el.textContent = v; };
-    set("[data-aevdone]", r.done);
-    set("[data-aevpt]", r.sum);
-    set("[data-aevconv]", r.conv.toFixed(2));
-    aScoreBar(wrap.closest(".acard"), key);
+    aSetGrade(gb.closest(".aev"), p[0], p[1] || "");
     return;
   }
 
@@ -3778,7 +3799,14 @@ function aGrow(el){
   el.style.height = Math.min(el.scrollHeight + 2, 400) + "px";
 }
 document.addEventListener("input", function(e){
-  if(e.target && e.target.classList && e.target.classList.contains("aev-n")) aGrow(e.target);
+  const t = e.target;
+  if(!t) return;
+  if(t.classList && t.classList.contains("aev-n")){ aGrow(t); return; }
+  if(t.dataset && t.dataset.aevres !== undefined){
+    const g = aGradeRead(t.value);
+    t.value = g ? AEV_V[g] : "";
+    aSetGrade(t.closest(".aev"), t.dataset.aevres, g);
+  }
 });
 /* 카드를 펼칠 때 이미 적혀 있던 것도 한 번 맞춘다 */
 document.addEventListener("click", function(e){
@@ -3814,6 +3842,21 @@ document.addEventListener("change", function(e){
     return;
   }
 
+  if(t.dataset.aevb !== undefined){
+    const wrap = t.closest(".aev"); if(!wrap) return;
+    const key = wrap.dataset.aevkey;
+    const i = t.dataset.aevb;
+    const ev = aNoteBag(key, "ev");
+    const cell = ev[i] || (ev[i] = {});
+    const items = aSelf(key);
+    const base = aBasisOf(key, items[i]);
+    if(t.value === base) delete cell.b;            /* 원문 그대로면 따로 담지 않는다 */
+    else cell.b = t.value;
+    aEvTidy(ev, i);
+    aNoteSave();
+    return;
+  }
+
   if(t.dataset.aevn !== undefined || t.dataset.aevn2 !== undefined){
     const wrap = t.closest(".aev"); if(!wrap) return;
     const two = t.dataset.aevn2 !== undefined;
@@ -3821,7 +3864,7 @@ document.addEventListener("change", function(e){
     const ev = aNoteBag(wrap.dataset.aevkey, "ev");
     const cell = ev[i] || (ev[i] = {});
     cell[two ? "n2" : "n"] = t.value;
-    if(!cell.g && !String(cell.n || "").trim() && !String(cell.n2 || "").trim()) delete ev[i];
+    aEvTidy(ev, i);
     aNoteSave();
     return;
   }
