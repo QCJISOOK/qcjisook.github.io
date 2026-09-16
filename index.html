@@ -1183,6 +1183,57 @@
     0%{ border-color:var(--accent); background:var(--accent-tint); color:var(--accent-strong); }
     100%{ border-color:var(--border); background:var(--surface); color:var(--muted); }
   }
+  /* 받은 서류 올려 두기 */
+  .afile{ margin-top:10px; }
+  .af-body{ padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .af-drop{
+    display:block; width:100%; box-sizing:border-box; text-align:center; cursor:pointer;
+    padding:20px 14px; border:1.5px dashed var(--border-strong); border-radius:10px;
+    background:var(--surface-2);
+  }
+  .af-drop b{ display:block; font-size:14px; font-weight:800; color:var(--ink-2); }
+  .af-drop em{ display:block; font-style:normal; font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .af-drop:hover, .af-drop:focus, .af-drop.over{
+    border-color:var(--accent); background:var(--accent-tint); outline:none;
+  }
+  .af-none{ margin-top:10px; font-size:13px; color:var(--muted); text-align:center; }
+  .af-docs{ margin-top:11px; display:flex; flex-direction:column; gap:7px; }
+  .af-d{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:9px 12px; border:1px solid var(--border); border-radius:9px; background:var(--surface-2);
+  }
+  .af-ic{
+    flex-shrink:0; font-family:var(--font-mono); font-size:11px; font-weight:800; color:#fff;
+    padding:3px 8px; border-radius:6px; background:var(--serious);
+  }
+  .af-nm{
+    flex:1 1 200px; min-width:0; font-size:13.5px; font-weight:700; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .af-sz{ font-family:var(--font-mono); font-size:12px; color:var(--muted); }
+  .af-b{
+    font-family:inherit; font-size:12.5px; font-weight:750; cursor:pointer; text-decoration:none;
+    color:var(--ink-2); padding:5px 11px; border:1px solid var(--border);
+    border-radius:7px; background:var(--surface);
+  }
+  .af-b:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .af-b.x:hover{ border-color:var(--critical); color:var(--critical); }
+  .af-thumbs{ display:flex; flex-wrap:wrap; gap:10px; margin-top:11px; }
+  .af-th{ position:relative; width:158px; }
+  .af-th img{
+    width:100%; height:116px; object-fit:cover; display:block;
+    border:1px solid var(--border); border-radius:8px; background:var(--surface-2);
+  }
+  .af-x{
+    position:absolute; top:5px; right:5px; width:21px; height:21px; padding:0; line-height:1;
+    font-family:var(--font-mono); font-size:12px; cursor:pointer; color:#fff;
+    border:0; border-radius:6px; background:rgba(0,0,0,.55);
+  }
+  .af-x:hover{ background:var(--critical); }
+  .af-cap{
+    display:block; margin-top:4px; font-size:11.5px; color:var(--muted);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
   /* 건별 등록 목록 */
   .ailist{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
   .ai-hd{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
@@ -2461,7 +2512,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 10:37</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:19</span></div>
 </div>
 
 
@@ -3937,6 +3988,161 @@ async function aPicDel(key, id){
 }
 
 
+
+/* ── 받은 서류 올려 두기 ──────────────────────────────────────
+   개선결과서처럼 업체가 보내오는 것 — 종류를 가리지 않고 원본 그대로 담는다. */
+const AFILE = {
+  cr: { title:"개선결과서(첨부)", tip:"업체가 보내온 개선결과서를 그대로 올려 둡니다 — PDF · 사진 · 문서" }
+};
+function aFileBag(key, sec){ return key + "::file::" + sec; }
+function aFileOf(key, sec){ return aPicOf(aFileBag(key, sec)); }
+function aIsImg(r){ return /^image\//.test(r.type || ""); }
+function aSize(n){
+  n = +n || 0;
+  if(n < 1024) return n + "B";
+  if(n < 1048576) return (n / 1024).toFixed(0) + "KB";
+  return (n / 1048576).toFixed(1) + "MB";
+}
+/* 종류를 가리지 않고 담는다 */
+async function aFileAdd(bag, file){
+  if(!file) return null;
+  const r = { id: "f" + Date.now() + Math.random().toString(36).slice(2, 7),
+              key: bag, name: file.name || "파일", type: file.type || "",
+              size: file.size, blob: file, at: new Date().toISOString().slice(0, 10) };
+  try {
+    const db = await aPicOpen();
+    await new Promise(function(ok, no){
+      const tx = db.transaction("pic", "readwrite");
+      tx.objectStore("pic").put(r);
+      tx.oncomplete = ok; tx.onerror = function(){ no(tx.error); };
+    });
+  } catch(e){ alert("파일을 담지 못했습니다 — 너무 크거나 브라우저에 자리가 없습니다."); return null; }
+  (aPicMem[bag] = aPicMem[bag] || []).push(aPicWrap(r));
+  return r;
+}
+
+function aFileHTML(key, sec){
+  const D = AFILE[sec];
+  const list = aFileOf(key, sec);
+  const imgs = list.filter(aIsImg), docs = list.filter(function(r){ return !aIsImg(r); });
+  return '<div class="afile" data-afkey="' + esc(key) + '" data-afsec="' + sec + '">'
+    + '<button type="button" class="aev-tog" data-aftog="1" aria-expanded="false">'
+    +   '<span class="car">\u25b8</span><b>' + esc(D.title) + '</b>'
+    +   '<span class="aev-tn">' + (list.length ? '파일 <i>' + list.length + '</i>개' : '없음') + '</span>'
+    + '</button>'
+    + '<div class="aev-body af-body" hidden>'
+    +   '<div class="af-drop" data-afdrop="' + esc(key) + '::' + sec + '" tabindex="0">'
+    +     '<b>' + esc(D.tip) + '</b>'
+    +     '<em>여기로 끌어놓거나 눌러서 고릅니다 · 붙여넣기(Ctrl+V)도 됩니다 · 원본 그대로 담깁니다</em>'
+    +     '<input type="file" multiple hidden />'
+    +   '</div>'
+    +   (docs.length ? '<div class="af-docs">' + docs.map(function(r){
+          return '<div class="af-d">'
+            + '<span class="af-ic">' + (/pdf/i.test(r.type) ? "PDF" : (r.name.split(".").pop() || "파일").toUpperCase().slice(0, 4)) + '</span>'
+            + '<span class="af-nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
+            + '<span class="af-sz">' + aSize(r.size) + '</span>'
+            + '<a class="af-b" href="' + (r.url || "#") + '" target="_blank" rel="noopener">열기</a>'
+            + '<a class="af-b" href="' + (r.url || "#") + '" download="' + esc(r.name) + '">내려받기</a>'
+            + '<button type="button" class="af-b x" data-afdel="' + esc(key) + '::' + sec + '::' + r.id + '">빼기</button>'
+            + '</div>';
+        }).join("") + '</div>' : "")
+    +   (imgs.length ? '<div class="af-thumbs">' + imgs.map(function(r){
+          return '<div class="af-th">'
+            + '<a href="' + (r.url || "#") + '" target="_blank" rel="noopener"><img src="' + (r.url || "") + '" alt="' + esc(r.name) + '" loading="lazy" /></a>'
+            + '<button type="button" class="af-x" data-afdel="' + esc(key) + '::' + sec + '::' + r.id + '" title="빼기">\u00d7</button>'
+            + '<span class="af-cap">' + esc(r.name) + '</span></div>';
+        }).join("") + '</div>' : "")
+    +   (list.length ? "" : '<div class="af-none">아직 올려 둔 파일이 없습니다.</div>')
+    + '</div></div>';
+}
+
+function aFileRedraw(key, sec){
+  document.querySelectorAll(".afile").forEach(function(w){
+    if(w.dataset.afkey !== key || w.dataset.afsec !== sec) return;
+    const open = !w.querySelector(".af-body").hidden;
+    w.outerHTML = aFileHTML(key, sec);
+    if(open){
+      document.querySelectorAll(".afile").forEach(function(x){
+        if(x.dataset.afkey === key && x.dataset.afsec === sec){
+          x.querySelector(".af-body").hidden = false;
+          x.querySelector("[data-aftog]").setAttribute("aria-expanded", "true");
+        }
+      });
+    }
+  });
+}
+async function aFileTake(key, sec, files){
+  const bag = aFileBag(key, sec);
+  const arr = [].slice.call(files || []);      /* 살아 있는 목록이라 먼저 떠 놓는다 */
+  let n = 0;
+  for(const f of arr) if(await aFileAdd(bag, f)) n++;
+  if(n) aFileRedraw(key, sec);
+}
+
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t || !t.closest) return;
+
+  const tg = t.closest("[data-aftog]");
+  if(tg){
+    e.preventDefault(); e.stopPropagation();
+    const body = tg.parentElement.querySelector(".af-body");
+    if(!body) return;
+    body.hidden = !body.hidden;
+    tg.setAttribute("aria-expanded", String(!body.hidden));
+    return;
+  }
+  const dl = t.closest("[data-afdel]");
+  if(dl){
+    e.preventDefault(); e.stopPropagation();
+    const p = dl.dataset.afdel.split("::");
+    if(!confirm("이 파일을 뺄까요?")) return;
+    aPicDel(aFileBag(p[0], p[1]), p[2]).then(function(){ aFileRedraw(p[0], p[1]); });
+    return;
+  }
+  if(t.closest(".af-b") || t.closest(".af-th a")) { e.stopPropagation(); return; }   /* 열기·내려받기는 그대로 */
+  const dz = t.closest("[data-afdrop]");
+  if(dz){
+    e.preventDefault(); e.stopPropagation();
+    dz.querySelector('input[type="file"]').click();
+    return;
+  }
+}, true);
+
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(t && t.type === "file" && t.closest && t.closest("[data-afdrop]")){
+    const p = t.closest("[data-afdrop]").dataset.afdrop.split("::");
+    aFileTake(p[0], p[1], t.files);
+    t.value = "";
+  }
+});
+document.addEventListener("dragover", function(e){
+  const dz = e.target.closest && e.target.closest("[data-afdrop]");
+  if(dz){ e.preventDefault(); dz.classList.add("over"); }
+});
+document.addEventListener("dragleave", function(e){
+  const dz = e.target.closest && e.target.closest("[data-afdrop]");
+  if(dz) dz.classList.remove("over");
+});
+document.addEventListener("drop", function(e){
+  const dz = e.target.closest && e.target.closest("[data-afdrop]");
+  if(!dz) return;
+  e.preventDefault(); dz.classList.remove("over");
+  const p = dz.dataset.afdrop.split("::");
+  aFileTake(p[0], p[1], (e.dataTransfer && e.dataTransfer.files) || []);
+});
+document.addEventListener("paste", function(e){
+  const dz = document.activeElement && document.activeElement.closest
+    && document.activeElement.closest("[data-afdrop]");
+  if(!dz || !e.clipboardData) return;
+  const fs3 = [].slice.call(e.clipboardData.files || []);
+  if(!fs3.length) return;
+  e.preventDefault();
+  const p = dz.dataset.afdrop.split("::");
+  aFileTake(p[0], p[1], fs3);
+});
+
 /* ── 건별 등록 ─────────────────────────────────────────────────
    양식의 번호 매김을 그대로 따른다 — 1. 구분 → 1) 제목 → 현황 / 요청.   */
 const ADOC_CAT = {
@@ -4359,8 +4565,9 @@ document.addEventListener("change", function(e){
 });
 
 async function aDocTake(key, sec, files){
+  const arr = [].slice.call(files || []);      /* 살아 있는 목록이라 먼저 떠 놓는다 */
   let n = 0;
-  for(const f of files || []) if(await aPicAdd(key + "::" + sec, f)) n++;
+  for(const f of arr) if(await aPicAdd(key + "::" + sec, f)) n++;
   if(n) aDocRedraw(key, sec);
 }
 function aDocRedraw(key, sec){
@@ -4430,6 +4637,8 @@ function aRefresh(key){
   const wasAev = !!(body.querySelector('[data-aevtog][aria-expanded="true"]'));
   const wasDoc = [].slice.call(body.querySelectorAll('[data-adoctog][aria-expanded="true"]'))
     .map(function(x){ return x.closest(".adoc").dataset.adocsec; });
+  const wasFile = [].slice.call(body.querySelectorAll('[data-aftog][aria-expanded="true"]'))
+    .map(function(x){ return x.closest(".afile").dataset.afsec; });
   const wasDb = openOf("[data-dbtog]", "dbtog");
   const foot = body.querySelector(".aev-foot");
   const wasY = foot ? foot.getBoundingClientRect().top : null;
@@ -4461,6 +4670,12 @@ function aRefresh(key){
     const w = [].slice.call(body.querySelectorAll(".adoc"))
       .filter(function(x){ return x.dataset.adocsec === sec; })[0];
     const tg = w && w.querySelector("[data-adoctog]");
+    if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
+  });
+  wasFile.forEach(function(sec){
+    const w = [].slice.call(body.querySelectorAll(".afile"))
+      .filter(function(x){ return x.dataset.afsec === sec; })[0];
+    const tg = w && w.querySelector("[data-aftog]");
     if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
   });
   body.querySelectorAll(".aev-n").forEach(aGrow);
@@ -5498,6 +5713,7 @@ function phasePostHTML(key, det){
         + sumBlock + capaBlock
         + origPagesHTML(key, "capa", "개선결과서"),
         items.length > 0)}
+      ${aFileHTML(key, "cr")}
       ${docFoldHTML(key, "ev", "평가서",
         (fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : "")
         + evalPagesHTML(key)
