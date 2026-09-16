@@ -2683,7 +2683,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 16:57</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 17:58</span></div>
 </div>
 
 
@@ -5287,11 +5287,38 @@ function aScoreBar(card, key){
    서로 다른 칸을 건드리는 한 부딪히지 않는다.                       */
 const ASV_LS  = "oi-audit-server-v1";     /* 서버 주소 */
 const ASV_WHO = "oi-audit-who-v1";        /* 내 이름 */
-const ASV_URL_BAKED = "";                 /* 배포 때 여기에 주소를 박는다 */
+const ASV_KEY = "oi-audit-srvkey-v1";     /* 열쇠말 */
+const ASV_URL_BAKED = "";                 /* 여기에는 박지 않는다 — 공개된 곳이라 */
 
 let asvUrl  = (function(){ try { return localStorage.getItem(ASV_LS) || ASV_URL_BAKED; } catch(e){ return ASV_URL_BAKED; } })();
 let asvWho  = (function(){ try { return localStorage.getItem(ASV_WHO) || ""; } catch(e){ return ""; } })();
+let asvKey  = (function(){ try { return localStorage.getItem(ASV_KEY) || ""; } catch(e){ return ""; } })();
 let asvSince = "";                        /* 마지막으로 받아 온 시각 */
+
+/* 설정 링크를 풀어 심는다 — …#srv=<글자> 한 번만 열면 끝난다 */
+function asvTake(b64){
+  try {
+    const s = atob(String(b64).replace(/-/g, "+").replace(/_/g, "/"));
+    const j = JSON.parse(new TextDecoder().decode(Uint8Array.from(s, function(c){ return c.charCodeAt(0); })));
+    if(!j || !j.u) return false;
+    asvUrl = j.u; asvKey = j.k || "";
+    try { localStorage.setItem(ASV_LS, asvUrl); localStorage.setItem(ASV_KEY, asvKey); } catch(e){}
+    if(j.n && !asvWho){ asvWho = j.n; try { localStorage.setItem(ASV_WHO, asvWho); } catch(e){} }
+    asvSince = "";
+    return true;
+  } catch(e){ return false; }
+}
+(function(){
+  const m = String(location.hash || "").match(/[#&]srv=([^&]+)/);
+  if(m && asvTake(m[1])){
+    try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+  }
+})();
+
+/* 서버에 갈 때는 열쇠말을 함께 보인다 */
+function asvSay2(j){
+  return (j && j.err) ? j.err : "서버가 받지 않음";
+}
 let asvBusy = false, asvTimer = null, asvPullT = null;
 let asvSnap = "{}";                       /* 마지막으로 올린 모습 — 무엇이 바뀌었는지 가린다 */
 let asvQ = { kv: [], items: [] };         /* 올릴 것 */
@@ -5377,7 +5404,7 @@ function asvSoon(){
 async function asvPush(){
   if(!asvOn() || asvBusy) return;
   if(!asvQ.kv.length && !asvQ.items.length) return;
-  const send = { by: asvWho, kv: asvQ.kv, items: asvQ.items };
+  const send = { by: asvWho, k: asvKey, kv: asvQ.kv, items: asvQ.items };
   asvQ = { kv: [], items: [] };
   asvBusy = true;
   asvSay("올리는 중…");
@@ -5388,7 +5415,7 @@ async function asvPush(){
       body: JSON.stringify(send)
     });
     const j = await r.json();
-    if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
+    if(!j.ok) throw new Error(asvSay2(j));
     asvSay("함께 보는 중 · " + j.at.slice(11) + " 올림");
   } catch(e){
     asvQ.kv = send.kv.concat(asvQ.kv);           /* 못 올렸으면 다시 줄 세운다 */
@@ -5402,10 +5429,11 @@ async function asvPush(){
 async function asvPull(){
   if(!asvOn()) return;
   try {
-    const u = asvUrl + (asvUrl.indexOf("?") < 0 ? "?" : "&") + "since=" + encodeURIComponent(asvSince);
+    const u = asvUrl + (asvUrl.indexOf("?") < 0 ? "?" : "&") + "since=" + encodeURIComponent(asvSince)
+              + "&k=" + encodeURIComponent(asvKey);
     const r = await fetch(u, { cache: "no-store" });
     const j = await r.json();
-    if(!j.ok) return;
+    if(!j.ok){ asvSay(asvSay2(j), 1); return; }
     let n = 0;
     const mine = {};
     asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
@@ -5502,7 +5530,7 @@ async function asvPushFiles(){
       const res = await fetch(asvUrl, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ by: asvWho, files: [row] })
+        body: JSON.stringify({ by: asvWho, k: asvKey, files: [row] })
       });
       const j = await res.json();
       if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
@@ -5549,7 +5577,7 @@ function asvBarHTML(){
   return '<div class="asv">'
     + '<span class="asv-dot' + (asvOn() ? " on" : "") + '"></span>'
     + '<b>' + (asvOn() ? "함께 적기 켜짐" : "함께 적기 꺼짐") + '</b>'
-    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "서버 주소를 넣으면 여럿이 같이 적을 수 있습니다") + '</span>'
+    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "받으신 설정 링크를 한 번 열면 여럿이 같이 적습니다") + '</span>'
     + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
     + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
     + '</div>';
@@ -5557,10 +5585,17 @@ function asvBarHTML(){
 document.addEventListener("click", function(e){
   if(!e.target.closest) return;
   if(e.target.closest("#asv-set")){
-    const v = prompt("Apps Script 웹앱 주소를 넣어 주세요 (/exec 로 끝납니다)", asvUrl || "https://script.google.com/…/exec");
+    const v = prompt("받으신 설정 링크를 그대로 붙여 넣어 주세요.\n(또는 /exec 로 끝나는 주소)", asvUrl || "");
     if(v === null) return;
-    asvUrl = v.trim();
-    try { localStorage.setItem(ASV_LS, asvUrl); } catch(e2){}
+    const t = v.trim();
+    const m = t.match(/[#&]srv=([^&\s]+)/);
+    if(m){ if(!asvTake(m[1])){ alert("설정 링크를 못 읽었습니다."); return; } }
+    else {
+      asvUrl = t;
+      const k = prompt("열쇠말을 넣어 주세요 (없으면 비워 두세요)", asvKey || "");
+      if(k !== null) asvKey = k.trim();
+      try { localStorage.setItem(ASV_LS, asvUrl); localStorage.setItem(ASV_KEY, asvKey); } catch(e2){}
+    }
     asvSince = "";
     location.reload();
   }
@@ -5592,7 +5627,11 @@ function asvStart(){
   }, 3000);
   asvPull();
   clearInterval(asvPullT);
-  asvPullT = setInterval(asvPull, 10000);       /* 10초마다 남의 것을 받아 온다 */
+  asvPullT = setInterval(function(){            /* 10초마다 남의 것을 받아 오고 */
+    asvPull();
+    try { asvPush(); } catch(e){}               /* 올리다 만 것이 있으면 다시 떠민다 */
+    try { asvPushFiles(); } catch(e){}
+  }, 10000);
   window.addEventListener("beforeunload", function(){ if(asvQ.kv.length || asvQ.items.length) asvPush(); });
 }
 
