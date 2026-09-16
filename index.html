@@ -1161,6 +1161,9 @@
   }
   .asv-dot.on{ background:var(--good); box-shadow:0 0 0 3px var(--good-tint); }
   .asv:has(.asv-dot.on) > b{ color:var(--good); }
+  .asv.off{ border-color:var(--critical); background:var(--critical-tint); }
+  .asv.off > b{ color:var(--critical); }
+  .asv-f input.want{ border-color:var(--critical); background:var(--critical-tint); }
   .asv-say{ font-size:12px; color:var(--muted); }
   .asv-say.bad{ color:var(--critical); font-weight:750; }
   .asv-f{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
@@ -2683,7 +2686,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 18:28</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 19:07</span></div>
 </div>
 
 
@@ -5308,12 +5311,19 @@ function asvTake(b64){
     return true;
   } catch(e){ return false; }
 }
-(function(){
+function asvFromHash(){
   const m = String(location.hash || "").match(/[#&]srv=([^&]+)/);
-  if(m && asvTake(m[1])){
-    try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
-  }
-})();
+  if(!m) return false;
+  const got = asvTake(m[1]);
+  try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+  return got;
+}
+asvFromHash();
+/* 화면이 이미 떠 있는데 설정 링크를 누르면 새로 고침이 안 일어난다.
+   그러면 읽는 대목은 이미 지나간 뒤라 눌러도 아무 일이 없다 — 여기서 받는다. */
+window.addEventListener("hashchange", function(){
+  if(asvFromHash()) location.reload();
+});
 
 /* 서버에 갈 때는 열쇠말을 함께 보인다 */
 function asvSay2(j){
@@ -5369,8 +5379,26 @@ function asvItems(note){
 }
 
 /* 바뀐 것만 골라 올릴 목록에 담는다 */
+/* 꺼진 채로 적고 있으면 그때마다 말해 준다 — 모르고 한나절 적는 일이 없게 */
+function asvNag(){
+  const bar = document.querySelector(".asv");
+  if(bar) bar.classList.add("off");
+  asvSay("함께 적기가 꺼져 있습니다 — 지금 적는 것은 이 브라우저에만 남습니다", 1);
+}
+let asvNagged = false;
+function asvWhoNag(){
+  const el = document.getElementById("asv-who");
+  if(asvWho){ if(el) el.classList.remove("want"); return false; }
+  if(el) el.classList.add("want");
+  if(!asvNagged){                       /* 한 번만 — 적을 때마다 말하면 다른 말을 덮는다 */
+    asvNagged = true;
+    asvSay("이름을 적어 주세요 — 누가 적었는지 남지 않습니다", 1);
+  }
+  return true;
+}
 function asvMark(){
-  if(!asvOn()) return;
+  if(!asvOn()){ asvNag(); return; }
+  asvWhoNag();
   let last;
   try { last = JSON.parse(asvSnap); } catch(e){ last = { kv:{}, items:{} }; }
   const kv = asvFlat(aNote), it = asvItems(aNote);
@@ -5577,10 +5605,11 @@ function asvTakeFiles(rows){
 
 /* ── 서버 주소 · 이름 ── */
 function asvBarHTML(){
-  return '<div class="asv">'
+  return '<div class="asv' + (asvOn() ? "" : " off") + '">'
     + '<span class="asv-dot' + (asvOn() ? " on" : "") + '"></span>'
     + '<b>' + (asvOn() ? "함께 적기 켜짐" : "함께 적기 꺼짐") + '</b>'
-    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "받으신 설정 링크를 한 번 열면 여럿이 같이 적습니다") + '</span>'
+    + '<span class="asv-say' + (asvOn() ? "" : " bad") + '" data-asvsay>'
+    +   (asvOn() ? "" : "적는 것이 이 브라우저에만 남습니다 — 받으신 설정 링크를 한 번 열어 주세요") + '</span>'
     + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
     + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
     + '</div>';
@@ -5603,12 +5632,14 @@ document.addEventListener("click", function(e){
     location.reload();
   }
 });
-document.addEventListener("change", function(e){
-  if(e.target && e.target.id === "asv-who"){
-    asvWho = e.target.value.trim();
-    try { localStorage.setItem(ASV_WHO, asvWho); } catch(e2){}
-  }
-});
+function asvWhoSet(e){
+  if(!e.target || e.target.id !== "asv-who") return;
+  asvWho = e.target.value.trim();
+  try { localStorage.setItem(ASV_WHO, asvWho); } catch(e2){}
+  if(asvWho){ e.target.classList.remove("want"); asvSay(""); }
+}
+document.addEventListener("change", asvWhoSet);
+document.addEventListener("input", asvWhoSet);   /* 칸을 벗어나지 않아도 담긴다 */
 
 /* ── 굴리기 ── */
 function asvStart(){
