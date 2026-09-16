@@ -863,7 +863,7 @@
   .score-val .tag.self{ background:var(--surface-2); color:var(--muted); }
   .score-empty{ font-size:14.5px; color:var(--muted); font-style:italic; padding:10px 2px; line-height:1.6; }
 
-  .cat-split{ display:grid; grid-template-columns:132px 1fr; gap:14px; align-items:start; }
+  .cat-split{ display:grid; grid-template-columns:178px 1fr; gap:14px; align-items:start; }
   @media (max-width:760px){ .cat-split{ grid-template-columns:1fr; } }
   .cat-colist{
     display:flex; flex-direction:column; gap:4px; max-height:270px; overflow-y:auto;
@@ -876,7 +876,7 @@
   }
   .cat-co:hover{ background:var(--surface-2); }
   .cat-co.on{ background:var(--accent-tint); border-color:var(--accent); }
-  .cat-co .n{ font-size:15.5px; font-weight:700; color:var(--ink); }
+  .cat-co .n{ font-size:15.5px; font-weight:700; color:var(--ink); white-space:nowrap; word-break:keep-all; }
   .cat-co .y{ font-family:var(--font-mono); font-size:12px; color:var(--muted); font-weight:600; }
   .cat-co.on .y{ color:var(--accent-strong); }
   .cat-co .noD{ font-size:12px; color:var(--muted); }
@@ -983,7 +983,7 @@
   /* 영역별 위치 비교(점 그래프) */
   /* 비교 모드에서는 패널을 전체 폭으로 펴고 레이더 · 영역표를 나란히 */
   #score-grid.cmp-wide{ grid-template-columns:1fr !important; }
-  #score-grid.cmp-wide .cat-split{ grid-template-columns:172px minmax(0,1fr); gap:18px; }
+  #score-grid.cmp-wide .cat-split{ grid-template-columns:178px minmax(0,1fr); gap:18px; }
   #score-grid.cmp-wide .cat-colist{ max-height:none; }
   #score-grid.cmp-wide .cat-main{
     display:grid; grid-template-columns:360px minmax(0,1fr); grid-template-rows:auto 1fr;
@@ -2639,7 +2639,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 15:14</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 15:17</span></div>
 </div>
 
 
