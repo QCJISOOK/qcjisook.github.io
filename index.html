@@ -2422,7 +2422,7 @@
         <option value="company">업체명순</option>
       </select>
       <button class="filter-reset" id="audit-reset">필터 초기화</button>
-      <button class="filter-reset anote-btn" id="anote-out" title="적어 둔 협의 내용 \u00b7 품목 메모 \u00b7 현장평가를 파일로 내려받습니다">기록 내보내기</button>
+      <button class="filter-reset anote-btn" id="anote-out" title="적어 둔 불만협의체 메모 \u00b7 품목 메모 \u00b7 현장평가를 파일로 내려받습니다">기록 내보내기</button>
       <button class="filter-reset anote-btn" id="anote-in" title="남이 보내 준 감사기록.json 을 얹습니다">기록 불러오기</button>
       <input type="file" id="anote-file" accept=".json,application/json" hidden />
       <span class="result-count" id="audit-count"></span>
@@ -3397,7 +3397,7 @@ function docLabel(name, desc){
 
 
 /* ── 감사 현장에서 적는 것 ─────────────────────────────────────
-   협의 내용 · 문서 점검 메모 · 현장평가(A/B/C + 비고).
+   불만협의체 메모 · 문서 점검 메모 · 현장평가(A/B/C + 비고).
    브라우저에 남고 「기록 내보내기」로 서로 주고받는다.               */
 const ANOTE_LS = "oi-audit-anote-v1";
 let aNote = (function(){
@@ -3412,7 +3412,7 @@ function aNoteSave(){
 }
 
 /* 접었다 펴는 적는 칸 */
-function aMemoHTML(key, sec, id, label, ph){
+function aMemoHTML(key, sec, id, label){
   const v = String(aNoteBag(key, sec)[id] || "");
   const has = v.trim().length > 0;
   return '<div class="amemo' + (has ? " has" : "") + '">'
@@ -3420,8 +3420,7 @@ function aMemoHTML(key, sec, id, label, ph){
     +   '<span class="car">\u25b8</span>' + esc(label)
     +   (has ? '<span class="amemo-dot">적어 둠</span>' : '')
     + '</button>'
-    + '<textarea class="amemo-in" data-anote="' + esc(sec) + '::' + esc(id) + '" rows="4" hidden'
-    +   ' placeholder="' + esc(ph || "여기에 적으면 이 브라우저에 남습니다.") + '">'
+    + '<textarea class="amemo-in" data-anote="' + esc(sec) + '::' + esc(id) + '" rows="4" hidden>'
     + esc(v) + '</textarea></div>';
 }
 
@@ -3722,7 +3721,7 @@ function aNoteExport(){
     ev += Object.keys(b.ev || {}).length;
   });
   alert("감사기록.json 을 내려받았습니다.\n"
-    + "· 협의 내용 " + cx + "건 · 품목 메모 " + doc + "건 · 평가 " + ev + "항목\n\n"
+    + "· 불만협의체 메모 " + cx + "건 · 품목 메모 " + doc + "건 · 평가 " + ev + "항목\n\n"
     + "이 파일을 대시보드 HTML 과 같은 자리에 덮어 두면\n다음에 여는 사람부터 함께 보입니다.");
 }
 async function aNoteImport(file){
@@ -3925,7 +3924,7 @@ function complaintRowHTML(c, kind, no, shots){
         <span class="cx-st ${st}">${esc(c.status)}</span>
         ${legalChipsHTML(c.type + " " + c.detail)}
       </div>
-      ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "협의 내용", "업체 설명 \u00b7 개선 방식 \u00b7 협의 결과를 적습니다.")}
+      ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "메모")}
     </div>
     ${pics}
   </div>`;
@@ -4003,7 +4002,7 @@ function complaintRowHTML2(c, kind, no, shots){
         <div class="c3-line col"><i>제조업체 회신</i>
           <div class="rp">${replyLinesHTML(c.reply)}</div></div>
         ${capaToggleHTML(_cxKey, c.slide)}
-        ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "협의 내용", "업체 설명 \u00b7 개선 방식 \u00b7 협의 결과를 적습니다.")}
+        ${aMemoHTML(_cxKey, "cx", kind + "#" + no, "메모")}
       </div>
 
     </div>
@@ -4133,7 +4132,7 @@ function docCheckHTML(key){
           + '<span class="dk-nm">'+esc(x.name)+'</span>'
           + '<span class="dk-lot">Lot '+esc(x.lot)+'</span>'
           + '<span class="dk-exp">~'+esc(x.exp)+'</span>'
-          + aMemoHTML(key, "doc", i + "::" + x.code, "메모", "문서를 보다 걸린 문제 \u00b7 문의 사항을 적습니다.")
+          + aMemoHTML(key, "doc", i + "::" + x.code, "메모")
           + '</div>';
       }).join("")}</div>`:""}
   </div>`;
