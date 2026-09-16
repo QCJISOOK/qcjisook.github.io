@@ -1668,6 +1668,8 @@
   .ph-title{ font-size:18.5px; font-weight:800; letter-spacing:-.01em; }
   .ph-sub{ font-size:14.5px; color:var(--muted); }
   .phase-body{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+  /* 적는 칸·올리는 칸은 넓어야 쓸 수 있다 — 한 줄을 다 쓴다 */
+  .phase-body > .adoc, .phase-body > .afile, .phase-body > .aev{ grid-column:1 / -1; }
   .doc-block{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:13px 15px; }
   .doc-block.wide{ grid-column:1 / -1; }
   /* 접었다 펴는 서류 칸 */
@@ -2569,7 +2571,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:54</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 13:01</span></div>
 </div>
 
 
@@ -4070,7 +4072,7 @@ async function aPicDel(key, id){
 /* ── 받은 서류 올려 두기 ──────────────────────────────────────
    개선결과서처럼 업체가 보내오는 것 — 종류를 가리지 않고 원본 그대로 담는다. */
 const AFILE = {
-  cr: { title:"개선결과서(첨부)", tip:"업체가 보내온 개선결과서를 그대로 올려 둡니다 — PDF · 사진 · 문서" }
+  cr: { title:"개선결과서 — 받은 파일", tip:"업체가 보내온 개선결과서를 그대로 올려 둡니다 — PDF · 사진 · 문서" }
 };
 function aFileBag(key, sec){ return key + "::file::" + sec; }
 function aFileOf(key, sec){ return aPicOf(aFileBag(key, sec)); }
@@ -4106,8 +4108,7 @@ function aFileHTML(key, sec){
   return '<div class="afile" data-afkey="' + esc(key) + '" data-afsec="' + sec + '">'
     + '<button type="button" class="aev-tog" data-aftog="1" aria-expanded="false">'
     +   '<span class="car">\u25b8</span><b>' + esc(D.title) + '</b>'
-    +   '<span class="aev-tn">' + (list.length ? '파일 <i>' + list.length + '</i>개' : '파일 없음')
-    +     ((sec === "cr" && aDocList(key, "crI").length) ? ' · 적은 것 <i>' + aDocList(key, "crI").length + '</i>건' : '') + '</span>'
+    +   '<span class="aev-tn">' + (list.length ? '파일 <i>' + list.length + '</i>개' : '파일 없음') + '</span>'
     + '</button>'
     + '<div class="aev-body af-body" hidden>'
     +   '<div class="af-drop" data-afdrop="' + esc(key) + '::' + sec + '" tabindex="0">'
@@ -4132,7 +4133,6 @@ function aFileHTML(key, sec){
             + '<span class="af-cap">' + esc(r.name) + '</span></div>';
         }).join("") + '</div>' : "")
     +   (list.length ? "" : '<div class="af-none">아직 올려 둔 파일이 없습니다.</div>')
-    +   (sec === "cr" ? aDocListHTML(key, "crI") : "")
     + '</div></div>';
 }
 
@@ -4492,8 +4492,7 @@ function aDocRefresh(key, sec){
       if(w.dataset.afkey === key && w.dataset.afsec === "cr"){
         const t = w.querySelector(".aev-tn");
         const nf = aFileOf(key, "cr").length, ni = aDocList(key, "crI").length;
-        if(t) t.innerHTML = (nf ? '파일 <i>' + nf + '</i>개' : '파일 없음')
-          + (ni ? ' · 적은 것 <i>' + ni + '</i>건' : '');
+        if(t) t.innerHTML = (nf ? '파일 <i>' + nf + '</i>개' : '파일 없음');
       }
     });
   }
@@ -5878,10 +5877,11 @@ function phasePostHTML(key, det){
         !!(idHTML || (fd && fd.issue)))}
       ${aDocHTML(key, "ci")}
       ${docFoldHTML(key, "capa", "개선결과서",
-        (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
-        + sumBlock + capaBlock
+        aDocListHTML(key, "crI")
+        + (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
+        + sumBlock + (items.length ? capaBlock : "")
         + origPagesHTML(key, "capa", "개선결과서"),
-        items.length > 0)}
+        items.length > 0 || aDocList(key, "crI").length > 0)}
       ${aFileHTML(key, "cr")}
       ${docFoldHTML(key, "ev", "평가서",
         (fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : "")
