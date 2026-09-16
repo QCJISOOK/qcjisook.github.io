@@ -1173,6 +1173,22 @@
 
   /* 현장평가 입력 */
   .aev{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+  .aev-tog{
+    display:flex; align-items:center; gap:9px; width:100%; font-family:inherit; text-align:left;
+    cursor:pointer; padding:9px 12px; border:1px solid var(--border); border-radius:9px;
+    background:var(--surface-2); color:var(--ink);
+  }
+  .aev-tog:hover{ border-color:var(--accent); }
+  .aev-tog > b{ font-size:12.5px; font-weight:800; }
+  .aev-tog .car{
+    display:inline-block; font-size:10px; color:var(--muted); transition:transform .15s;
+  }
+  .aev-tog[aria-expanded="true"] .car{ transform:rotate(90deg); }
+  .aev-tog[aria-expanded="true"]{ border-color:var(--accent); background:var(--accent-tint); }
+  .aev-tn{ margin-left:auto; font-size:11px; color:var(--muted); }
+  .aev-tn i{ font-family:var(--font-mono); font-style:normal; font-weight:800; color:var(--ink); }
+  .aev-body{ margin-top:12px; }
+  .aev-body[hidden]{ display:none; }
   .aev-none{ font-size:12px; color:var(--muted); }
   .aev-hd{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
   .aev-hd > b{ font-size:12.5px; font-weight:800; }
@@ -2264,7 +2280,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 09:32</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 09:37</span></div>
 </div>
 
 
@@ -3560,6 +3576,11 @@ function aEvalHTML(key){
     + '</thead><tbody>' + rows + '</tbody></table></div>';
 
   return '<div class="aev" data-aevkey="' + esc(key) + '">'
+    + '<button type="button" class="aev-tog" data-aevtog="1" aria-expanded="false">'
+    +   '<span class="car">\u25b8</span><b>현장평가 (입력)</b>'
+    +   '<span class="aev-tn">매긴 항목 <i data-aevtn>' + r.done + '</i> / ' + items.length + '</span>'
+    + '</button>'
+    + '<div class="aev-body" hidden>'
     + '<div class="aev-hd">'
     +   '<b>올리브 현장평가 입력</b>'
     +   (aFrames[key] ? '<span class="aev-borrow">자가점검 시트가 없어 표준 항목표를 빌려 씁니다</span>' : '')
@@ -3573,6 +3594,7 @@ function aEvalHTML(key){
     + table
     + '<div class="aev-foot">'
     +   '<button type="button" class="aev-go" data-aevdraw="1">평가 완료</button>'
+    + '</div>'
     + '</div>'
     + '</div>';
 }
@@ -3592,6 +3614,7 @@ function aRefresh(key){
       .map(function(x){ return x.dataset[at]; });
   };
   const wasPh = openOf("[data-phtog]", "phtog");
+  const wasAev = !!(body.querySelector('[data-aevtog][aria-expanded="true"]'));
   const wasDb = openOf("[data-dbtog]", "dbtog");
   const foot = body.querySelector(".aev-foot");
   const wasY = foot ? foot.getBoundingClientRect().top : null;
@@ -3615,6 +3638,10 @@ function aRefresh(key){
     });
   };
   try { reopen("", "phtog", wasPh); reopen("", "dbtog", wasDb); } catch(e){}
+  if(wasAev){                                   /* 평가표는 펴 둔 채로 둔다 */
+    const tg = body.querySelector("[data-aevtog]");
+    if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
+  }
   body.querySelectorAll(".aev-n").forEach(aGrow);
 
   /* 보고 있던 자리로 되돌린다 */
@@ -3661,6 +3688,7 @@ function aSetGrade(wrap, i, g){
   const r = aEvalSum(key);
   const set = function(sel, v){ const el = wrap.querySelector(sel); if(el) el.textContent = v; };
   set("[data-aevdone]", r.done);
+  set("[data-aevtn]", r.done);
   set("[data-aevpt]", r.sum);
   set("[data-aevconv]", r.conv.toFixed(2));
   aScoreBar(wrap.closest(".acard"), key);
@@ -3777,6 +3805,17 @@ document.addEventListener("click", function(e){
     return;
   }
 
+  const tg = t.closest("[data-aevtog]");
+  if(tg){
+    e.preventDefault(); e.stopPropagation();
+    const body = tg.parentElement.querySelector(".aev-body");
+    if(!body) return;
+    body.hidden = !body.hidden;
+    tg.setAttribute("aria-expanded", String(!body.hidden));
+    if(!body.hidden) setTimeout(function(){ body.querySelectorAll(".aev-n").forEach(aGrow); }, 40);
+    return;
+  }
+
   const db = t.closest("[data-aevdraw]");
   if(db){
     e.preventDefault(); e.stopPropagation();
@@ -3819,7 +3858,8 @@ document.addEventListener("input", function(e){
 /* 카드를 펼칠 때 이미 적혀 있던 것도 한 번 맞춘다 */
 document.addEventListener("click", function(e){
   if(!e.target || !e.target.closest) return;
-  if(!e.target.closest(".acard-top") && !e.target.closest("[data-aevdraw]") && !e.target.closest("[data-phtog]")) return;
+  if(!e.target.closest(".acard-top") && !e.target.closest("[data-aevdraw]")
+     && !e.target.closest("[data-phtog]") && !e.target.closest("[data-aevtog]")) return;
   setTimeout(function(){ document.querySelectorAll(".aev-n").forEach(aGrow); }, 60);
 });
 
