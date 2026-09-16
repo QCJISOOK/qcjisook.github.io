@@ -140,6 +140,10 @@
     max-width:2000px; margin:0 auto; padding:18px 28px 0;
     background:none; border:none;
   }
+  .build-stamp{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.02em; color:var(--muted);
+    padding:3px 8px; border-radius:20px; border:1px solid var(--border); white-space:nowrap;
+  }
   .brand{ display:flex; align-items:center; gap:9px; }
   .brand-mark{
     width:28px; height:28px; border-radius:7px; background:var(--accent);
@@ -1254,14 +1258,19 @@
   .ae-pt.olive b{ color:var(--accent-strong); }
   .ae-res{
     width:100%; box-sizing:border-box; text-align:center; font-family:var(--font-mono);
-    font-size:14px; font-weight:800; color:var(--accent-strong); padding:4px 2px;
-    border:1px solid var(--border); border-radius:6px; background:var(--surface);
+    font-size:15px; font-weight:800; color:var(--accent-strong); padding:5px 2px;
+    border:1.5px solid var(--accent); border-radius:6px; background:var(--accent-tint);
+    cursor:text;
   }
-  .ae-res::placeholder{ color:var(--border-strong); font-weight:400; }
-  .ae-res:focus{ outline:none; border-color:var(--accent); background:var(--accent-tint); }
+  .ae-res::placeholder{ color:var(--accent); opacity:.45; font-weight:700; }
+  .ae-res:hover{ background:var(--surface); }
+  .ae-res:focus{ outline:2px solid var(--accent); outline-offset:-1px; background:var(--surface); }
   .ae-in{ padding:4px 5px; }
+  .aev-n{ cursor:text; }
   .aev-n.bas{ background:var(--surface-2); }
   .aev-n.bas:focus{ background:var(--surface); }
+  /* 적는 칸은 적는 칸으로 보이게 */
+  .aev-t td.ae-in, .aev-t td.ae-pt.olive{ background:var(--surface); }
   .aev-n{
     display:block; width:100%; box-sizing:border-box;
     font-family:inherit; font-size:11px; line-height:1.55; padding:5px 7px; min-width:0;
@@ -2255,7 +2264,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 09:32</span></div>
 </div>
 
 
