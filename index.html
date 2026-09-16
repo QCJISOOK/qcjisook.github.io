@@ -1183,6 +1183,119 @@
     0%{ border-color:var(--accent); background:var(--accent-tint); color:var(--accent-strong); }
     100%{ border-color:var(--border); background:var(--surface); color:var(--muted); }
   }
+  /* 건별 등록 목록 */
+  .ailist{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+  .ai-hd{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .ai-hd > b{ font-size:14.5px; font-weight:800; }
+  .ai-cnt{ font-size:13px; color:var(--muted); }
+  .ai-cnt.flash{ color:var(--accent-strong); font-weight:800; }
+  .ai-add{
+    margin-left:auto; font-family:inherit; font-size:13.5px; font-weight:800; cursor:pointer;
+    padding:8px 16px; border-radius:100px; border:0; background:var(--accent-strong); color:#fff;
+  }
+  .ai-add:hover{ filter:brightness(1.08); }
+  .ai-copy{
+    font-family:inherit; font-size:12.5px; font-weight:750; cursor:pointer;
+    padding:6px 12px; border-radius:100px; border:1px dashed var(--border-strong);
+    background:transparent; color:var(--ink-2);
+  }
+  .ai-copy:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .ai-none{
+    font-size:13px; color:var(--muted); padding:16px; text-align:center;
+    border:1px dashed var(--border); border-radius:10px; background:var(--surface-2);
+  }
+  .ai-g + .ai-g{ margin-top:14px; }
+  .ai-gh{
+    font-size:13.5px; font-weight:800; color:var(--rail);
+    padding:5px 11px; border-radius:7px; background:var(--railbg); display:inline-block; margin-bottom:6px;
+  }
+  .ai-i{
+    display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:10px; align-items:start;
+    padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface);
+  }
+  .ai-i + .ai-i{ margin-top:7px; }
+  .ai-n{ font-family:var(--font-mono); font-size:13px; font-weight:800; color:var(--muted); padding-top:2px; }
+  .ai-t{ font-size:14px; font-weight:750; color:var(--ink); line-height:1.5; }
+  .ai-ok{
+    margin-left:8px; font-size:12px; font-weight:800; padding:2px 8px; border-radius:20px;
+  }
+  .ai-ok.good{ background:var(--good-tint); color:var(--good); }
+  .ai-ok.bad{ background:var(--critical-tint); color:var(--critical); }
+  .ai-l{ display:flex; gap:8px; margin-top:5px; font-size:13px; line-height:1.6; }
+  .ai-l i{
+    flex-shrink:0; font-style:normal; font-weight:800; color:var(--muted);
+    min-width:30px; font-size:12px; padding-top:1px;
+  }
+  .ai-l span{ color:var(--ink-2); white-space:pre-wrap; }
+  .ai-pics{ display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+  .ai-pics img{
+    width:104px; height:78px; object-fit:cover; border-radius:7px;
+    border:1px solid var(--border); background:var(--surface-2);
+  }
+  .ai-x{ display:flex; flex-direction:column; gap:5px; }
+  .ai-e{
+    font-family:inherit; font-size:12px; font-weight:750; cursor:pointer; color:var(--ink-2);
+    padding:4px 11px; border:1px solid var(--border); border-radius:7px; background:var(--surface);
+  }
+  .ai-e:hover{ border-color:var(--accent); color:var(--accent-strong); }
+
+  /* 등록 창 */
+  .aiw{
+    position:fixed; inset:0; z-index:950; background:rgba(15,18,26,.45);
+    display:flex; align-items:flex-start; justify-content:center; padding:40px 18px; overflow:auto;
+  }
+  .ai-box{
+    width:min(720px,100%); background:var(--surface); border-radius:14px;
+    box-shadow:0 18px 60px rgba(0,0,0,.28); overflow:hidden;
+  }
+  .ai-bh{ display:flex; align-items:baseline; gap:10px; padding:15px 18px; border-bottom:1px solid var(--border); }
+  .ai-bh b{ font-size:17px; }
+  .ai-bh span{ font-size:13px; color:var(--muted); }
+  .ai-close{ margin-left:auto; background:none; border:0; font-size:17px; cursor:pointer; color:var(--muted); }
+  .ai-bb{ padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+  .ai-f{ display:flex; flex-direction:column; gap:5px; }
+  .ai-f > span{ font-size:13.5px; font-weight:750; color:var(--ink-2); }
+  .ai-req{ color:var(--critical); font-style:normal; }
+  .ai-bb input, .ai-bb select, .ai-bb textarea{
+    font-family:inherit; font-size:15px; padding:9px 11px; border-radius:9px; width:100%;
+    box-sizing:border-box; border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+  }
+  .ai-bb textarea{ resize:vertical; line-height:1.6; white-space:pre-wrap; }
+  .ai-bb input:focus, .ai-bb select:focus, .ai-bb textarea:focus{
+    outline:none; border-color:var(--accent); background:var(--surface);
+  }
+  .ai-drop{
+    text-align:center; cursor:pointer; font-size:13px; color:var(--muted); padding:18px 12px;
+    border:1.5px dashed var(--border-strong); border-radius:10px; background:var(--surface-2);
+  }
+  .ai-drop:hover, .ai-drop:focus, .ai-drop.over{ border-color:var(--accent); background:var(--accent-tint); outline:none; }
+  .ai-thumbs{ display:flex; flex-wrap:wrap; gap:8px; }
+  .ai-thumbs:empty{ display:none; }
+  .ai-th{ position:relative; }
+  .ai-th img{
+    width:116px; height:86px; object-fit:cover; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-2); display:block;
+  }
+  .ai-thx{
+    position:absolute; top:4px; right:4px; width:20px; height:20px; padding:0; line-height:1;
+    font-size:11px; cursor:pointer; color:#fff; border:0; border-radius:6px; background:rgba(0,0,0,.55);
+  }
+  .ai-thx:hover{ background:var(--critical); }
+  .ai-bf{
+    display:flex; justify-content:flex-end; gap:9px;
+    padding:13px 18px; border-top:1px solid var(--border); background:var(--surface-2);
+  }
+  .ai-cancel, .ai-save{
+    font-family:inherit; font-size:14px; font-weight:800; cursor:pointer;
+    padding:9px 20px; border-radius:100px;
+  }
+  .ai-cancel{ border:1px solid var(--border); background:var(--surface); color:var(--ink-2); }
+  .ai-save{ border:0; background:var(--accent-strong); color:#fff; }
+  .ai-save:hover{ filter:brightness(1.08); }
+  @media (max-width:760px){
+    .ai-i{ grid-template-columns:24px minmax(0,1fr); }
+    .ai-x{ grid-column:2; flex-direction:row; }
+  }
   /* 확인서 · 개선지시서 쓰기 */
   .adoc{ margin-top:10px; }
   .adoc-body{ padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
@@ -2348,7 +2461,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 10:25</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 10:37</span></div>
 </div>
 
 
@@ -3703,8 +3816,6 @@ const ADOC_FORM = {
     { k:"at",      t:"감사일자",        w:"third", d:1 },
     { k:"auditee", t:"피감사자",        w:"third" },
     { k:"auditor", t:"감사자",          w:"third" },
-    { k:"result",  t:"결과",            w:"full", ta:8 },
-    { k:"find",    t:"개선 지적 사항",  w:"full", ta:10 },
     { k:"wRole",   t:"작성자 직책",     w:"third" },
     { k:"wName",   t:"작성자 성명",     w:"third" },
     { k:"wAt",     t:"작성 일자",       w:"third", d:1 },
@@ -3716,7 +3827,6 @@ const ADOC_FORM = {
     { k:"co",      t:"화장품제조업자",  w:"half" },
     { k:"due",     t:"회신 기한",       w:"half", d:1 },
     { k:"at",      t:"확인 일자",       w:"third", d:1 },
-    { k:"body",    t:"개선 사항",       w:"full", ta:12, from:"cf::find" },
     { k:"wAt",     t:"작성일자",        w:"third", d:1 },
     { k:"seller",  t:"화장품책임판매업자", w:"third" },
     { k:"wName",   t:"작성자",          w:"third" },
@@ -3798,9 +3908,9 @@ const aPicReady = (async function(){
   } catch(e){}
 })();
 function aPicOf(key){ return aPicMem[key] || []; }
-async function aPicAdd(key, file){
+async function aPicAdd(key, file, forceId){
   if(!file || !/^image\//.test(file.type || "")) return null;
-  const r = { id: "p" + Date.now() + Math.random().toString(36).slice(2, 7),
+  const r = { id: forceId || ("p" + Date.now() + Math.random().toString(36).slice(2, 7)),
               key: key, name: file.name || "사진", type: file.type,
               size: file.size, blob: file, at: new Date().toISOString().slice(0, 10) };
   try {
@@ -3826,6 +3936,312 @@ async function aPicDel(key, id){
   aPicMem[key] = aPicOf(key).filter(function(r){ return r.id !== id; });
 }
 
+
+/* ── 건별 등록 ─────────────────────────────────────────────────
+   양식의 번호 매김을 그대로 따른다 — 1. 구분 → 1) 제목 → 현황 / 요청.   */
+const ADOC_CAT = {
+  r: ["품질 문서 관련","생산 현장","검사","공정관리","작업장관리",
+      "협력업체관리","부적합관리","제품식별·추적성","5S관리"],
+  f: ["생산 현장관련","서류 관련","검사 관련","설비 관련","위생 관련","교육 관련","기타"]
+};
+const ADOC_ITEM = {
+  cfR: { on:"cf", title:"결과", add:"결과 등록", pic:0, cats:ADOC_CAT.r,
+         f:[ {k:"text", t:"내용", ta:3, req:1, ph:"예) CGMP 매뉴얼 제·개정 및 이력 관리 상태 양호"},
+             {k:"ok",   t:"판정", sel:["양호","미흡"]} ] },
+  cfF: { on:"cf", title:"개선 지적 사항", add:"지적사항 등록", pic:0, cats:ADOC_CAT.f,
+         f:[ {k:"title", t:"제목", req:1, ph:"예) 클레임이력에 대해 현장 전파 강화"},
+             {k:"now",   t:"현황", ta:3, req:1, ph:"무엇이 문제인지 — 사례가 있으면 함께"},
+             {k:"ask",   t:"요청", ta:3, req:1, ph:"무엇을 해 달라는지"} ] },
+  ciF: { on:"ci", title:"개선 사항", add:"지적사항 등록", pic:1, cats:ADOC_CAT.f,
+         f:[ {k:"title", t:"제목", req:1, ph:"예) 작업소 위생 환경 재정비"},
+             {k:"now",   t:"현황", ta:3, req:1, ph:"무엇이 문제인지"},
+             {k:"ask",   t:"요청", ta:3, req:1, ph:"무엇을 해 달라는지"} ] }
+};
+function aDocList(key, sec){
+  const a = aNoteOf(key);
+  if(!Array.isArray(a[sec])) a[sec] = [];
+  return a[sec];
+}
+function aDocFind(key, sec, id){ return aDocList(key, sec).filter(function(x){ return x.id === id; })[0]; }
+
+/* 구분끼리 묶어 번호를 매긴다 */
+function aDocGroups(key, sec){
+  const out = [], seen = {};
+  aDocList(key, sec).forEach(function(it){
+    let g = seen[it.cat];
+    if(!g){ g = seen[it.cat] = { cat: it.cat, items: [] }; out.push(g); }
+    g.items.push(it);
+  });
+  return out;
+}
+
+/* 양식에 들어갈 글로 엮는다 — 나중에 엑셀로 뽑을 때 쓴다 */
+function aDocText(key, sec){
+  const D = ADOC_ITEM[sec];
+  return aDocGroups(key, sec).map(function(g, gi){
+    const head = (gi + 1) + ". " + g.cat;
+    const body = g.items.map(function(it, i){
+      if(sec === "cfR") return "   " + (i + 1) + ") " + it.text + (it.ok ? " " + it.ok : "");
+      return (i + 1) + ") " + it.title
+        + "\n- 현황: " + String(it.now || "").split("\n").join("\n  ")
+        + "\n- 요청: " + String(it.ask || "").split("\n").join("\n  ");
+    }).join(sec === "cfR" ? "\n" : "\n\n");
+    return head + "\n" + body;
+  }).join("\n\n");
+}
+
+function aDocListHTML(key, sec){
+  const D = ADOC_ITEM[sec];
+  const groups = aDocGroups(key, sec);
+  const n = aDocList(key, sec).length;
+  const rows = groups.map(function(g, gi){
+    return '<div class="ai-g"><div class="ai-gh">' + (gi + 1) + '. ' + esc(g.cat) + '</div>'
+      + g.items.map(function(it, i){
+          const pics = D.pic ? aPicOf(key + "::" + sec + "::" + it.id) : [];
+          return '<div class="ai-i" data-aiid="' + esc(it.id) + '">'
+            + '<div class="ai-n">' + (i + 1) + ')</div>'
+            + '<div class="ai-b">'
+            +   (sec === "cfR"
+                  ? '<div class="ai-t">' + esc(it.text || "")
+                    + (it.ok ? '<span class="ai-ok ' + (it.ok === "미흡" ? "bad" : "good") + '">' + esc(it.ok) + '</span>' : "")
+                    + '</div>'
+                  : '<div class="ai-t">' + esc(it.title || "") + '</div>'
+                    + '<div class="ai-l"><i>현황</i><span>' + esc(it.now || "") + '</span></div>'
+                    + '<div class="ai-l"><i>요청</i><span>' + esc(it.ask || "") + '</span></div>')
+            +   (pics.length
+                  ? '<div class="ai-pics">' + pics.map(function(p){
+                      return '<img src="' + (p.url || "") + '" alt="' + esc(p.name) + '" loading="lazy" />';
+                    }).join("") + '</div>'
+                  : "")
+            + '</div>'
+            + '<div class="ai-x">'
+            +   '<button type="button" class="ai-e" data-aiedit="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">수정</button>'
+            +   '<button type="button" class="ai-e" data-aidel="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">삭제</button>'
+            + '</div></div>';
+        }).join("")
+      + '</div>';
+  }).join("");
+
+  return '<div class="ailist" data-aikey="' + esc(key) + '" data-aisec="' + sec + '">'
+    + '<div class="ai-hd"><b>' + esc(D.title) + '</b>'
+    +   '<span class="ai-cnt">' + (n ? n + '건' : '아직 없음') + '</span>'
+    +   (sec === "ciF"
+          ? '<button type="button" class="ai-copy" data-aicopy="' + esc(key) + '">확인서 지적사항 가져오기</button>' : "")
+    +   '<button type="button" class="ai-add" data-aiadd="' + esc(key) + '||' + sec + '">＋ ' + esc(D.add) + '</button>'
+    + '</div>'
+    + (n ? rows : '<div class="ai-none">아직 등록한 ' + esc(D.title) + ' 이 없습니다. 오른쪽 <b>＋ ' + esc(D.add) + '</b> 을 눌러 한 건씩 등록합니다.</div>')
+    + '</div>';
+}
+
+/* ── 등록 창 ── */
+function aDocOpen(key, sec, id){
+  const D = ADOC_ITEM[sec];
+  const it = id ? (aDocFind(key, sec, id) || {}) : {};
+  const cats = D.cats.slice();
+  aDocList(key, sec).forEach(function(x){ if(x.cat && cats.indexOf(x.cat) < 0) cats.push(x.cat); });
+
+  const w = document.createElement("div");
+  w.className = "aiw";
+  w.innerHTML =
+    '<div class="ai-box" role="dialog" aria-label="' + esc(D.title) + ' 등록">'
+    + '<div class="ai-bh"><b>' + esc(D.title) + (id ? " 수정" : " 등록") + '</b>'
+    +   '<span>한 건씩 적습니다 — 양식에는 구분끼리 묶여 번호가 매겨집니다</span>'
+    +   '<button type="button" class="ai-close" data-aiclose="1" aria-label="닫기">✕</button></div>'
+    + '<div class="ai-bb">'
+    +   '<label class="ai-f"><span>구분</span>'
+    +     '<input list="ai-cats" data-aif="cat" value="' + esc(it.cat || cats[0]) + '" placeholder="예) 생산 현장관련" />'
+    +     '<datalist id="ai-cats">' + cats.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join("") + '</datalist>'
+    +   '</label>'
+    +   D.f.map(function(f){
+          const v = it[f.k] || "";
+          const inp = f.ta
+            ? '<textarea data-aif="' + f.k + '" rows="' + f.ta + '" placeholder="' + esc(f.ph || "") + '">' + esc(v) + '</textarea>'
+            : (f.sel
+                ? '<select data-aif="' + f.k + '">' + f.sel.map(function(o){
+                    return '<option' + (o === v ? " selected" : "") + '>' + esc(o) + '</option>'; }).join("") + '</select>'
+                : '<input data-aif="' + f.k + '" value="' + esc(v) + '" placeholder="' + esc(f.ph || "") + '" />');
+          return '<label class="ai-f"><span>' + esc(f.t) + (f.req ? ' <i class="ai-req">*</i>' : '') + '</span>' + inp + '</label>';
+        }).join("")
+    +   (D.pic
+          ? '<div class="ai-f"><span>사진</span>'
+            + '<div class="ai-drop" data-aidrop="1" tabindex="0">여기로 끌어놓거나 눌러서 고릅니다 · 붙여넣기(Ctrl+V)도 됩니다'
+            + '<input type="file" accept="image/*" multiple hidden /></div>'
+            + '<div class="ai-thumbs"></div></div>'
+          : "")
+    + '</div>'
+    + '<div class="ai-bf">'
+    +   '<button type="button" class="ai-cancel" data-aiclose="1">취소</button>'
+    +   '<button type="button" class="ai-save" data-aisave="1">' + (id ? "수정" : "등록") + '</button>'
+    + '</div></div>';
+
+  w.dataset.aikey = key; w.dataset.aisec = sec; w.dataset.aiid = id || "";
+  document.body.appendChild(w);
+  const first = w.querySelector('[data-aif="cat"]');
+  if(first) first.focus();
+
+  if(D.pic){
+    w._pics = [];                                   /* 새 건은 저장할 때 담는다 */
+    if(id) w._pics = aPicOf(key + "::" + sec + "::" + id).slice();
+    aDocThumbs(w);
+  }
+  w.addEventListener("click", function(e){ if(e.target === w) aDocClose(w); });
+}
+function aDocClose(w){ if(w && w.parentElement) w.remove(); }
+/* 목록 머리에 잠깐 띄우는 알림 — 창을 띄우지 않는다 */
+function aiFlash(key, sec, msg){
+  document.querySelectorAll(".ailist").forEach(function(el){
+    if(el.dataset.aikey !== key || el.dataset.aisec !== sec) return;
+    const c = el.querySelector(".ai-cnt");
+    if(!c) return;
+    const was = c.textContent;
+    c.textContent = msg;
+    c.classList.add("flash");
+    setTimeout(function(){ c.textContent = was; c.classList.remove("flash"); }, 2200);
+  });
+}
+function aDocThumbs(w){
+  const box = w.querySelector(".ai-thumbs");
+  if(!box) return;
+  box.innerHTML = (w._pics || []).map(function(p, i){
+    return '<div class="ai-th"><img src="' + (p.url || "") + '" alt="" />'
+      + '<button type="button" class="ai-thx" data-aithx="' + i + '">✕</button></div>';
+  }).join("");
+}
+
+async function aDocSave(w){
+  const key = w.dataset.aikey, sec = w.dataset.aisec, id = w.dataset.aiid;
+  const D = ADOC_ITEM[sec];
+  const val = {};
+  w.querySelectorAll("[data-aif]").forEach(function(el){ val[el.dataset.aif] = el.value.trim(); });
+  const miss = D.f.filter(function(f){ return f.req && !val[f.k]; });
+  if(!val.cat){ alert("구분을 적어 주세요."); return; }
+  if(miss.length){ alert(miss.map(function(f){ return f.t; }).join(" · ") + " 을(를) 적어 주세요."); return; }
+
+  const list = aDocList(key, sec);
+  let it = id ? aDocFind(key, sec, id) : null;
+  if(!it){ it = { id: "i" + Date.now() + Math.random().toString(36).slice(2, 6) }; list.push(it); }
+  Object.assign(it, val);
+  aNoteSave();
+
+  if(D.pic){
+    const bag = key + "::" + sec + "::" + it.id;
+    const keep = {};
+    (w._pics || []).forEach(function(p){ keep[p.id] = 1; });
+    for(const p of aPicOf(bag).slice()) if(!keep[p.id]) await aPicDel(bag, p.id);
+    for(const p of (w._pics || [])) if(p.file) await aPicAdd(bag, p.file, p.id);
+  }
+  aDocClose(w);
+  aDocRefresh(key, sec);
+}
+
+/* 목록만 다시 그린다 — 펼쳐 둔 것을 건드리지 않는다 */
+function aDocRefresh(key, sec){
+  document.querySelectorAll(".ailist").forEach(function(el){
+    if(el.dataset.aikey !== key || el.dataset.aisec !== sec) return;
+    el.outerHTML = aDocListHTML(key, sec);
+  });
+  document.querySelectorAll(".adoc").forEach(function(w){
+    if(w.dataset.adockey === key) aDocCount(w);
+  });
+}
+
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t || !t.closest) return;
+
+  const a = t.closest("[data-aiadd]");
+  if(a){ e.preventDefault(); e.stopPropagation();
+    const p = a.dataset.aiadd.split("||"); aDocOpen(p[0], p[1], ""); return; }
+
+  const ed = t.closest("[data-aiedit]");
+  if(ed){ e.preventDefault(); e.stopPropagation();
+    const p = ed.dataset.aiedit.split("||"); aDocOpen(p[0], p[1], p[2]); return; }
+
+  const dl = t.closest("[data-aidel]");
+  if(dl){ e.preventDefault(); e.stopPropagation();
+    const p = dl.dataset.aidel.split("||");
+    if(!confirm("이 건을 지울까요?")) return;
+    const a2 = aNoteOf(p[0]);
+    a2[p[1]] = aDocList(p[0], p[1]).filter(function(x){ return x.id !== p[2]; });
+    aNoteSave();
+    if(ADOC_ITEM[p[1]].pic){
+      const bag = p[0] + "::" + p[1] + "::" + p[2];
+      aPicOf(bag).slice().forEach(function(x){ aPicDel(bag, x.id); });
+    }
+    aDocRefresh(p[0], p[1]); return; }
+
+  const cp = t.closest("[data-aicopy]");
+  if(cp){ e.preventDefault(); e.stopPropagation();
+    const key = cp.dataset.aicopy;
+    const src = aDocList(key, "cfF");
+    if(!src.length){ alert("확인서에 등록한 지적사항이 없습니다."); return; }
+    const dst = aDocList(key, "ciF");
+    if(dst.length && !confirm("이미 등록한 " + dst.length + "건을 두고 확인서 것을 더 넣을까요?")) return;
+    const have = {};
+    dst.forEach(function(x){ have[x.cat + "|" + x.title] = 1; });
+    let n = 0;
+    src.forEach(function(x){
+      if(have[x.cat + "|" + x.title]) return;
+      dst.push({ id:"i" + Date.now() + Math.random().toString(36).slice(2,6),
+                 cat:x.cat, title:x.title, now:x.now, ask:x.ask });
+      n++;
+    });
+    aNoteSave(); aDocRefresh(key, "ciF");
+    aiFlash(key, "ciF", n ? n + "건을 가져왔습니다" : "새로 가져올 건이 없습니다"); return; }
+
+  if(t.closest("[data-aiclose]")){ e.preventDefault(); e.stopPropagation(); aDocClose(t.closest(".aiw")); return; }
+  if(t.closest("[data-aisave]")){ e.preventDefault(); e.stopPropagation(); aDocSave(t.closest(".aiw")); return; }
+
+  const thx = t.closest("[data-aithx]");
+  if(thx){ e.preventDefault(); e.stopPropagation();
+    const w = thx.closest(".aiw");
+    w._pics.splice(+thx.dataset.aithx, 1); aDocThumbs(w); return; }
+
+  const dz = t.closest(".ai-drop");
+  if(dz){ e.preventDefault(); e.stopPropagation(); dz.querySelector('input[type="file"]').click(); return; }
+}, true);
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){ const w = document.querySelector(".aiw"); if(w) aDocClose(w); }
+});
+
+function aDocTakePics(w, files){
+  [].slice.call(files || []).forEach(function(f){
+    if(!/^image\//.test(f.type || "")) return;
+    w._pics = w._pics || [];
+    w._pics.push({ id:"p" + Date.now() + Math.random().toString(36).slice(2,6),
+                   name:f.name || "사진", file:f, url:URL.createObjectURL(f) });
+  });
+  aDocThumbs(w);
+}
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(t && t.type === "file" && t.closest && t.closest(".ai-drop")){
+    aDocTakePics(t.closest(".aiw"), t.files); t.value = "";
+  }
+});
+document.addEventListener("dragover", function(e){
+  const dz = e.target.closest && e.target.closest(".ai-drop");
+  if(dz){ e.preventDefault(); dz.classList.add("over"); }
+});
+document.addEventListener("dragleave", function(e){
+  const dz = e.target.closest && e.target.closest(".ai-drop");
+  if(dz) dz.classList.remove("over");
+});
+document.addEventListener("drop", function(e){
+  const dz = e.target.closest && e.target.closest(".ai-drop");
+  if(!dz) return;
+  e.preventDefault(); dz.classList.remove("over");
+  aDocTakePics(dz.closest(".aiw"), (e.dataTransfer && e.dataTransfer.files) || []);
+});
+document.addEventListener("paste", function(e){
+  const w = document.querySelector(".aiw");
+  if(!w || !e.clipboardData) return;
+  const fs2 = [].slice.call(e.clipboardData.files || []);
+  if(!fs2.length) return;
+  e.preventDefault(); aDocTakePics(w, fs2);
+});
+
 /* ── 화면 ── */
 function aDocFieldHTML(key, sec, f){
   const v = aDocVal(key, sec, f.k);
@@ -3840,7 +4256,7 @@ function aDocFieldHTML(key, sec, f){
   return '<label class="adoc-f w-' + f.w + '"><span class="adoc-t">' + esc(f.t) + grab + '</span>' + inp + '</label>';
 }
 
-function aDocPicHTML(key, sec){
+function aDocPicHTML_unused(key, sec){
   const list = aPicOf(key + "::" + sec);
   return '<div class="adoc-pics">'
     + '<div class="adoc-drop" data-adocdrop="' + esc(key) + '::' + sec + '" tabindex="0">'
@@ -3860,16 +4276,17 @@ function aDocHTML(key, sec){
   const F = ADOC_FORM[sec];
   const bag = aNoteBag(key, sec);
   const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
-  const np = F.pic ? aPicOf(key + "::" + sec).length : 0;
+  const secs = (sec === "cf") ? ["cfR", "cfF"] : ["ciF"];
+  const ni = secs.reduce(function(s, x){ return s + aDocList(key, x).length; }, 0);
   return '<div class="adoc" data-adockey="' + esc(key) + '" data-adocsec="' + sec + '">'
     + '<button type="button" class="aev-tog" data-adoctog="1" aria-expanded="false">'
     +   '<span class="car">\u25b8</span><b>' + esc(F.title) + '</b>'
-    +   '<span class="aev-tn">' + (n ? '적은 칸 <i>' + n + '</i>' : '아직 안 씀')
-    +     (F.pic ? ' · 사진 <i>' + np + '</i>' : '') + '</span>'
+    +   '<span class="aev-tn">' + (ni ? '등록 <i>' + ni + '</i>건' : '등록 없음')
+    +     (n ? ' · 적은 칸 <i>' + n + '</i>' : '') + '</span>'
     + '</button>'
     + '<div class="aev-body adoc-body" hidden>'
     +   '<div class="adoc-grid">' + F.fields.map(function(f){ return aDocFieldHTML(key, sec, f); }).join("") + '</div>'
-    +   (F.pic ? aDocPicHTML(key, sec) : "")
+    +   (sec === "cf" ? aDocListHTML(key, "cfR") + aDocListHTML(key, "cfF") : aDocListHTML(key, "ciF"))
     +   '<div class="aev-foot"><span class="aev-saved" data-asaved>'
     +     (aSavedAt ? "자동 저장됨 · " + aSavedAt : "적는 대로 이 브라우저에 자동 저장됩니다") + '</span></div>'
     + '</div></div>';
@@ -3960,10 +4377,11 @@ function aDocCount(wrap){
   const key = wrap.dataset.adockey, sec = wrap.dataset.adocsec;
   const bag = aNoteBag(key, sec);
   const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
-  const np = ADOC_FORM[sec].pic ? aPicOf(key + "::" + sec).length : 0;
+  const secs = (sec === "cf") ? ["cfR", "cfF"] : ["ciF"];
+  const ni = secs.reduce(function(s, x){ return s + aDocList(key, x).length; }, 0);
   const el = wrap.querySelector(".aev-tn");
-  if(el) el.innerHTML = (n ? '적은 칸 <i>' + n + '</i>' : '아직 안 씀')
-    + (ADOC_FORM[sec].pic ? ' · 사진 <i>' + np + '</i>' : '');
+  if(el) el.innerHTML = (ni ? '등록 <i>' + ni + '</i>건' : '등록 없음')
+    + (n ? ' · 적은 칸 <i>' + n + '</i>' : '');
 }
 
 /* 끌어놓기 · 붙여넣기 */
