@@ -2683,7 +2683,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 17:58</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 18:28</span></div>
 </div>
 
 
@@ -5439,6 +5439,7 @@ async function asvPull(){
     asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
 
     (j.kv || []).forEach(function(r2){
+      if(/^ix[|@]/.test(String(r2.key))) return;      /* 이슈현황 자리는 그쪽에서 본다 */
       if(mine[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field]) return;
       const a = aNoteOf(r2.key);
       if(r2.sec === "@"){ a[r2.field] = r2.value; n++; return; }
@@ -5449,6 +5450,7 @@ async function asvPull(){
       n++;
     });
     (j.items || []).forEach(function(r2){
+      if(/^ix[|@]/.test(String(r2.key))) return;
       const a = aNoteOf(r2.key);
       if(!Array.isArray(a[r2.sec])) a[r2.sec] = [];
       const list = a[r2.sec];
@@ -5550,6 +5552,7 @@ async function asvPushFiles(){
 function asvTakeFiles(rows){
   let n = 0;
   (rows || []).forEach(function(r){
+    if(/^ix[|@]/.test(String(r.bag))) return;
     const bag = r.bag;
     const list = aPicMem[bag] = aPicMem[bag] || [];
     const at = list.findIndex(function(x){ return x.id === r.id; });
