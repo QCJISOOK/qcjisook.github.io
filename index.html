@@ -1150,6 +1150,29 @@
   .acard:hover{ border-color:var(--border-strong); box-shadow:var(--shadow-md); }
   .acard.open{ border-color:var(--accent); }
   /* 감사 현장에서 적는 칸 */
+  /* 함께 적기 */
+  .asv{
+    display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap;
+    padding:5px 12px; border-radius:100px; border:1px solid var(--border); background:var(--surface);
+  }
+  .asv > b{ font-size:12.5px; font-weight:800; color:var(--muted); }
+  .asv-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--border-strong); flex-shrink:0;
+  }
+  .asv-dot.on{ background:var(--good); box-shadow:0 0 0 3px var(--good-tint); }
+  .asv:has(.asv-dot.on) > b{ color:var(--good); }
+  .asv-say{ font-size:12px; color:var(--muted); }
+  .asv-say.bad{ color:var(--critical); font-weight:750; }
+  .asv-f{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
+  .asv-f input{
+    font-family:inherit; font-size:12.5px; padding:3px 8px; width:86px; color:var(--ink);
+    border:1px solid var(--border); border-radius:7px; background:var(--surface-2);
+  }
+  .asv-b{
+    font-family:inherit; font-size:12px; font-weight:750; cursor:pointer; color:var(--ink-2);
+    padding:4px 11px; border:1px solid var(--border); border-radius:100px; background:var(--surface-2);
+  }
+  .asv-b:hover{ border-color:var(--accent); color:var(--accent-strong); }
   .anote-btn{ border-style:dashed; }
   .amemo{ margin-top:8px; flex-basis:100%; }
   .amemo-btn{
@@ -2656,7 +2679,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 15:29</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 16:47</span></div>
 </div>
 
 
@@ -2817,6 +2840,7 @@
       <button class="filter-reset anote-btn" id="anote-out" title="적어 둔 불만협의체 메모 \u00b7 품목 메모 \u00b7 현장평가를 파일로 내려받습니다">기록 내보내기</button>
       <button class="filter-reset anote-btn" id="anote-in" title="남이 보내 준 감사기록.json 을 얹습니다">기록 불러오기</button>
       <input type="file" id="anote-file" accept=".json,application/json" hidden />
+      <span id="asv-bar"></span>
       <span class="result-count" id="audit-count"></span>
     </div>
     <div class="audit-cards" id="audit-cards"></div>
@@ -3814,6 +3838,7 @@ function aNoteSave(){
     const d = new Date(), p = function(n){ return String(n).padStart(2, "0"); };
     aSavedAt = p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
     aSavedMark("자동 저장됨 · " + aSavedAt);
+    try { asvMark(); } catch(e){}
     return true;
   }
   catch(e){
@@ -4039,7 +4064,7 @@ const ADOC_FORM = {
     { k:"aName",   t:"승인자 성명",     w:"third" },
     { k:"aAt",     t:"승인 일자",       w:"third", d:1 }
   ]},
-  ev: { title:"평가서", pic:0, fields: [
+  er: { title:"평가서", pic:0, fields: [
     { k:"co",     t:"제조업자 상호",     w:"half" },
     { k:"site",   t:"제조소 명칭",       w:"half" },
     { k:"addr",   t:"제조소 소재지",     w:"full" },
@@ -4093,7 +4118,7 @@ function aDocSeed(key, sec, k){
     if(k === "seller") return "㈜올리브인터내셔널";
     return "";
   }
-  if(sec === "ev"){
+  if(sec === "er"){
     if(k === "co" || k === "site") return co;
     if(k === "at") return at;
     if(k === "items") return aDocSeed(key, "cf", "items");
@@ -4946,7 +4971,7 @@ function aDocPicHTML_unused(key, sec){
 const AW_TABS = [
   { k:"cf", t:"확인서",     lists:["cfR", "cfF"] },
   { k:"ci", t:"개선지시서", lists:["ciF"] },
-  { k:"ev", t:"평가서",     lists:[] }
+  { k:"er", t:"평가서",     lists:[] }
 ];
 function aDocCountOf(key, sec){
   const bag = aNoteBag(key, sec);
@@ -5247,6 +5272,221 @@ function aScoreBar(card, key){
   }
 }
 
+
+/* ── 함께 적기 ─────────────────────────────────────────────────
+   구글 Apps Script 웹앱과 주고받는다. 칸 하나가 한 줄이라
+   서로 다른 칸을 건드리는 한 부딪히지 않는다.                       */
+const ASV_LS  = "oi-audit-server-v1";     /* 서버 주소 */
+const ASV_WHO = "oi-audit-who-v1";        /* 내 이름 */
+const ASV_URL_BAKED = "";                 /* 배포 때 여기에 주소를 박는다 */
+
+let asvUrl  = (function(){ try { return localStorage.getItem(ASV_LS) || ASV_URL_BAKED; } catch(e){ return ASV_URL_BAKED; } })();
+let asvWho  = (function(){ try { return localStorage.getItem(ASV_WHO) || ""; } catch(e){ return ""; } })();
+let asvSince = "";                        /* 마지막으로 받아 온 시각 */
+let asvBusy = false, asvTimer = null, asvPullT = null;
+let asvSnap = "{}";                       /* 마지막으로 올린 모습 — 무엇이 바뀌었는지 가린다 */
+let asvQ = { kv: [], items: [] };         /* 올릴 것 */
+
+function asvOn(){ return !!asvUrl; }
+function asvSay(msg, bad){
+  document.querySelectorAll("[data-asvsay]").forEach(function(el){
+    el.textContent = msg || "";
+    el.classList.toggle("bad", !!bad);
+  });
+}
+
+/* 지금 모습을 칸 단위로 편다 — {"열쇠\u0001칸\u0001이름": 값} */
+function asvFlat(note){
+  const out = {};
+  Object.keys(note || {}).forEach(function(key){
+    const a = note[key] || {};
+    Object.keys(a).forEach(function(sec){
+      const v = a[sec];
+      if(v === null || v === undefined) return;
+      if(typeof v !== "object"){ out[key + "\u0001@" + "\u0001" + sec] = String(v); return; }
+      if(Array.isArray(v)) return;                 /* 등록한 건은 따로 본다 */
+      if(sec === "ev"){                            /* 현장평가는 줄마다 통째로 */
+        Object.keys(v).forEach(function(i){
+          out[key + "\u0001ev\u0001" + i] = JSON.stringify(v[i]);
+        });
+        return;
+      }
+      Object.keys(v).forEach(function(f){
+        out[key + "\u0001" + sec + "\u0001" + f] = String(v[f] == null ? "" : v[f]);
+      });
+    });
+  });
+  return out;
+}
+function asvItems(note){
+  const out = {};
+  Object.keys(note || {}).forEach(function(key){
+    const a = note[key] || {};
+    Object.keys(a).forEach(function(sec){
+      if(!Array.isArray(a[sec])) return;
+      a[sec].forEach(function(it){
+        if(it && it.id) out[it.id] = { id: it.id, key: key, sec: sec, json: JSON.stringify(it) };
+      });
+    });
+  });
+  return out;
+}
+
+/* 바뀐 것만 골라 올릴 목록에 담는다 */
+function asvMark(){
+  if(!asvOn()) return;
+  let last;
+  try { last = JSON.parse(asvSnap); } catch(e){ last = { kv:{}, items:{} }; }
+  const kv = asvFlat(aNote), it = asvItems(aNote);
+
+  Object.keys(kv).forEach(function(id){
+    if(last.kv && last.kv[id] === kv[id]) return;
+    const p = id.split("\u0001");
+    asvQ.kv.push({ key: p[0], sec: p[1], field: p[2], value: kv[id] });
+  });
+  Object.keys(it).forEach(function(id){
+    if(last.items && last.items[id] === it[id].json) return;
+    asvQ.items.push(it[id]);
+  });
+  Object.keys(last.items || {}).forEach(function(id){
+    if(it[id]) return;
+    const o = JSON.parse(last.items[id] || "{}");
+    asvQ.items.push({ id: id, key: o._k || "", sec: o._s || "", json: "", gone: 1 });
+  });
+
+  const snap = { kv: kv, items: {} };
+  Object.keys(it).forEach(function(id){ snap.items[id] = it[id].json; });
+  asvSnap = JSON.stringify(snap);
+
+  if(asvQ.kv.length || asvQ.items.length) asvSoon();
+}
+function asvSoon(){
+  clearTimeout(asvTimer);
+  asvTimer = setTimeout(asvPush, 900);
+}
+
+async function asvPush(){
+  if(!asvOn() || asvBusy) return;
+  if(!asvQ.kv.length && !asvQ.items.length) return;
+  const send = { by: asvWho, kv: asvQ.kv, items: asvQ.items };
+  asvQ = { kv: [], items: [] };
+  asvBusy = true;
+  asvSay("올리는 중…");
+  try {
+    const r = await fetch(asvUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },   /* 미리 묻지 않게 */
+      body: JSON.stringify(send)
+    });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
+    asvSay("함께 보는 중 · " + j.at.slice(11) + " 올림");
+  } catch(e){
+    asvQ.kv = send.kv.concat(asvQ.kv);           /* 못 올렸으면 다시 줄 세운다 */
+    asvQ.items = send.items.concat(asvQ.items);
+    asvSay("서버에 못 올렸습니다 — 다시 시도합니다", 1);
+    setTimeout(asvPush, 6000);
+  } finally { asvBusy = false; }
+}
+
+/* 남이 적은 것을 받아 얹는다 — 내가 방금 적은 칸은 건드리지 않는다 */
+async function asvPull(){
+  if(!asvOn()) return;
+  try {
+    const u = asvUrl + (asvUrl.indexOf("?") < 0 ? "?" : "&") + "since=" + encodeURIComponent(asvSince);
+    const r = await fetch(u, { cache: "no-store" });
+    const j = await r.json();
+    if(!j.ok) return;
+    let n = 0;
+    const mine = {};
+    asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
+
+    (j.kv || []).forEach(function(r2){
+      if(mine[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field]) return;
+      const a = aNoteOf(r2.key);
+      if(r2.sec === "@"){ a[r2.field] = r2.value; n++; return; }
+      const bag = aNoteBag(r2.key, r2.sec);
+      if(r2.sec === "ev"){
+        try { bag[r2.field] = JSON.parse(r2.value); } catch(e){ return; }
+      } else bag[r2.field] = r2.value;
+      n++;
+    });
+    (j.items || []).forEach(function(r2){
+      const a = aNoteOf(r2.key);
+      if(!Array.isArray(a[r2.sec])) a[r2.sec] = [];
+      const list = a[r2.sec];
+      const at = list.findIndex(function(x){ return x.id === r2.id; });
+      if(r2.gone){ if(at >= 0){ list.splice(at, 1); n++; } return; }
+      let o = null;
+      try { o = JSON.parse(r2.json); } catch(e){ return; }
+      if(at >= 0) list[at] = o; else list.push(o);
+      n++;
+    });
+
+    asvSince = j.at;
+    if(n){
+      try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); } catch(e){}
+      asvSnap = JSON.stringify((function(){
+        const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
+        Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
+        return s;
+      })());
+      asvSay("남이 적은 것 " + n + "군데를 받았습니다");
+      asvRedraw();
+    }
+  } catch(e){}
+}
+/* 받은 것을 화면에 얹는다 — 펴 둔 카드만 다시 세운다 */
+function asvRedraw(){
+  document.querySelectorAll(".acard.open").forEach(function(card){
+    if(typeof aRefresh === "function") aRefresh(card.dataset.key);
+  });
+}
+
+/* ── 서버 주소 · 이름 ── */
+function asvBarHTML(){
+  return '<div class="asv">'
+    + '<span class="asv-dot' + (asvOn() ? " on" : "") + '"></span>'
+    + '<b>' + (asvOn() ? "함께 적기 켜짐" : "함께 적기 꺼짐") + '</b>'
+    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "서버 주소를 넣으면 여럿이 같이 적을 수 있습니다") + '</span>'
+    + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
+    + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
+    + '</div>';
+}
+document.addEventListener("click", function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest("#asv-set")){
+    const v = prompt("Apps Script 웹앱 주소를 넣어 주세요 (/exec 로 끝납니다)", asvUrl || "https://script.google.com/…/exec");
+    if(v === null) return;
+    asvUrl = v.trim();
+    try { localStorage.setItem(ASV_LS, asvUrl); } catch(e2){}
+    asvSince = "";
+    location.reload();
+  }
+});
+document.addEventListener("change", function(e){
+  if(e.target && e.target.id === "asv-who"){
+    asvWho = e.target.value.trim();
+    try { localStorage.setItem(ASV_WHO, asvWho); } catch(e2){}
+  }
+});
+
+/* ── 굴리기 ── */
+function asvStart(){
+  const bar = document.getElementById("asv-bar");
+  if(bar) bar.innerHTML = asvBarHTML();
+  if(!asvOn()) return;
+  asvSnap = JSON.stringify((function(){
+    const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
+    Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
+    return s;
+  })());
+  asvPull();
+  clearInterval(asvPullT);
+  asvPullT = setInterval(asvPull, 10000);       /* 10초마다 남의 것을 받아 온다 */
+  window.addEventListener("beforeunload", function(){ if(asvQ.kv.length || asvQ.items.length) asvPush(); });
+}
+
 /* ── 기록 주고받기 ── */
 function aNoteMerge(src){
   if(!src || typeof src !== "object") return 0;
@@ -5501,7 +5741,9 @@ document.addEventListener("change", function(e){
 
 /* 같은 자리에 놓인 기록 파일을 열 때 함께 읽는다 */
 (async function(){
-  if(!(await aNoteLoad())) return;
+  const got = await aNoteLoad();
+  try { asvStart(); } catch(e){}
+  if(!got) return;
   if(document.getElementById("audit-cards") && typeof renderAuditCards === "function"){
     try { renderAuditCards(); } catch(e){}
   }
