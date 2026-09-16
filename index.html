@@ -1183,6 +1183,60 @@
     0%{ border-color:var(--accent); background:var(--accent-tint); color:var(--accent-strong); }
     100%{ border-color:var(--border); background:var(--surface); color:var(--muted); }
   }
+  /* 확인서 · 개선지시서 쓰기 */
+  .adoc{ margin-top:10px; }
+  .adoc-body{ padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .adoc-grid{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px 12px; }
+  .adoc-f{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .adoc-f.w-full{ grid-column:span 6; }
+  .adoc-f.w-half{ grid-column:span 3; }
+  .adoc-f.w-third{ grid-column:span 2; }
+  .adoc-t{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:11px; font-weight:750; color:var(--ink-2);
+  }
+  .adoc-grab{
+    font-family:inherit; font-size:10px; font-weight:700; cursor:pointer; color:var(--muted);
+    padding:2px 7px; border-radius:6px; border:1px dashed var(--border); background:transparent;
+  }
+  .adoc-grab:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .adoc-in{
+    font-family:inherit; font-size:12px; line-height:1.6; color:var(--ink);
+    padding:7px 9px; border:1px solid var(--border); border-radius:7px;
+    background:var(--surface-2); width:100%; box-sizing:border-box; resize:vertical;
+  }
+  .adoc-in:focus{ outline:none; border-color:var(--accent); background:var(--surface); }
+  textarea.adoc-in{ white-space:pre-wrap; }
+  .adoc-pics{ margin-top:14px; }
+  .adoc-drop{
+    display:block; width:100%; box-sizing:border-box; text-align:center; cursor:pointer;
+    font-size:11.5px; color:var(--muted); padding:16px 12px;
+    border:1.5px dashed var(--border-strong); border-radius:10px; background:var(--surface-2);
+  }
+  .adoc-drop b{ color:var(--ink); }
+  .adoc-drop:hover, .adoc-drop:focus, .adoc-drop.over{
+    border-color:var(--accent); background:var(--accent-tint); outline:none;
+  }
+  .adoc-thumbs{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .adoc-th{ position:relative; width:150px; }
+  .adoc-th img{
+    width:100%; height:110px; object-fit:cover; display:block;
+    border:1px solid var(--border); border-radius:8px; background:var(--surface-2);
+  }
+  .adoc-x{
+    position:absolute; top:4px; right:4px; width:20px; height:20px; padding:0; line-height:1;
+    font-family:var(--font-mono); font-size:12px; cursor:pointer; color:#fff;
+    border:none; border-radius:6px; background:rgba(0,0,0,.55);
+  }
+  .adoc-x:hover{ background:#c0392b; }
+  .adoc-nm{
+    display:block; margin-top:3px; font-size:10px; color:var(--muted);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  @media (max-width:820px){
+    .adoc-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .adoc-f.w-full,.adoc-f.w-half,.adoc-f.w-third{ grid-column:span 2; }
+  }
   .aev-tog{
     display:flex; align-items:center; gap:9px; width:100%; font-family:inherit; text-align:left;
     cursor:pointer; padding:9px 12px; border:1px solid var(--border); border-radius:9px;
@@ -2290,7 +2344,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 09:42</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 09:57</span></div>
 </div>
 
 
@@ -3632,6 +3686,310 @@ function aEvalHTML(key){
     + '</div>';
 }
 
+
+/* ── 확인서 · 개선지시서 쓰기 ────────────────────────────────────
+   양식의 칸을 그대로 옮겨 두고, 카드에 이미 있는 것은 미리 채워 준다.
+   사진은 원본 그대로 브라우저 곳간에 담는다.                          */
+const ADOC_FORM = {
+  cf: { title: "확인서(작성)", pic: 0, fields: [
+    { k:"co",      t:"제조업자 상호",   w:"half" },
+    { k:"site",    t:"제조소 명칭",     w:"half" },
+    { k:"addr",    t:"제조소 소재지",   w:"full" },
+    { k:"items",   t:"대상품목",        w:"full", ta:3 },
+    { k:"at",      t:"감사일자",        w:"third", d:1 },
+    { k:"auditee", t:"피감사자",        w:"third" },
+    { k:"auditor", t:"감사자",          w:"third" },
+    { k:"result",  t:"결과",            w:"full", ta:8 },
+    { k:"find",    t:"개선 지적 사항",  w:"full", ta:10 },
+    { k:"wRole",   t:"작성자 직책",     w:"third" },
+    { k:"wName",   t:"작성자 성명",     w:"third" },
+    { k:"wAt",     t:"작성 일자",       w:"third", d:1 },
+    { k:"aRole",   t:"승인자 직책",     w:"third" },
+    { k:"aName",   t:"승인자 성명",     w:"third" },
+    { k:"aAt",     t:"승인 일자",       w:"third", d:1 }
+  ]},
+  ci: { title: "개선지시서(작성)", pic: 1, fields: [
+    { k:"co",      t:"화장품제조업자",  w:"half" },
+    { k:"due",     t:"회신 기한",       w:"half", d:1 },
+    { k:"at",      t:"확인 일자",       w:"third", d:1 },
+    { k:"body",    t:"개선 사항",       w:"full", ta:12, from:"cf::find" },
+    { k:"wAt",     t:"작성일자",        w:"third", d:1 },
+    { k:"seller",  t:"화장품책임판매업자", w:"third" },
+    { k:"wName",   t:"작성자",          w:"third" },
+    { k:"mName",   t:"책임판매관리자",  w:"third" }
+  ]}
+};
+
+/* 카드에 이미 있는 것은 미리 채워 준다 */
+function aDocSeed(key, sec, k){
+  const co = String(key).split("|")[2] || "";
+  const d = (typeof auditData !== "undefined")
+    ? auditData.filter(function(x){ return (x.year + "|" + x.quarter + "|" + x.company) === key; })[0] : null;
+  const m = (typeof confirmMeta !== "undefined" && confirmMeta[key]) || {};
+  const at = d ? String(d.date).replace(/[^0-9-]/g, "") : "";
+  if(sec === "cf"){
+    if(k === "co" || k === "site") return co;
+    if(k === "at") return at;
+    if(k === "auditee") return m.auditee || "";
+    if(k === "auditor") return m.auditor || "";
+    if(k === "items"){
+      /* 양식은 「- 품명/로트/기한」 을 한 줄에 하나씩 적는다 */
+      if(m.target) return String(m.target).split(" \u00b7 ").map(function(s){
+        return "- " + s.split(" / ").join("/");
+      }).join("\n");
+      const dk = (typeof docCheck !== "undefined" && docCheck[key]) || {};
+      return (dk.items || []).map(function(x){
+        return "- " + x.name + "/" + x.lot + "/" + x.exp;
+      }).join("\n");
+    }
+    if(k === "wRole") return "담당";
+    if(k === "aRole") return "책임판매관리자";
+    return "";
+  }
+  if(sec === "ci"){
+    if(k === "co") return co;
+    if(k === "at") return at;
+    if(k === "seller") return "㈜올리브인터내셔널";
+    return "";
+  }
+  return "";
+}
+function aDocVal(key, sec, k){
+  const bag = aNoteBag(key, sec);
+  return bag[k] !== undefined ? bag[k] : aDocSeed(key, sec, k);
+}
+
+/* ── 사진 곳간 ── */
+const ADOC_DB = "oi-audit-docs";
+let aPicMem = {}, _aPicDB = null;
+function aPicOpen(){
+  if(_aPicDB) return Promise.resolve(_aPicDB);
+  return new Promise(function(ok, no){
+    let rq;
+    try { rq = indexedDB.open(ADOC_DB, 1); } catch(e){ return no(e); }
+    rq.onupgradeneeded = function(){
+      const db = rq.result;
+      if(!db.objectStoreNames.contains("pic")){
+        const st = db.createObjectStore("pic", { keyPath: "id" });
+        st.createIndex("key", "key");
+      }
+    };
+    rq.onsuccess = function(){ _aPicDB = rq.result; ok(_aPicDB); };
+    rq.onerror = function(){ no(rq.error); };
+  });
+}
+function aPicWrap(r){
+  if(!r.url && r.blob){ try { r.url = URL.createObjectURL(r.blob); } catch(e){} }
+  return r;
+}
+const aPicReady = (async function(){
+  try {
+    const db = await aPicOpen();
+    const all = await new Promise(function(ok, no){
+      const rq = db.transaction("pic").objectStore("pic").getAll();
+      rq.onsuccess = function(){ ok(rq.result || []); };
+      rq.onerror = function(){ no(rq.error); };
+    });
+    all.forEach(function(r){ (aPicMem[r.key] = aPicMem[r.key] || []).push(aPicWrap(r)); });
+  } catch(e){}
+})();
+function aPicOf(key){ return aPicMem[key] || []; }
+async function aPicAdd(key, file){
+  if(!file || !/^image\//.test(file.type || "")) return null;
+  const r = { id: "p" + Date.now() + Math.random().toString(36).slice(2, 7),
+              key: key, name: file.name || "사진", type: file.type,
+              size: file.size, blob: file, at: new Date().toISOString().slice(0, 10) };
+  try {
+    const db = await aPicOpen();
+    await new Promise(function(ok, no){
+      const tx = db.transaction("pic", "readwrite");
+      tx.objectStore("pic").put(r);
+      tx.oncomplete = ok; tx.onerror = function(){ no(tx.error); };
+    });
+  } catch(e){ alert("사진을 담지 못했습니다."); return null; }
+  (aPicMem[key] = aPicMem[key] || []).push(aPicWrap(r));
+  return r;
+}
+async function aPicDel(key, id){
+  try {
+    const db = await aPicOpen();
+    await new Promise(function(ok, no){
+      const tx = db.transaction("pic", "readwrite");
+      tx.objectStore("pic").delete(id);
+      tx.oncomplete = ok; tx.onerror = function(){ no(tx.error); };
+    });
+  } catch(e){}
+  aPicMem[key] = aPicOf(key).filter(function(r){ return r.id !== id; });
+}
+
+/* ── 화면 ── */
+function aDocFieldHTML(key, sec, f){
+  const v = aDocVal(key, sec, f.k);
+  const id = sec + "::" + f.k;
+  const inp = f.ta
+    ? '<textarea class="adoc-in" data-adoc="' + id + '" rows="' + f.ta + '">' + esc(v) + '</textarea>'
+    : '<input class="adoc-in" data-adoc="' + id + '"' + (f.d ? ' type="date"' : '')
+      + ' value="' + esc(v) + '" />';
+  const grab = f.from
+    ? '<button type="button" class="adoc-grab" data-adocgrab="' + esc(f.from) + '::' + id + '">확인서의 개선 지적 사항 가져오기</button>'
+    : "";
+  return '<label class="adoc-f w-' + f.w + '"><span class="adoc-t">' + esc(f.t) + grab + '</span>' + inp + '</label>';
+}
+
+function aDocPicHTML(key, sec){
+  const list = aPicOf(key + "::" + sec);
+  return '<div class="adoc-pics">'
+    + '<div class="adoc-drop" data-adocdrop="' + esc(key) + '::' + sec + '" tabindex="0">'
+    +   '<b>사진</b> — 여기로 끌어놓거나 눌러서 고릅니다. 붙여넣기(Ctrl+V)도 됩니다.'
+    +   '<input type="file" accept="image/*" multiple hidden />'
+    + '</div>'
+    + '<div class="adoc-thumbs">'
+    +   list.map(function(r){
+          return '<div class="adoc-th"><img src="' + (r.url || "") + '" alt="' + esc(r.name) + '" loading="lazy" />'
+            + '<button type="button" class="adoc-x" data-adocdel="' + esc(key) + '::' + sec + '::' + r.id + '" title="빼기">\u00d7</button>'
+            + '<span class="adoc-nm">' + esc(r.name) + '</span></div>';
+        }).join("")
+    + '</div></div>';
+}
+
+function aDocHTML(key, sec){
+  const F = ADOC_FORM[sec];
+  const bag = aNoteBag(key, sec);
+  const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
+  const np = F.pic ? aPicOf(key + "::" + sec).length : 0;
+  return '<div class="adoc" data-adockey="' + esc(key) + '" data-adocsec="' + sec + '">'
+    + '<button type="button" class="aev-tog" data-adoctog="1" aria-expanded="false">'
+    +   '<span class="car">\u25b8</span><b>' + esc(F.title) + '</b>'
+    +   '<span class="aev-tn">' + (n ? '적은 칸 <i>' + n + '</i>' : '아직 안 씀')
+    +     (F.pic ? ' · 사진 <i>' + np + '</i>' : '') + '</span>'
+    + '</button>'
+    + '<div class="aev-body adoc-body" hidden>'
+    +   '<div class="adoc-grid">' + F.fields.map(function(f){ return aDocFieldHTML(key, sec, f); }).join("") + '</div>'
+    +   (F.pic ? aDocPicHTML(key, sec) : "")
+    +   '<div class="aev-foot"><span class="aev-saved" data-asaved>'
+    +     (aSavedAt ? "자동 저장됨 · " + aSavedAt : "적는 대로 이 브라우저에 자동 저장됩니다") + '</span></div>'
+    + '</div></div>';
+}
+
+/* ── 누르기 · 적기 ── */
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t || !t.closest) return;
+
+  const tg = t.closest("[data-adoctog]");
+  if(tg){
+    e.preventDefault(); e.stopPropagation();
+    const body = tg.parentElement.querySelector(".adoc-body");
+    if(!body) return;
+    body.hidden = !body.hidden;
+    tg.setAttribute("aria-expanded", String(!body.hidden));
+    return;
+  }
+
+  const gb = t.closest("[data-adocgrab]");
+  if(gb){
+    e.preventDefault(); e.stopPropagation();
+    const p = gb.dataset.adocgrab.split("::");          /* 가져올곳sec::가져올곳k::넣을곳sec::넣을곳k */
+    const wrap = gb.closest(".adoc"); if(!wrap) return;
+    const key = wrap.dataset.adockey;
+    const src = aDocVal(key, p[0], p[1]);
+    if(!String(src).trim()){ alert("확인서의 「개선 지적 사항」이 비어 있습니다."); return; }
+    const el = wrap.querySelector('[data-adoc="' + p[2] + '::' + p[3] + '"]');
+    if(!el) return;
+    if(String(el.value).trim() && !confirm("이미 적힌 내용을 확인서 것으로 바꿀까요?")) return;
+    el.value = src;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+
+  const dz = t.closest("[data-adocdrop]");
+  if(dz && !t.closest("[data-adocdel]")){
+    e.preventDefault(); e.stopPropagation();
+    dz.querySelector('input[type="file"]').click();
+    return;
+  }
+
+  const dl = t.closest("[data-adocdel]");
+  if(dl){
+    e.preventDefault(); e.stopPropagation();
+    const p = dl.dataset.adocdel.split("::");
+    aPicDel(p[0] + "::" + p[1], p[2]).then(function(){ aDocRedraw(p[0], p[1]); });
+    return;
+  }
+}, true);
+
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(!t || !t.dataset) return;
+  if(t.dataset.adoc !== undefined){
+    const wrap = t.closest(".adoc"); if(!wrap) return;
+    const p = t.dataset.adoc.split("::");
+    aNoteBag(wrap.dataset.adockey, p[0])[p[1]] = t.value;
+    aNoteSave();
+    aDocCount(wrap);
+    return;
+  }
+  if(t.type === "file" && t.closest("[data-adocdrop]")){
+    const dz = t.closest("[data-adocdrop]");
+    const p = dz.dataset.adocdrop.split("::");
+    aDocTake(p[0], p[1], t.files);
+    t.value = "";
+  }
+});
+
+async function aDocTake(key, sec, files){
+  let n = 0;
+  for(const f of files || []) if(await aPicAdd(key + "::" + sec, f)) n++;
+  if(n) aDocRedraw(key, sec);
+}
+function aDocRedraw(key, sec){
+  document.querySelectorAll(".adoc").forEach(function(w){
+    if(w.dataset.adockey !== key || w.dataset.adocsec !== sec) return;
+    const open = !w.querySelector(".adoc-body").hidden;
+    const pics = w.querySelector(".adoc-pics");
+    if(pics) pics.outerHTML = aDocPicHTML(key, sec);
+    aDocCount(w);
+    if(open) w.querySelector(".adoc-body").hidden = false;
+  });
+}
+function aDocCount(wrap){
+  const key = wrap.dataset.adockey, sec = wrap.dataset.adocsec;
+  const bag = aNoteBag(key, sec);
+  const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
+  const np = ADOC_FORM[sec].pic ? aPicOf(key + "::" + sec).length : 0;
+  const el = wrap.querySelector(".aev-tn");
+  if(el) el.innerHTML = (n ? '적은 칸 <i>' + n + '</i>' : '아직 안 씀')
+    + (ADOC_FORM[sec].pic ? ' · 사진 <i>' + np + '</i>' : '');
+}
+
+/* 끌어놓기 · 붙여넣기 */
+document.addEventListener("dragover", function(e){
+  const dz = e.target.closest && e.target.closest("[data-adocdrop]");
+  if(!dz) return;
+  e.preventDefault(); dz.classList.add("over");
+});
+document.addEventListener("dragleave", function(e){
+  const dz = e.target.closest && e.target.closest("[data-adocdrop]");
+  if(dz) dz.classList.remove("over");
+});
+document.addEventListener("drop", function(e){
+  const dz = e.target.closest && e.target.closest("[data-adocdrop]");
+  if(!dz) return;
+  e.preventDefault(); dz.classList.remove("over");
+  const p = dz.dataset.adocdrop.split("::");
+  aDocTake(p[0], p[1], (e.dataTransfer && e.dataTransfer.files) || []);
+});
+document.addEventListener("paste", function(e){
+  const dz = document.activeElement && document.activeElement.closest
+    && document.activeElement.closest("[data-adocdrop]");
+  if(!dz || !e.clipboardData) return;
+  const fs = [].slice.call(e.clipboardData.files || []);
+  if(!fs.length) return;
+  e.preventDefault();
+  const p = dz.dataset.adocdrop.split("::");
+  aDocTake(p[0], p[1], fs);
+});
+
 /* 카드 한 장만 다시 세운다 */
 function aRefresh(key){
   const card = [].slice.call(document.querySelectorAll(".acard")).filter(function(c){ return c.dataset.key === key; })[0];
@@ -3648,6 +4006,8 @@ function aRefresh(key){
   };
   const wasPh = openOf("[data-phtog]", "phtog");
   const wasAev = !!(body.querySelector('[data-aevtog][aria-expanded="true"]'));
+  const wasDoc = [].slice.call(body.querySelectorAll('[data-adoctog][aria-expanded="true"]'))
+    .map(function(x){ return x.closest(".adoc").dataset.adocsec; });
   const wasDb = openOf("[data-dbtog]", "dbtog");
   const foot = body.querySelector(".aev-foot");
   const wasY = foot ? foot.getBoundingClientRect().top : null;
@@ -3675,6 +4035,12 @@ function aRefresh(key){
     const tg = body.querySelector("[data-aevtog]");
     if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
   }
+  wasDoc.forEach(function(sec){
+    const w = [].slice.call(body.querySelectorAll(".adoc"))
+      .filter(function(x){ return x.dataset.adocsec === sec; })[0];
+    const tg = w && w.querySelector("[data-adoctog]");
+    if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
+  });
   body.querySelectorAll(".aev-n").forEach(aGrow);
 
   /* 보고 있던 자리로 되돌린다 */
@@ -3899,6 +4265,7 @@ document.addEventListener("input", function(e){
   const t = e.target;
   if(!t) return;
   if(t.classList && t.classList.contains("amemo-in")){ aTypeQueue(t); return; }
+  if(t.classList && t.classList.contains("adoc-in")){ aTypeQueue(t); return; }
   if(t.classList && t.classList.contains("aev-n")){ aGrow(t); aTypeQueue(t); return; }
   if(t.dataset && t.dataset.aevres !== undefined){
     const g = aGradeRead(t.value);
@@ -4696,12 +5063,14 @@ function phasePostHTML(key, det){
           : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`))
         + origPagesHTML(key, "confirm", "확인서"),
         !!(crHTML || (fd && fd.result)))}
+      ${aDocHTML(key, "cf")}
       ${docFoldHTML(key, "id", "개선지시서",
         (idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
           : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
           : `<div class="empty-note">개선지시서 내용 없음</div>`))
         + origPagesHTML(key, "issue", "개선지시서"),
         !!(idHTML || (fd && fd.issue)))}
+      ${aDocHTML(key, "ci")}
       ${docFoldHTML(key, "capa", "개선결과서",
         (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
         + sumBlock + capaBlock
