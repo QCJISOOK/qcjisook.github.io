@@ -1168,6 +1168,10 @@
     font-family:inherit; font-size:12.5px; padding:3px 8px; width:86px; color:var(--ink);
     border:1px solid var(--border); border-radius:7px; background:var(--surface-2);
   }
+  .af-srv{
+    font-size:11px; font-weight:800; color:var(--good);
+    padding:2px 8px; border-radius:20px; background:var(--good-tint);
+  }
   .asv-b{
     font-family:inherit; font-size:12px; font-weight:750; cursor:pointer; color:var(--ink-2);
     padding:4px 11px; border:1px solid var(--border); border-radius:100px; background:var(--surface-2);
@@ -2679,7 +2683,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 16:47</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 16:57</span></div>
 </div>
 
 
@@ -4181,9 +4185,11 @@ async function aPicAdd(key, file, forceId){
     });
   } catch(e){ alert("사진을 담지 못했습니다."); return null; }
   (aPicMem[key] = aPicMem[key] || []).push(aPicWrap(r));
+  try { asvFileQ(r); } catch(e){}
   return r;
 }
 async function aPicDel(key, id){
+  try { asvFileQ((aPicOf(key) || []).filter(function(x){ return x.id === id; })[0], 1); } catch(e){}
   try {
     const db = await aPicOpen();
     await new Promise(function(ok, no){
@@ -4271,8 +4277,8 @@ async function aPdfSpread(key, file){
       const blob = await new Promise(function(r){ cv.toBlob(r, "image/png"); });
       if(!blob) continue;
       const nm = String(file.name || "개선결과서").replace(/\.pdf$/i, "");
-      const rec = await aFileAdd(bag, new File([blob], nm + " p" + p + ".png", { type:"image/png" }));
-      if(rec){ rec.pg = base + p; n++; }
+      const rec = await aFileAdd(bag, new File([blob], nm + " p" + p + ".png", { type:"image/png" }), base + p);
+      if(rec) n++;
       cv.width = cv.height = 0;
     } catch(e){}
   }
@@ -4313,11 +4319,11 @@ function aSize(n){
   return (n / 1048576).toFixed(1) + "MB";
 }
 /* 종류를 가리지 않고 담는다 */
-async function aFileAdd(bag, file){
+async function aFileAdd(bag, file, pg){
   if(!file) return null;
   const r = { id: "f" + Date.now() + Math.random().toString(36).slice(2, 7),
               key: bag, name: file.name || "파일", type: file.type || "",
-              size: file.size, blob: file, at: new Date().toISOString().slice(0, 10) };
+              size: file.size, blob: file, pg: pg || 0, at: new Date().toISOString().slice(0, 10) };
   try {
     const db = await aPicOpen();
     await new Promise(function(ok, no){
@@ -4327,6 +4333,7 @@ async function aFileAdd(bag, file){
     });
   } catch(e){ alert("파일을 담지 못했습니다 — 너무 크거나 브라우저에 자리가 없습니다."); return null; }
   (aPicMem[bag] = aPicMem[bag] || []).push(aPicWrap(r));
+  try { asvFileQ(r); } catch(e){}
   return r;
 }
 
@@ -4351,7 +4358,9 @@ function aFileHTML(key, sec){
             + '<span class="af-nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span>'
             + '<span class="af-sz">' + aSize(r.size) + '</span>'
             + '<a class="af-b" href="' + (r.url || "#") + '" target="_blank" rel="noopener">열기</a>'
-            + '<a class="af-b" href="' + (r.url || "#") + '" download="' + esc(r.name) + '">내려받기</a>'
+            + '<a class="af-b" href="' + (r.drive ? asvDriveDl(r.drive) : (r.url || "#")) + '"'
+            +   (r.drive ? ' target="_blank" rel="noopener"' : ' download="' + esc(r.name) + '"') + '>내려받기</a>'
+            + (r.from === "서버" ? '<span class="af-srv">함께</span>' : "")
             + '<button type="button" class="af-b x" data-afdel="' + esc(key) + '::' + sec + '::' + r.id + '">빼기</button>'
             + '</div>';
         }).join("") + '</div>' : "")
@@ -5272,221 +5281,321 @@ function aScoreBar(card, key){
   }
 }
 
-
-/* ── 함께 적기 ─────────────────────────────────────────────────
-   구글 Apps Script 웹앱과 주고받는다. 칸 하나가 한 줄이라
-   서로 다른 칸을 건드리는 한 부딪히지 않는다.                       */
-const ASV_LS  = "oi-audit-server-v1";     /* 서버 주소 */
-const ASV_WHO = "oi-audit-who-v1";        /* 내 이름 */
-const ASV_URL_BAKED = "";                 /* 배포 때 여기에 주소를 박는다 */
-
-let asvUrl  = (function(){ try { return localStorage.getItem(ASV_LS) || ASV_URL_BAKED; } catch(e){ return ASV_URL_BAKED; } })();
-let asvWho  = (function(){ try { return localStorage.getItem(ASV_WHO) || ""; } catch(e){ return ""; } })();
-let asvSince = "";                        /* 마지막으로 받아 온 시각 */
-let asvBusy = false, asvTimer = null, asvPullT = null;
-let asvSnap = "{}";                       /* 마지막으로 올린 모습 — 무엇이 바뀌었는지 가린다 */
-let asvQ = { kv: [], items: [] };         /* 올릴 것 */
-
-function asvOn(){ return !!asvUrl; }
-function asvSay(msg, bad){
-  document.querySelectorAll("[data-asvsay]").forEach(function(el){
-    el.textContent = msg || "";
-    el.classList.toggle("bad", !!bad);
-  });
-}
-
-/* 지금 모습을 칸 단위로 편다 — {"열쇠\u0001칸\u0001이름": 값} */
-function asvFlat(note){
-  const out = {};
-  Object.keys(note || {}).forEach(function(key){
-    const a = note[key] || {};
-    Object.keys(a).forEach(function(sec){
-      const v = a[sec];
-      if(v === null || v === undefined) return;
-      if(typeof v !== "object"){ out[key + "\u0001@" + "\u0001" + sec] = String(v); return; }
-      if(Array.isArray(v)) return;                 /* 등록한 건은 따로 본다 */
-      if(sec === "ev"){                            /* 현장평가는 줄마다 통째로 */
-        Object.keys(v).forEach(function(i){
-          out[key + "\u0001ev\u0001" + i] = JSON.stringify(v[i]);
-        });
-        return;
-      }
-      Object.keys(v).forEach(function(f){
-        out[key + "\u0001" + sec + "\u0001" + f] = String(v[f] == null ? "" : v[f]);
-      });
-    });
-  });
-  return out;
-}
-function asvItems(note){
-  const out = {};
-  Object.keys(note || {}).forEach(function(key){
-    const a = note[key] || {};
-    Object.keys(a).forEach(function(sec){
-      if(!Array.isArray(a[sec])) return;
-      a[sec].forEach(function(it){
-        if(it && it.id) out[it.id] = { id: it.id, key: key, sec: sec, json: JSON.stringify(it) };
-      });
-    });
-  });
-  return out;
-}
-
-/* 바뀐 것만 골라 올릴 목록에 담는다 */
-function asvMark(){
-  if(!asvOn()) return;
-  let last;
-  try { last = JSON.parse(asvSnap); } catch(e){ last = { kv:{}, items:{} }; }
-  const kv = asvFlat(aNote), it = asvItems(aNote);
-
-  Object.keys(kv).forEach(function(id){
-    if(last.kv && last.kv[id] === kv[id]) return;
-    const p = id.split("\u0001");
-    asvQ.kv.push({ key: p[0], sec: p[1], field: p[2], value: kv[id] });
-  });
-  Object.keys(it).forEach(function(id){
-    if(last.items && last.items[id] === it[id].json) return;
-    asvQ.items.push(it[id]);
-  });
-  Object.keys(last.items || {}).forEach(function(id){
-    if(it[id]) return;
-    const o = JSON.parse(last.items[id] || "{}");
-    asvQ.items.push({ id: id, key: o._k || "", sec: o._s || "", json: "", gone: 1 });
-  });
-
-  const snap = { kv: kv, items: {} };
-  Object.keys(it).forEach(function(id){ snap.items[id] = it[id].json; });
-  asvSnap = JSON.stringify(snap);
-
-  if(asvQ.kv.length || asvQ.items.length) asvSoon();
-}
-function asvSoon(){
-  clearTimeout(asvTimer);
-  asvTimer = setTimeout(asvPush, 900);
-}
-
-async function asvPush(){
-  if(!asvOn() || asvBusy) return;
-  if(!asvQ.kv.length && !asvQ.items.length) return;
-  const send = { by: asvWho, kv: asvQ.kv, items: asvQ.items };
-  asvQ = { kv: [], items: [] };
-  asvBusy = true;
-  asvSay("올리는 중…");
-  try {
-    const r = await fetch(asvUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },   /* 미리 묻지 않게 */
-      body: JSON.stringify(send)
-    });
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
-    asvSay("함께 보는 중 · " + j.at.slice(11) + " 올림");
-  } catch(e){
-    asvQ.kv = send.kv.concat(asvQ.kv);           /* 못 올렸으면 다시 줄 세운다 */
-    asvQ.items = send.items.concat(asvQ.items);
-    asvSay("서버에 못 올렸습니다 — 다시 시도합니다", 1);
-    setTimeout(asvPush, 6000);
-  } finally { asvBusy = false; }
-}
-
-/* 남이 적은 것을 받아 얹는다 — 내가 방금 적은 칸은 건드리지 않는다 */
-async function asvPull(){
-  if(!asvOn()) return;
-  try {
-    const u = asvUrl + (asvUrl.indexOf("?") < 0 ? "?" : "&") + "since=" + encodeURIComponent(asvSince);
-    const r = await fetch(u, { cache: "no-store" });
-    const j = await r.json();
-    if(!j.ok) return;
-    let n = 0;
-    const mine = {};
-    asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
-
-    (j.kv || []).forEach(function(r2){
-      if(mine[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field]) return;
-      const a = aNoteOf(r2.key);
-      if(r2.sec === "@"){ a[r2.field] = r2.value; n++; return; }
-      const bag = aNoteBag(r2.key, r2.sec);
-      if(r2.sec === "ev"){
-        try { bag[r2.field] = JSON.parse(r2.value); } catch(e){ return; }
-      } else bag[r2.field] = r2.value;
-      n++;
-    });
-    (j.items || []).forEach(function(r2){
-      const a = aNoteOf(r2.key);
-      if(!Array.isArray(a[r2.sec])) a[r2.sec] = [];
-      const list = a[r2.sec];
-      const at = list.findIndex(function(x){ return x.id === r2.id; });
-      if(r2.gone){ if(at >= 0){ list.splice(at, 1); n++; } return; }
-      let o = null;
-      try { o = JSON.parse(r2.json); } catch(e){ return; }
-      if(at >= 0) list[at] = o; else list.push(o);
-      n++;
-    });
-
-    asvSince = j.at;
-    if(n){
-      try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); } catch(e){}
-      asvSnap = JSON.stringify((function(){
-        const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
-        Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
-        return s;
-      })());
-      asvSay("남이 적은 것 " + n + "군데를 받았습니다");
-      asvRedraw();
-    }
-  } catch(e){}
-}
-/* 받은 것을 화면에 얹는다 — 펴 둔 카드만 다시 세운다 */
-function asvRedraw(){
-  document.querySelectorAll(".acard.open").forEach(function(card){
-    if(typeof aRefresh === "function") aRefresh(card.dataset.key);
-  });
-}
-
-/* ── 서버 주소 · 이름 ── */
-function asvBarHTML(){
-  return '<div class="asv">'
-    + '<span class="asv-dot' + (asvOn() ? " on" : "") + '"></span>'
-    + '<b>' + (asvOn() ? "함께 적기 켜짐" : "함께 적기 꺼짐") + '</b>'
-    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "서버 주소를 넣으면 여럿이 같이 적을 수 있습니다") + '</span>'
-    + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
-    + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
-    + '</div>';
-}
-document.addEventListener("click", function(e){
-  if(!e.target.closest) return;
-  if(e.target.closest("#asv-set")){
-    const v = prompt("Apps Script 웹앱 주소를 넣어 주세요 (/exec 로 끝납니다)", asvUrl || "https://script.google.com/…/exec");
-    if(v === null) return;
-    asvUrl = v.trim();
-    try { localStorage.setItem(ASV_LS, asvUrl); } catch(e2){}
-    asvSince = "";
-    location.reload();
-  }
-});
-document.addEventListener("change", function(e){
-  if(e.target && e.target.id === "asv-who"){
-    asvWho = e.target.value.trim();
-    try { localStorage.setItem(ASV_WHO, asvWho); } catch(e2){}
-  }
-});
-
-/* ── 굴리기 ── */
-function asvStart(){
-  const bar = document.getElementById("asv-bar");
-  if(bar) bar.innerHTML = asvBarHTML();
-  if(!asvOn()) return;
-  asvSnap = JSON.stringify((function(){
-    const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
-    Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
-    return s;
-  })());
-  asvPull();
-  clearInterval(asvPullT);
-  asvPullT = setInterval(asvPull, 10000);       /* 10초마다 남의 것을 받아 온다 */
-  window.addEventListener("beforeunload", function(){ if(asvQ.kv.length || asvQ.items.length) asvPush(); });
-}
-
+
+/* ── 함께 적기 ─────────────────────────────────────────────────
+   구글 Apps Script 웹앱과 주고받는다. 칸 하나가 한 줄이라
+   서로 다른 칸을 건드리는 한 부딪히지 않는다.                       */
+const ASV_LS  = "oi-audit-server-v1";     /* 서버 주소 */
+const ASV_WHO = "oi-audit-who-v1";        /* 내 이름 */
+const ASV_URL_BAKED = "";                 /* 배포 때 여기에 주소를 박는다 */
+
+let asvUrl  = (function(){ try { return localStorage.getItem(ASV_LS) || ASV_URL_BAKED; } catch(e){ return ASV_URL_BAKED; } })();
+let asvWho  = (function(){ try { return localStorage.getItem(ASV_WHO) || ""; } catch(e){ return ""; } })();
+let asvSince = "";                        /* 마지막으로 받아 온 시각 */
+let asvBusy = false, asvTimer = null, asvPullT = null;
+let asvSnap = "{}";                       /* 마지막으로 올린 모습 — 무엇이 바뀌었는지 가린다 */
+let asvQ = { kv: [], items: [] };         /* 올릴 것 */
+
+function asvOn(){ return !!asvUrl; }
+function asvSay(msg, bad){
+  document.querySelectorAll("[data-asvsay]").forEach(function(el){
+    el.textContent = msg || "";
+    el.classList.toggle("bad", !!bad);
+  });
+}
+
+/* 지금 모습을 칸 단위로 편다 — {"열쇠\u0001칸\u0001이름": 값} */
+function asvFlat(note){
+  const out = {};
+  Object.keys(note || {}).forEach(function(key){
+    const a = note[key] || {};
+    Object.keys(a).forEach(function(sec){
+      const v = a[sec];
+      if(v === null || v === undefined) return;
+      if(typeof v !== "object"){ out[key + "\u0001@" + "\u0001" + sec] = String(v); return; }
+      if(Array.isArray(v)) return;                 /* 등록한 건은 따로 본다 */
+      if(sec === "ev"){                            /* 현장평가는 줄마다 통째로 */
+        Object.keys(v).forEach(function(i){
+          out[key + "\u0001ev\u0001" + i] = JSON.stringify(v[i]);
+        });
+        return;
+      }
+      Object.keys(v).forEach(function(f){
+        out[key + "\u0001" + sec + "\u0001" + f] = String(v[f] == null ? "" : v[f]);
+      });
+    });
+  });
+  return out;
+}
+function asvItems(note){
+  const out = {};
+  Object.keys(note || {}).forEach(function(key){
+    const a = note[key] || {};
+    Object.keys(a).forEach(function(sec){
+      if(!Array.isArray(a[sec])) return;
+      a[sec].forEach(function(it){
+        if(it && it.id) out[it.id] = { id: it.id, key: key, sec: sec, json: JSON.stringify(it) };
+      });
+    });
+  });
+  return out;
+}
+
+/* 바뀐 것만 골라 올릴 목록에 담는다 */
+function asvMark(){
+  if(!asvOn()) return;
+  let last;
+  try { last = JSON.parse(asvSnap); } catch(e){ last = { kv:{}, items:{} }; }
+  const kv = asvFlat(aNote), it = asvItems(aNote);
+
+  Object.keys(kv).forEach(function(id){
+    if(last.kv && last.kv[id] === kv[id]) return;
+    const p = id.split("\u0001");
+    asvQ.kv.push({ key: p[0], sec: p[1], field: p[2], value: kv[id] });
+  });
+  Object.keys(it).forEach(function(id){
+    if(last.items && last.items[id] === it[id].json) return;
+    asvQ.items.push(it[id]);
+  });
+  Object.keys(last.items || {}).forEach(function(id){
+    if(it[id]) return;
+    const o = JSON.parse(last.items[id] || "{}");
+    asvQ.items.push({ id: id, key: o._k || "", sec: o._s || "", json: "", gone: 1 });
+  });
+
+  const snap = { kv: kv, items: {} };
+  Object.keys(it).forEach(function(id){ snap.items[id] = it[id].json; });
+  asvSnap = JSON.stringify(snap);
+
+  if(asvQ.kv.length || asvQ.items.length) asvSoon();
+}
+function asvSoon(){
+  clearTimeout(asvTimer);
+  asvTimer = setTimeout(asvPush, 900);
+}
+
+async function asvPush(){
+  if(!asvOn() || asvBusy) return;
+  if(!asvQ.kv.length && !asvQ.items.length) return;
+  const send = { by: asvWho, kv: asvQ.kv, items: asvQ.items };
+  asvQ = { kv: [], items: [] };
+  asvBusy = true;
+  asvSay("올리는 중…");
+  try {
+    const r = await fetch(asvUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },   /* 미리 묻지 않게 */
+      body: JSON.stringify(send)
+    });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
+    asvSay("함께 보는 중 · " + j.at.slice(11) + " 올림");
+  } catch(e){
+    asvQ.kv = send.kv.concat(asvQ.kv);           /* 못 올렸으면 다시 줄 세운다 */
+    asvQ.items = send.items.concat(asvQ.items);
+    asvSay("서버에 못 올렸습니다 — 다시 시도합니다", 1);
+    setTimeout(asvPush, 6000);
+  } finally { asvBusy = false; }
+}
+
+/* 남이 적은 것을 받아 얹는다 — 내가 방금 적은 칸은 건드리지 않는다 */
+async function asvPull(){
+  if(!asvOn()) return;
+  try {
+    const u = asvUrl + (asvUrl.indexOf("?") < 0 ? "?" : "&") + "since=" + encodeURIComponent(asvSince);
+    const r = await fetch(u, { cache: "no-store" });
+    const j = await r.json();
+    if(!j.ok) return;
+    let n = 0;
+    const mine = {};
+    asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
+
+    (j.kv || []).forEach(function(r2){
+      if(mine[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field]) return;
+      const a = aNoteOf(r2.key);
+      if(r2.sec === "@"){ a[r2.field] = r2.value; n++; return; }
+      const bag = aNoteBag(r2.key, r2.sec);
+      if(r2.sec === "ev"){
+        try { bag[r2.field] = JSON.parse(r2.value); } catch(e){ return; }
+      } else bag[r2.field] = r2.value;
+      n++;
+    });
+    (j.items || []).forEach(function(r2){
+      const a = aNoteOf(r2.key);
+      if(!Array.isArray(a[r2.sec])) a[r2.sec] = [];
+      const list = a[r2.sec];
+      const at = list.findIndex(function(x){ return x.id === r2.id; });
+      if(r2.gone){ if(at >= 0){ list.splice(at, 1); n++; } return; }
+      let o = null;
+      try { o = JSON.parse(r2.json); } catch(e){ return; }
+      if(at >= 0) list[at] = o; else list.push(o);
+      n++;
+    });
+
+    try { n += asvTakeFiles(j.files); } catch(e){}
+    asvSince = j.at;
+    if(n){
+      try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); } catch(e){}
+      asvSnap = JSON.stringify((function(){
+        const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
+        Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
+        return s;
+      })());
+      asvSay("남이 적은 것 " + n + "군데를 받았습니다");
+      asvRedraw();
+    } else if((j.files || []).length){
+      asvRedraw();
+    }
+  } catch(e){}
+}
+/* 받은 것을 화면에 얹는다 — 펴 둔 카드만 다시 세운다 */
+function asvRedraw(){
+  document.querySelectorAll(".acard.open").forEach(function(card){
+    if(typeof aRefresh === "function") aRefresh(card.dataset.key);
+  });
+}
+
+
+/* ── 사진·서류도 함께 ───────────────────────────────────────── */
+let asvQF = [];                    /* 올릴 파일 */
+let asvFBusy = false;
+const asvSeen = {};                /* 서버에서 받아 이미 아는 파일 */
+
+/* 드라이브에 담긴 것을 화면에 쓸 주소로 */
+function asvDriveUrl(drive, type){
+  if(!drive) return "";
+  return /^image\//.test(type || "")
+    ? "https://lh3.googleusercontent.com/d/" + drive + "=w2200"
+    : "https://drive.google.com/file/d/" + drive + "/view";
+}
+function asvDriveDl(drive){
+  return drive ? "https://drive.google.com/uc?export=download&id=" + drive : "#";
+}
+
+function asvFileQ(rec, gone){
+  if(!asvOn() || !rec) return;
+  asvQF.push({ rec: rec, gone: !!gone });
+  asvPushFiles();
+}
+async function asvB64(blob){
+  return new Promise(function(ok, no){
+    const fr = new FileReader();
+    fr.onload = function(){ ok(String(fr.result).split(",")[1] || ""); };
+    fr.onerror = function(){ no(fr.error); };
+    fr.readAsDataURL(blob);
+  });
+}
+async function asvPushFiles(){
+  if(!asvOn() || asvFBusy || !asvQF.length) return;
+  asvFBusy = true;
+  try {
+    while(asvQF.length){
+      const job = asvQF[0];
+      const r = job.rec;
+      const row = { id: r.id, bag: r.key, name: r.name || "", type: r.type || "",
+                    size: r.size || 0, pg: r.pg || "", drive: r.drive || "" };
+      if(job.gone) row.gone = 1;
+      else if(r.blob && !r.drive){
+        asvSay("사진·서류 올리는 중 — " + (r.name || "") + " (" + asvQF.length + "개 남음)");
+        try { row.b64 = await asvB64(r.blob); } catch(e){ asvQF.shift(); continue; }
+      }
+      const res = await fetch(asvUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ by: asvWho, files: [row] })
+      });
+      const j = await res.json();
+      if(!j.ok) throw new Error(j.err || "서버가 받지 않음");
+      asvSeen[r.id] = 1;
+      asvQF.shift();
+    }
+    asvSay("사진·서류까지 함께 보는 중");
+  } catch(e){
+    asvSay("사진을 못 올렸습니다 — 다시 시도합니다", 1);
+    setTimeout(function(){ asvFBusy = false; asvPushFiles(); }, 8000);
+    return;
+  }
+  asvFBusy = false;
+}
+
+/* 서버에서 온 파일을 곳간에 얹는다 — 알맹이는 드라이브에 두고 주소만 쓴다 */
+function asvTakeFiles(rows){
+  let n = 0;
+  (rows || []).forEach(function(r){
+    const bag = r.bag;
+    const list = aPicMem[bag] = aPicMem[bag] || [];
+    const at = list.findIndex(function(x){ return x.id === r.id; });
+    if(r.gone){
+      if(at >= 0){ list.splice(at, 1); n++; }
+      asvSeen[r.id] = 1;
+      return;
+    }
+    if(at >= 0){                                  /* 내가 올린 것 — 드라이브 주소만 받아 둔다 */
+      if(!list[at].drive && r.drive) list[at].drive = r.drive;
+      asvSeen[r.id] = 1;
+      return;
+    }
+    list.push({ id: r.id, key: bag, name: r.name, type: r.type, size: +r.size || 0,
+                pg: r.pg ? +r.pg : 0, drive: r.drive,
+                url: asvDriveUrl(r.drive, r.type), from: "서버" });
+    asvSeen[r.id] = 1;
+    n++;
+  });
+  return n;
+}
+
+/* ── 서버 주소 · 이름 ── */
+function asvBarHTML(){
+  return '<div class="asv">'
+    + '<span class="asv-dot' + (asvOn() ? " on" : "") + '"></span>'
+    + '<b>' + (asvOn() ? "함께 적기 켜짐" : "함께 적기 꺼짐") + '</b>'
+    + '<span class="asv-say" data-asvsay>' + (asvOn() ? "" : "서버 주소를 넣으면 여럿이 같이 적을 수 있습니다") + '</span>'
+    + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
+    + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
+    + '</div>';
+}
+document.addEventListener("click", function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest("#asv-set")){
+    const v = prompt("Apps Script 웹앱 주소를 넣어 주세요 (/exec 로 끝납니다)", asvUrl || "https://script.google.com/…/exec");
+    if(v === null) return;
+    asvUrl = v.trim();
+    try { localStorage.setItem(ASV_LS, asvUrl); } catch(e2){}
+    asvSince = "";
+    location.reload();
+  }
+});
+document.addEventListener("change", function(e){
+  if(e.target && e.target.id === "asv-who"){
+    asvWho = e.target.value.trim();
+    try { localStorage.setItem(ASV_WHO, asvWho); } catch(e2){}
+  }
+});
+
+/* ── 굴리기 ── */
+function asvStart(){
+  const bar = document.getElementById("asv-bar");
+  if(bar) bar.innerHTML = asvBarHTML();
+  if(!asvOn()) return;
+  asvSnap = JSON.stringify((function(){
+    const kv = asvFlat(aNote), it = asvItems(aNote), s = { kv: kv, items: {} };
+    Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
+    return s;
+  })());
+  /* 서버를 붙이기 전에 담아 둔 사진·서류가 있으면 한 번 밀어 올린다 */
+  setTimeout(function(){
+    Object.keys(aPicMem).forEach(function(bag){
+      (aPicMem[bag] || []).forEach(function(r){
+        if(!asvSeen[r.id] && r.blob && !r.drive) asvFileQ(r);
+      });
+    });
+  }, 3000);
+  asvPull();
+  clearInterval(asvPullT);
+  asvPullT = setInterval(asvPull, 10000);       /* 10초마다 남의 것을 받아 온다 */
+  window.addEventListener("beforeunload", function(){ if(asvQ.kv.length || asvQ.items.length) asvPush(); });
+}
+
 /* ── 기록 주고받기 ── */
 function aNoteMerge(src){
   if(!src || typeof src !== "object") return 0;
