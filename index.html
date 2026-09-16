@@ -1195,7 +1195,6 @@
     padding:2px 7px; border-radius:20px; background:var(--railbg);
   }
   .aev-tip{ font-size:10.5px; color:var(--muted); margin-bottom:9px; }
-  .aev-left{ margin-left:8px; font-weight:750; color:var(--accent-strong); }
   /* 점검 시트 틀 그대로 */
   .aev-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
   .aev-t{ border-collapse:collapse; width:100%; min-width:1180px; font-size:11.5px; }
@@ -3475,7 +3474,6 @@ function aEvalHTML(key){
     return '<div class="aev"><div class="aev-none">자가점검 시트 항목이 없어 평가표를 세울 수 없습니다.</div></div>';
   }
   const meta = aNoteOf(key);
-  const left = items.length - r.done;
 
   /* 구분 칸을 시트처럼 하나로 묶는다 */
   const span = {};
@@ -3532,7 +3530,6 @@ function aEvalHTML(key){
     + '<div class="aev-tip">기준 : A(3점), B(2점), C(1점) — 평가기준 칸을 누르면 그 등급으로 매겨집니다. 적은 것은 칸을 벗어날 때 저장됩니다.</div>'
     + table
     + '<div class="aev-foot">'
-    +   '<span class="aev-left" data-aevleft>' + (left ? "아직 " + left + "항목 남았습니다 — 다 매기면 점수판에 올라갑니다." : "전 항목 평가 완료") + '</span>'
     +   '<button type="button" class="aev-go" data-aevdraw="1">평가 완료</button>'
     + '</div>'
     + '</div>';
@@ -3717,8 +3714,6 @@ document.addEventListener("click", function(e){
     set("[data-aevdone]", r.done);
     set("[data-aevpt]", r.sum);
     set("[data-aevconv]", r.conv.toFixed(2));
-    const left = r.items.length - r.done;
-    set("[data-aevleft]", left ? "아직 " + left + "항목 남았습니다 — 다 매기면 점수판에 올라갑니다." : "전 항목 평가 완료");
     aScoreBar(wrap.closest(".acard"), key);
     return;
   }
