@@ -322,7 +322,7 @@
 
   /* ---------- ranking bars ---------- */
   .rank-list{ display:flex; flex-direction:column; gap:10px; }
-  .rank-row{ display:grid; grid-template-columns:120px 1fr 40px; align-items:center; gap:10px; }
+  .rank-row{ display:grid; grid-template-columns:154px 1fr 42px; align-items:center; gap:10px; }
   .rank-row .name{ font-size:15.5px; color:var(--ink-2); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-track{ position:relative; height:16px; background:var(--surface-2); border-radius:5px; overflow:hidden; }
   .rank-fill{ position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--accent); }
@@ -845,7 +845,7 @@
   .score-row.s0.sel .co, .score-row.s1.sel .co, .score-row.s2.sel .co{ color:var(--ink); }
   .cmp-note.swap{ background:var(--warn-tint); color:var(--warn); }
 
-  .score-row{ display:grid; grid-template-columns:17px 104px 1fr 92px; align-items:center; gap:9px;
+  .score-row{ display:grid; grid-template-columns:17px 136px 1fr 92px; align-items:center; gap:9px;
     padding:4px 6px; margin:0 -6px; border-radius:9px; border:1px solid transparent; transition:background-color .15s, border-color .15s; }
   .score-row:hover{ background:var(--surface-2); }
   .score-row.sel{ background:var(--accent-tint); border-color:var(--accent); }
@@ -1541,6 +1541,22 @@
   }
   .ae-pt.self{ color:var(--muted); background:var(--surface-2); }
   .ae-pt.olive b{ color:var(--accent-strong); }
+  /* 표 맨 아래 총점 · 백분율 */
+  .aev-t tfoot .ae-sum th{
+    text-align:right; font-size:13px; font-weight:800; color:var(--ink);
+    background:var(--surface-2); vertical-align:middle;
+  }
+  .aev-t tfoot .ae-sum td{ background:var(--surface-2); vertical-align:middle; }
+  .aev-t tfoot .ae-pt{ font-family:var(--font-mono); text-align:center; }
+  .aev-t tfoot .ae-pt b{ font-size:16px; font-weight:800; }
+  .aev-t tfoot .ae-pt.self b{ color:var(--ink-2); }
+  .aev-t tfoot .ae-pt.olive b{ color:var(--accent-strong); }
+  .aev-t tfoot .ae-pt i{
+    display:block; font-style:normal; font-family:inherit;
+    font-size:10.5px; font-weight:600; color:var(--muted); margin-top:1px;
+  }
+  .ae-sumnote{ font-size:11.5px; color:var(--muted); line-height:1.5; }
+  .ae-sumnote b{ font-family:var(--font-mono); color:var(--ink); }
   .ae-res{
     width:100%; box-sizing:border-box; text-align:center; font-family:var(--font-mono);
     font-size:18.5px; font-weight:800; color:var(--accent-strong); padding:5px 2px;
@@ -2534,7 +2550,7 @@
     .page{ padding:24px 16px 60px; }
     .chart-grid{ grid-template-columns:1fr; }
     .kpi-row{ grid-template-columns:1fr 1fr; }
-    .rank-row{ grid-template-columns:84px 1fr 32px; }
+    .rank-row{ grid-template-columns:118px 1fr 34px; }
   }
 </style>
 
@@ -2553,7 +2569,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:33</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:54</span></div>
 </div>
 
 
@@ -3816,6 +3832,11 @@ function aEvalHTML(key){
     return '<div class="aev"><div class="aev-none">자가점검 시트 항목이 없어 평가표를 세울 수 없습니다.</div></div>';
   }
   const meta = aNoteOf(key);
+  /* 제조업자(자체)도 같은 방식으로 셈해 나란히 놓는다 */
+  let mSum = 0, mDone = 0;
+  items.forEach(function(it){ if(it.m){ mSum += AEV_V[it.m]; mDone++; } });
+  const full = items.length * 3;
+  const mConv = full ? (mSum * 100 / full) : 0;
 
   /* 구분 칸을 시트처럼 하나로 묶는다 */
   const span = {};
@@ -3866,7 +3887,23 @@ function aEvalHTML(key){
     +     '<th rowspan="2">근거 자료<i>업체 기입 · 고칠 수 있음</i></th>'
     +     '<th rowspan="2">개선 지적 사항<i>현장 기록</i></th></tr>'
     +   '<tr><th class="g-A">A (우수)</th><th class="g-B">B (보통)</th><th class="g-C">C (미흡)</th></tr>'
-    + '</thead><tbody>' + rows + '</tbody></table></div>';
+    + '</thead><tbody>' + rows + '</tbody>'
+    + '<tfoot>'
+    +   '<tr class="ae-sum">'
+    +     '<th colspan="5">총점</th>'
+    +     '<td class="ae-pt self"><b>' + mSum + '</b><i>/ ' + full + '</i></td>'
+    +     '<td class="ae-pt olive"><b data-aevtpt>' + r.sum + '</b><i>/ ' + full + '</i></td>'
+    +     '<td class="ae-sumnote" colspan="2">A 3점 · B 2점 · C 1점 · ' + items.length + '항목</td>'
+    +   '</tr>'
+    +   '<tr class="ae-sum">'
+    +     '<th colspan="5">백분율 점수</th>'
+    +     '<td class="ae-pt self"><b>' + mConv.toFixed(2) + '</b><i>점</i></td>'
+    +     '<td class="ae-pt olive"><b data-aevtcv>' + r.conv.toFixed(2) + '</b><i>점</i></td>'
+    +     '<td class="ae-sumnote" colspan="2">100점 환산 — 매긴 항목 '
+    +       '<b data-aevtdone>' + r.done + '</b> / ' + items.length
+    +       (mDone ? ' · 제조업자 ' + mDone + '항목' : '') + '</td>'
+    +   '</tr>'
+    + '</tfoot></table></div>';
 
   return '<div class="aev" data-aevkey="' + esc(key) + '">'
     + '<button type="button" class="aev-tog" data-aevtog="1" aria-expanded="false">'
@@ -4798,7 +4835,7 @@ function aRefresh(key){
     const tg = w && w.querySelector("[data-aftog]");
     if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
   });
-  body.querySelectorAll(".aev-n").forEach(aGrow);
+  aGrowSoon(body);
 
   /* 보고 있던 자리로 되돌린다 */
   const f2 = body.querySelector(".aev-foot");
@@ -4845,6 +4882,9 @@ function aSetGrade(wrap, i, g){
   const set = function(sel, v){ const el = wrap.querySelector(sel); if(el) el.textContent = v; };
   set("[data-aevdone]", r.done);
   set("[data-aevtn]", r.done);
+  set("[data-aevtpt]", r.sum);
+  set("[data-aevtcv]", r.conv.toFixed(2));
+  set("[data-aevtdone]", r.done);
   set("[data-aevpt]", r.sum);
   set("[data-aevconv]", r.conv.toFixed(2));
   aScoreBar(wrap.closest(".acard"), key);
@@ -4968,7 +5008,7 @@ document.addEventListener("click", function(e){
     if(!body) return;
     body.hidden = !body.hidden;
     tg.setAttribute("aria-expanded", String(!body.hidden));
-    if(!body.hidden) setTimeout(function(){ body.querySelectorAll(".aev-n").forEach(aGrow); }, 40);
+    if(!body.hidden) aGrowSoon(body);
     return;
   }
 
@@ -5030,12 +5070,21 @@ document.addEventListener("input", function(e){
     aSetGrade(t.closest(".aev"), t.dataset.aevres, g);
   }
 });
-/* 카드를 펼칠 때 이미 적혀 있던 것도 한 번 맞춘다 */
+/* 배치가 끝난 뒤에 재야 한다 — 그림을 그린 직후와 잠시 뒤에 한 번 더 */
+function aGrowSoon(root){
+  const run = function(){
+    (root || document).querySelectorAll(".aev-n").forEach(aGrow);
+  };
+  requestAnimationFrame(function(){ requestAnimationFrame(run); });
+  setTimeout(run, 140);
+  setTimeout(run, 450);
+}
+/* 카드를 펼칠 때 이미 적혀 있던 것도 맞춘다 */
 document.addEventListener("click", function(e){
   if(!e.target || !e.target.closest) return;
   if(!e.target.closest(".acard-top") && !e.target.closest("[data-aevdraw]")
      && !e.target.closest("[data-phtog]") && !e.target.closest("[data-aevtog]")) return;
-  setTimeout(function(){ document.querySelectorAll(".aev-n").forEach(aGrow); }, 60);
+  aGrowSoon();
 });
 
 document.addEventListener("change", function(e){
