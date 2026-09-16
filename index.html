@@ -1290,6 +1290,51 @@
   }
   .ai-e:hover{ border-color:var(--accent); color:var(--accent-strong); }
 
+  /* 지적사항 일람표 */
+  .cs-hd{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:10px 13px; border:1px solid var(--border); border-bottom:0;
+    border-radius:10px 10px 0 0; background:var(--surface-2);
+  }
+  .cs-hd > b{ font-size:14.5px; font-weight:800; }
+  .cs-co{
+    font-size:12.5px; font-weight:750; color:var(--accent-strong);
+    padding:2px 10px; border-radius:20px; background:var(--accent-tint);
+  }
+  .cs-d{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .cs-d:first-of-type{ margin-left:auto; }
+  .cs-d input{
+    font-family:inherit; font-size:12.5px; padding:4px 8px; color:var(--ink);
+    border:1px solid var(--border); border-radius:7px; background:var(--surface);
+  }
+  .cs-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:0 0 10px 10px; }
+  .cs-t{ width:100%; min-width:900px; border-collapse:collapse; table-layout:fixed; font-size:13px; }
+  .cs-t col.w-no{ width:46px; }
+  .cs-t col.w-cat{ width:112px; }
+  .cs-t col.w-find{ width:auto; }
+  .cs-t col.w-plan{ width:24%; }
+  .cs-t col.w-dept{ width:92px; }
+  .cs-t col.w-who{ width:104px; }
+  .cs-t col.w-due{ width:104px; }
+  .cs-t col.w-x{ width:64px; }
+  .cs-t th, .cs-t td{
+    border:1px solid var(--border); padding:8px 10px; vertical-align:top; line-height:1.6;
+  }
+  .cs-t thead th{
+    text-align:center; font-size:12.5px; font-weight:800; color:var(--ink);
+    background:var(--surface-2); white-space:nowrap; vertical-align:middle;
+  }
+  .cs-no{
+    text-align:center; font-family:var(--font-mono); font-weight:800;
+    color:var(--muted); vertical-align:middle;
+  }
+  .cs-cat{ font-weight:750; color:var(--ink-2); vertical-align:middle; }
+  .cs-tx{ color:var(--ink-2); white-space:pre-wrap; }
+  .cs-m{ text-align:center; color:var(--ink-2); vertical-align:middle; white-space:nowrap; }
+  .cs-none{ color:var(--border-strong); }
+  .cs-x{ text-align:center; vertical-align:middle; }
+  .cs-x .ai-e{ display:block; width:100%; margin:0 0 4px; }
+  .cs-x .ai-e:last-child{ margin-bottom:0; }
   /* 개선 전·후 비교표 */
   .ct{ margin-top:12px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
   .ct-hd{
@@ -2571,7 +2616,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 13:01</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 14:48</span></div>
 </div>
 
 
@@ -4238,7 +4283,14 @@ const ADOC_ITEM = {
          f:[ {k:"title", t:"제목", req:1, ph:"예) 클레임이력에 대해 현장 전파 강화"},
              {k:"now",   t:"현황", ta:3, req:1, ph:"무엇이 문제인지 — 사례가 있으면 함께"},
              {k:"ask",   t:"요청", ta:3, req:1, ph:"무엇을 해 달라는지"} ] },
-  crI: { on:"cr", title:"개선 결과", add:"개선결과 등록", table:1, catT:"개선부서",
+  crS: { on:"cr", title:"지적사항 일람표", add:"지적사항 등록", sheet:1, catT:"평가항목",
+         cats:["품질 업무 관련","생산 현장 관련","검사 관련","설비 관련","위생 관련","문서 관련","기타"],
+         f:[ {k:"find", t:"지적사항", ta:4, req:1, ph:"예) 입고자재 스티커 도병표(관리번호 · 제조기록이 유기입)\n- 사례 : …"},
+             {k:"plan", t:"개선대책", ta:3, req:1, ph:"예) 제조공정 변경 · 결과보고서 작성 및 작업자 교육보고서"},
+             {k:"dept", t:"부서",     ph:"예) 제조1팀"},
+             {k:"who",  t:"담당자",   ph:"예) 하영재 팀장"},
+             {k:"due",  t:"완료 예정일", d:1} ] },
+  crI: { on:"cr", title:"개선 전·후 비교표", add:"개선 전·후 등록", table:1, catT:"개선부서",
          picg:[ {k:"b", t:"개선 전 사진"}, {k:"a", t:"개선 후 사진"} ],
          cats:["QA팀","QC팀","생산팀","자재팀","연구소","설비팀","기타"],
          f:[ {k:"title",  t:"문제 점", ta:2, req:1, ph:"예) 클레임 발생시 회신기한에 대한 내부기준 부재로 대응 지연 우려"},
@@ -4288,6 +4340,53 @@ function aDocText(key, sec){
   }).join("\n\n");
 }
 
+/* 업체 서식과 같은 「지적사항 일람표」 */
+function aSheetHTML(key, sec){
+  const D = ADOC_ITEM[sec];
+  const list = aDocList(key, sec);
+  const co = String(key).split("|")[2] || "";
+  const meta = aNoteBag(key, "cr");
+  const dash = '<span class="cs-none">—</span>';
+  const head =
+    '<div class="cs-hd">'
+    + '<b>올리브인터내셔널 Audit 지적사항</b><span class="cs-co">' + esc(co) + '</span>'
+    + '<label class="cs-d">실사일<input type="date" data-csmeta="at" value="' + esc(meta.at || "") + '" /></label>'
+    + '<label class="cs-d">작성일<input type="date" data-csmeta="wAt" value="' + esc(meta.wAt || "") + '" /></label>'
+    + '</div>';
+  if(!list.length) return head;
+  return head
+    + '<div class="cs-wrap"><table class="cs-t">'
+    + '<colgroup><col class="w-no"><col class="w-cat"><col class="w-find"><col class="w-plan">'
+    +   '<col class="w-dept"><col class="w-who"><col class="w-due"><col class="w-x"></colgroup>'
+    + '<thead><tr>'
+    +   '<th>NO.</th><th>평가항목</th><th>지적사항</th><th>개선대책</th>'
+    +   '<th>부서</th><th>담당자</th><th>완료 예정일</th><th></th>'
+    + '</tr></thead><tbody>'
+    + list.map(function(it, i){
+        return '<tr>'
+          + '<td class="cs-no">' + (i + 1) + '</td>'
+          + '<td class="cs-cat">' + (it.cat ? esc(it.cat) : dash) + '</td>'
+          + '<td class="cs-tx">' + (it.find ? esc(it.find) : dash) + '</td>'
+          + '<td class="cs-tx">' + (it.plan ? esc(it.plan) : dash) + '</td>'
+          + '<td class="cs-m">' + (it.dept ? esc(it.dept) : dash) + '</td>'
+          + '<td class="cs-m">' + (it.who ? esc(it.who) : dash) + '</td>'
+          + '<td class="cs-m">' + (it.due ? esc(it.due) : dash) + '</td>'
+          + '<td class="cs-x">'
+          +   '<button type="button" class="ai-e" data-aiedit="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">수정</button>'
+          +   '<button type="button" class="ai-e" data-aidel="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">삭제</button>'
+          + '</td></tr>';
+      }).join("")
+    + '</tbody></table></div>';
+}
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(!t || !t.dataset || t.dataset.csmeta === undefined) return;
+  const w = t.closest(".ailist");
+  if(!w) return;
+  aNoteBag(w.dataset.aikey, "cr")[t.dataset.csmeta] = t.value;
+  aNoteSave();
+});
+
 /* 업체 서식과 같은 「개선 전·후 비교표」 */
 function aCapaTableHTML(key, sec, it, no){
   const D = ADOC_ITEM[sec];
@@ -4328,6 +4427,17 @@ function aDocListHTML(key, sec){
   const D = ADOC_ITEM[sec];
   const groups = aDocGroups(key, sec);
   const n = aDocList(key, sec).length;
+  if(D.sheet){
+    return '<div class="ailist" data-aikey="' + esc(key) + '" data-aisec="' + sec + '">'
+      + '<div class="ai-hd"><b>' + esc(D.title) + '</b>'
+      +   '<span class="ai-cnt">' + (n ? n + '건' : '아직 없음') + '</span>'
+      +   '<button type="button" class="ai-copy" data-aipull="' + esc(key) + '">개선지시서에서 가져오기</button>'
+      +   '<button type="button" class="ai-add" data-aiadd="' + esc(key) + '||' + sec + '">＋ ' + esc(D.add) + '</button>'
+      + '</div>'
+      + aSheetHTML(key, sec)
+      + (n ? "" : '<div class="ai-none">업체가 보낸 개선결과서를 보고 <b>＋ ' + esc(D.add) + '</b> 으로 한 건씩 적습니다.</div>')
+      + '</div>';
+  }
   if(D.table){
     const list = aDocList(key, sec);
     return '<div class="ailist" data-aikey="' + esc(key) + '" data-aisec="' + sec + '">'
@@ -4525,6 +4635,26 @@ document.addEventListener("click", function(e){
       aPicOf(bag).slice().forEach(function(x){ aPicDel(bag, x.id); });
     }
     aDocRefresh(p[0], p[1]); return; }
+
+  const pl = t.closest("[data-aipull]");
+  if(pl){ e.preventDefault(); e.stopPropagation();
+    const key = pl.dataset.aipull;
+    const src = aDocList(key, "ciF");
+    if(!src.length){ alert("개선지시서에 등록한 지적사항이 없습니다."); return; }
+    const dst = aDocList(key, "crS");
+    const have = {};
+    dst.forEach(function(x){ have[x.cat + "|" + x.find] = 1; });
+    let n = 0;
+    src.forEach(function(x){
+      const find = x.title + (x.now ? "\n- 현황 : " + x.now : "");
+      if(have[x.cat + "|" + find]) return;
+      dst.push({ id:"i" + Date.now() + Math.random().toString(36).slice(2,6),
+                 cat:x.cat, find:find, plan:x.ask || "", dept:"", who:"", due:"" });
+      n++;
+    });
+    aNoteSave(); aDocRefresh(key, "crS");
+    aiFlash(key, "crS", n ? n + "건을 가져왔습니다 — 개선대책·부서·담당자를 채우세요" : "새로 가져올 건이 없습니다");
+    return; }
 
   const cp = t.closest("[data-aicopy]");
   if(cp){ e.preventDefault(); e.stopPropagation();
@@ -5877,11 +6007,11 @@ function phasePostHTML(key, det){
         !!(idHTML || (fd && fd.issue)))}
       ${aDocHTML(key, "ci")}
       ${docFoldHTML(key, "capa", "개선결과서",
-        aDocListHTML(key, "crI")
+        aDocListHTML(key, "crS") + aDocListHTML(key, "crI")
         + (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
         + sumBlock + (items.length ? capaBlock : "")
         + origPagesHTML(key, "capa", "개선결과서"),
-        items.length > 0 || aDocList(key, "crI").length > 0)}
+        items.length > 0 || aDocList(key, "crI").length > 0 || aDocList(key, "crS").length > 0)}
       ${aFileHTML(key, "cr")}
       ${docFoldHTML(key, "ev", "평가서",
         (fd && fd.capa ? `<div class="txt-block">${esc(fd.capa)}</div>` : "")
