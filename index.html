@@ -1290,6 +1290,47 @@
   }
   .ai-e:hover{ border-color:var(--accent); color:var(--accent-strong); }
 
+  /* 개선 전·후 비교표 */
+  .ct{ margin-top:12px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .ct-hd{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:9px 12px; background:var(--surface-2); border-bottom:1px solid var(--border);
+  }
+  .ct-no{
+    flex-shrink:0; font-family:var(--font-mono); font-size:12px; font-weight:800; color:#fff;
+    width:22px; height:22px; line-height:22px; text-align:center; border-radius:6px; background:var(--accent-strong);
+  }
+  .ct-hd > b{ font-size:14px; font-weight:800; color:var(--ink); }
+  .ct-dept{
+    font-size:12px; font-weight:750; color:var(--accent-strong);
+    padding:2px 9px; border-radius:20px; background:var(--accent-tint);
+  }
+  .ct-x{ margin-left:auto; display:flex; gap:5px; }
+  .ct-t{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  .ct-t th, .ct-t td{
+    border:1px solid var(--border); padding:8px 11px; vertical-align:top; line-height:1.6;
+  }
+  .ct-t th{
+    width:106px; text-align:center; vertical-align:middle; font-weight:800;
+    color:var(--ink-2); background:var(--surface-2); white-space:nowrap;
+  }
+  .ct-t td{ color:var(--ink-2); white-space:pre-wrap; }
+  .ct-h2 td{
+    text-align:center; font-weight:800; color:var(--ink); background:var(--surface-2);
+    width:50%; white-space:nowrap;
+  }
+  .ct-ba{ width:50%; }
+  .ct-txt{ white-space:pre-wrap; }
+  .ct-none{ color:var(--border-strong); }
+  .ct-pics{ display:flex; flex-wrap:wrap; gap:7px; margin-top:7px; }
+  .ct-pics img{
+    width:100%; max-width:260px; height:auto; display:block; border-radius:7px;
+    border:1px solid var(--border); background:var(--surface-2);
+  }
+  @media (max-width:760px){
+    .ct-t th{ width:80px; }
+    .ct-pics img{ max-width:100%; }
+  }
   /* 등록 창 */
   .aiw{
     position:fixed; inset:0; z-index:950; background:rgba(15,18,26,.45);
@@ -2512,7 +2553,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:26</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 12:33</span></div>
 </div>
 
 
@@ -4028,7 +4069,8 @@ function aFileHTML(key, sec){
   return '<div class="afile" data-afkey="' + esc(key) + '" data-afsec="' + sec + '">'
     + '<button type="button" class="aev-tog" data-aftog="1" aria-expanded="false">'
     +   '<span class="car">\u25b8</span><b>' + esc(D.title) + '</b>'
-    +   '<span class="aev-tn">' + (list.length ? '파일 <i>' + list.length + '</i>개' : '없음') + '</span>'
+    +   '<span class="aev-tn">' + (list.length ? '파일 <i>' + list.length + '</i>개' : '파일 없음')
+    +     ((sec === "cr" && aDocList(key, "crI").length) ? ' · 적은 것 <i>' + aDocList(key, "crI").length + '</i>건' : '') + '</span>'
     + '</button>'
     + '<div class="aev-body af-body" hidden>'
     +   '<div class="af-drop" data-afdrop="' + esc(key) + '::' + sec + '" tabindex="0">'
@@ -4053,6 +4095,7 @@ function aFileHTML(key, sec){
             + '<span class="af-cap">' + esc(r.name) + '</span></div>';
         }).join("") + '</div>' : "")
     +   (list.length ? "" : '<div class="af-none">아직 올려 둔 파일이 없습니다.</div>')
+    +   (sec === "cr" ? aDocListHTML(key, "crI") : "")
     + '</div></div>';
 }
 
@@ -4158,6 +4201,13 @@ const ADOC_ITEM = {
          f:[ {k:"title", t:"제목", req:1, ph:"예) 클레임이력에 대해 현장 전파 강화"},
              {k:"now",   t:"현황", ta:3, req:1, ph:"무엇이 문제인지 — 사례가 있으면 함께"},
              {k:"ask",   t:"요청", ta:3, req:1, ph:"무엇을 해 달라는지"} ] },
+  crI: { on:"cr", title:"개선 결과", add:"개선결과 등록", table:1, catT:"개선부서",
+         picg:[ {k:"b", t:"개선 전 사진"}, {k:"a", t:"개선 후 사진"} ],
+         cats:["QA팀","QC팀","생산팀","자재팀","연구소","설비팀","기타"],
+         f:[ {k:"title",  t:"문제 점", ta:2, req:1, ph:"예) 클레임 발생시 회신기한에 대한 내부기준 부재로 대응 지연 우려"},
+             {k:"how",    t:"개선방법", ta:2, req:1, ph:"예) 클레임 유형별 회신 기한(Deadline) 운영 표준 수립"},
+             {k:"before", t:"개선 전", ta:3, ph:"예) 고객사 클레임 관련 회신기한에 대한 내부규정 누락"},
+             {k:"after",  t:"개선 후", ta:3, ph:"무엇이 어떻게 바뀌었는지 — 사진은 아래에 붙입니다"} ] },
   ciF: { on:"ci", title:"개선 사항", add:"지적사항 등록", pic:1, cats:ADOC_CAT.f,
          f:[ {k:"title", t:"제목", req:1, ph:"예) 작업소 위생 환경 재정비"},
              {k:"now",   t:"현황", ta:3, req:1, ph:"무엇이 문제인지"},
@@ -4169,6 +4219,11 @@ function aDocList(key, sec){
   return a[sec];
 }
 function aDocFind(key, sec, id){ return aDocList(key, sec).filter(function(x){ return x.id === id; })[0]; }
+/* 사진 곳간 이름 — 묶음이 하나면 옛 이름을 그대로 쓴다 */
+function aPicBagOf(D, key, sec, id, g){
+  return key + "::" + sec + "::" + id + (D.picg ? "::" + g : "");
+}
+function aPicGroups(D){ return D.picg || (D.pic ? [{ k:"p", t:"사진" }] : []); }
 
 /* 구분끼리 묶어 번호를 매긴다 */
 function aDocGroups(key, sec){
@@ -4196,10 +4251,57 @@ function aDocText(key, sec){
   }).join("\n\n");
 }
 
+/* 업체 서식과 같은 「개선 전·후 비교표」 */
+function aCapaTableHTML(key, sec, it, no){
+  const D = ADOC_ITEM[sec];
+  const pic = function(g){
+    return aPicOf(aPicBagOf(D, key, sec, it.id, g)).map(function(p){
+      return '<a href="' + (p.url || "#") + '" target="_blank" rel="noopener">'
+        + '<img src="' + (p.url || "") + '" alt="' + esc(p.name) + '" loading="lazy" /></a>';
+    }).join("");
+  };
+  const cell = function(txt, g){
+    const ps = pic(g);
+    return '<td class="ct-ba">'
+      + (txt ? '<div class="ct-txt">' + esc(txt) + '</div>' : "")
+      + (ps ? '<div class="ct-pics">' + ps + '</div>' : "")
+      + (txt || ps ? "" : '<span class="ct-none">—</span>')
+      + '</td>';
+  };
+  return '<div class="ct" data-aiid="' + esc(it.id) + '">'
+    + '<div class="ct-hd">'
+    +   '<span class="ct-no">' + no + '</span>'
+    +   '<b>' + esc(it.title || "") + '</b>'
+    +   '<span class="ct-dept">' + esc(it.cat || "") + '</span>'
+    +   '<span class="ct-x">'
+    +     '<button type="button" class="ai-e" data-aiedit="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">수정</button>'
+    +     '<button type="button" class="ai-e" data-aidel="' + esc(key) + '||' + sec + '||' + esc(it.id) + '">삭제</button>'
+    +   '</span>'
+    + '</div>'
+    + '<table class="ct-t"><tbody>'
+    +   '<tr><th>개선부서</th><td colspan="2">' + esc(it.cat || "") + '</td></tr>'
+    +   '<tr><th>문제 점</th><td colspan="2">' + esc(it.title || "") + '</td></tr>'
+    +   '<tr><th>개선방법</th><td colspan="2">' + esc(it.how || "") + '</td></tr>'
+    +   '<tr class="ct-h2"><th rowspan="2">개선 결과</th><td>개선전</td><td>개선후</td></tr>'
+    +   '<tr>' + cell(it.before, "b") + cell(it.after, "a") + '</tr>'
+    + '</tbody></table></div>';
+}
+
 function aDocListHTML(key, sec){
   const D = ADOC_ITEM[sec];
   const groups = aDocGroups(key, sec);
   const n = aDocList(key, sec).length;
+  if(D.table){
+    const list = aDocList(key, sec);
+    return '<div class="ailist" data-aikey="' + esc(key) + '" data-aisec="' + sec + '">'
+      + '<div class="ai-hd"><b>' + esc(D.title) + '</b>'
+      +   '<span class="ai-cnt">' + (n ? n + '건' : '아직 없음') + '</span>'
+      +   '<button type="button" class="ai-add" data-aiadd="' + esc(key) + '||' + sec + '">＋ ' + esc(D.add) + '</button>'
+      + '</div>'
+      + (n ? list.map(function(it, i){ return aCapaTableHTML(key, sec, it, i + 1); }).join("")
+           : '<div class="ai-none">업체가 보낸 개선결과서를 보고 <b>＋ ' + esc(D.add) + '</b> 으로 한 건씩 적습니다.</div>')
+      + '</div>';
+  }
   const rows = groups.map(function(g, gi){
     return '<div class="ai-g"><div class="ai-gh">' + (gi + 1) + '. ' + esc(g.cat) + '</div>'
       + g.items.map(function(it, i){
@@ -4254,7 +4356,7 @@ function aDocOpen(key, sec, id){
     +   '<span>한 건씩 적습니다 — 양식에는 구분끼리 묶여 번호가 매겨집니다</span>'
     +   '<button type="button" class="ai-close" data-aiclose="1" aria-label="닫기">✕</button></div>'
     + '<div class="ai-bb">'
-    +   '<label class="ai-f"><span>구분</span>'
+    +   '<label class="ai-f"><span>' + esc(D.catT || "구분") + '</span>'
     +     '<input list="ai-cats" data-aif="cat" value="' + esc(it.cat || cats[0]) + '" placeholder="예) 생산 현장관련" />'
     +     '<datalist id="ai-cats">' + cats.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join("") + '</datalist>'
     +   '</label>'
@@ -4268,12 +4370,12 @@ function aDocOpen(key, sec, id){
                 : '<input data-aif="' + f.k + '" value="' + esc(v) + '" placeholder="' + esc(f.ph || "") + '" />');
           return '<label class="ai-f"><span>' + esc(f.t) + (f.req ? ' <i class="ai-req">*</i>' : '') + '</span>' + inp + '</label>';
         }).join("")
-    +   (D.pic
-          ? '<div class="ai-f"><span>사진</span>'
-            + '<div class="ai-drop" data-aidrop="1" tabindex="0">여기로 끌어놓거나 눌러서 고릅니다 · 붙여넣기(Ctrl+V)도 됩니다'
+    +   aPicGroups(D).map(function(g){
+          return '<div class="ai-f"><span>' + esc(g.t) + '</span>'
+            + '<div class="ai-drop" data-aidrop="' + g.k + '" tabindex="0">여기로 끌어놓거나 눌러서 고릅니다 · 붙여넣기(Ctrl+V)도 됩니다'
             + '<input type="file" accept="image/*" multiple hidden /></div>'
-            + '<div class="ai-thumbs"></div></div>'
-          : "")
+            + '<div class="ai-thumbs" data-aith="' + g.k + '"></div></div>';
+        }).join("")
     + '</div>'
     + '<div class="ai-bf">'
     +   '<button type="button" class="ai-cancel" data-aiclose="1">취소</button>'
@@ -4285,11 +4387,11 @@ function aDocOpen(key, sec, id){
   const first = w.querySelector('[data-aif="cat"]');
   if(first) first.focus();
 
-  if(D.pic){
-    w._pics = [];                                   /* 새 건은 저장할 때 담는다 */
-    if(id) w._pics = aPicOf(key + "::" + sec + "::" + id).slice();
-    aDocThumbs(w);
-  }
+  w._pg = {};
+  aPicGroups(D).forEach(function(g){
+    w._pg[g.k] = id ? aPicOf(aPicBagOf(D, key, sec, id, g.k)).slice() : [];
+  });
+  aDocThumbs(w);
   w.addEventListener("click", function(e){ if(e.target === w) aDocClose(w); });
 }
 function aDocClose(w){ if(w && w.parentElement) w.remove(); }
@@ -4306,12 +4408,13 @@ function aiFlash(key, sec, msg){
   });
 }
 function aDocThumbs(w){
-  const box = w.querySelector(".ai-thumbs");
-  if(!box) return;
-  box.innerHTML = (w._pics || []).map(function(p, i){
-    return '<div class="ai-th"><img src="' + (p.url || "") + '" alt="" />'
-      + '<button type="button" class="ai-thx" data-aithx="' + i + '">✕</button></div>';
-  }).join("");
+  w.querySelectorAll(".ai-thumbs").forEach(function(box){
+    const g = box.dataset.aith || "p";
+    box.innerHTML = ((w._pg && w._pg[g]) || []).map(function(p, i){
+      return '<div class="ai-th"><img src="' + (p.url || "") + '" alt="" />'
+        + '<button type="button" class="ai-thx" data-aithx="' + g + '::' + i + '">✕</button></div>';
+    }).join("");
+  });
 }
 
 async function aDocSave(w){
@@ -4329,12 +4432,13 @@ async function aDocSave(w){
   Object.assign(it, val);
   aNoteSave();
 
-  if(D.pic){
-    const bag = key + "::" + sec + "::" + it.id;
+  for(const g of aPicGroups(D)){
+    const bag = aPicBagOf(D, key, sec, it.id, g.k);
+    const mine = (w._pg && w._pg[g.k]) || [];
     const keep = {};
-    (w._pics || []).forEach(function(p){ keep[p.id] = 1; });
+    mine.forEach(function(p){ keep[p.id] = 1; });
     for(const p of aPicOf(bag).slice()) if(!keep[p.id]) await aPicDel(bag, p.id);
-    for(const p of (w._pics || [])) if(p.file) await aPicAdd(bag, p.file, p.id);
+    for(const p of mine) if(p.file) await aPicAdd(bag, p.file, p.id);
   }
   aDocClose(w);
   aDocRefresh(key, sec);
@@ -4346,6 +4450,16 @@ function aDocRefresh(key, sec){
     if(el.dataset.aikey !== key || el.dataset.aisec !== sec) return;
     el.outerHTML = aDocListHTML(key, sec);
   });
+  if(sec === "crI"){
+    document.querySelectorAll(".afile").forEach(function(w){
+      if(w.dataset.afkey === key && w.dataset.afsec === "cr"){
+        const t = w.querySelector(".aev-tn");
+        const nf = aFileOf(key, "cr").length, ni = aDocList(key, "crI").length;
+        if(t) t.innerHTML = (nf ? '파일 <i>' + nf + '</i>개' : '파일 없음')
+          + (ni ? ' · 적은 것 <i>' + ni + '</i>건' : '');
+      }
+    });
+  }
   document.querySelectorAll(".adoc").forEach(function(w){
     if(w.dataset.adockey === key) aDocCount(w);
   });
@@ -4401,7 +4515,8 @@ document.addEventListener("click", function(e){
   const thx = t.closest("[data-aithx]");
   if(thx){ e.preventDefault(); e.stopPropagation();
     const w = thx.closest(".aiw");
-    w._pics.splice(+thx.dataset.aithx, 1); aDocThumbs(w); return; }
+    const p = thx.dataset.aithx.split("::");
+    (w._pg[p[0]] || []).splice(+p[1], 1); aDocThumbs(w); return; }
 
   const dz = t.closest(".ai-drop");
   if(dz){ e.preventDefault(); e.stopPropagation(); dz.querySelector('input[type="file"]').click(); return; }
@@ -4411,19 +4526,21 @@ document.addEventListener("keydown", function(e){
   if(e.key === "Escape"){ const w = document.querySelector(".aiw"); if(w) aDocClose(w); }
 });
 
-function aDocTakePics(w, files){
+function aDocTakePics(w, g, files){
+  w._pg = w._pg || {};
+  w._pg[g] = w._pg[g] || [];
   [].slice.call(files || []).forEach(function(f){
     if(!/^image\//.test(f.type || "")) return;
-    w._pics = w._pics || [];
-    w._pics.push({ id:"p" + Date.now() + Math.random().toString(36).slice(2,6),
-                   name:f.name || "사진", file:f, url:URL.createObjectURL(f) });
+    w._pg[g].push({ id:"p" + Date.now() + Math.random().toString(36).slice(2,6),
+                    name:f.name || "사진", file:f, url:URL.createObjectURL(f) });
   });
   aDocThumbs(w);
 }
 document.addEventListener("change", function(e){
   const t = e.target;
   if(t && t.type === "file" && t.closest && t.closest(".ai-drop")){
-    aDocTakePics(t.closest(".aiw"), t.files); t.value = "";
+    const dz = t.closest(".ai-drop");
+    aDocTakePics(t.closest(".aiw"), dz.dataset.aidrop || "p", t.files); t.value = "";
   }
 });
 document.addEventListener("dragover", function(e){
@@ -4438,14 +4555,17 @@ document.addEventListener("drop", function(e){
   const dz = e.target.closest && e.target.closest(".ai-drop");
   if(!dz) return;
   e.preventDefault(); dz.classList.remove("over");
-  aDocTakePics(dz.closest(".aiw"), (e.dataTransfer && e.dataTransfer.files) || []);
+  aDocTakePics(dz.closest(".aiw"), dz.dataset.aidrop || "p", (e.dataTransfer && e.dataTransfer.files) || []);
 });
 document.addEventListener("paste", function(e){
   const w = document.querySelector(".aiw");
   if(!w || !e.clipboardData) return;
   const fs2 = [].slice.call(e.clipboardData.files || []);
   if(!fs2.length) return;
-  e.preventDefault(); aDocTakePics(w, fs2);
+  const dz2 = document.activeElement && document.activeElement.closest
+    && document.activeElement.closest(".ai-drop");
+  e.preventDefault();
+  aDocTakePics(w, (dz2 && dz2.dataset.aidrop) || aPicGroups(ADOC_ITEM[w.dataset.aisec])[0].k, fs2);
 });
 
 /* ── 화면 ── */
