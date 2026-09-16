@@ -1459,6 +1459,23 @@
   /* 확인서 · 개선지시서 쓰기 */
   .adoc{ margin-top:10px; }
   .adoc-body{ padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .aw-sub{ font-style:normal; font-size:12.5px; color:var(--muted); }
+  .aw-tabs{
+    display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;
+    padding-bottom:12px; border-bottom:1px solid var(--border);
+  }
+  .aw-t{
+    display:inline-flex; align-items:center; gap:7px; font-family:inherit;
+    font-size:13.5px; font-weight:800; cursor:pointer; color:var(--ink-2);
+    padding:8px 16px; border:1px solid var(--border); border-radius:100px; background:var(--surface);
+  }
+  .aw-t:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .aw-t.on{ background:var(--accent-strong); border-color:transparent; color:#fff; }
+  .aw-t i{
+    font-style:normal; font-family:var(--font-mono); font-size:11px; font-weight:800;
+    padding:1px 7px; border-radius:20px; background:var(--surface-2); color:var(--ink-2);
+  }
+  .aw-t.on i{ background:rgba(255,255,255,.24); color:#fff; }
   .adoc-grid{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px 12px; }
   .adoc-f{ display:flex; flex-direction:column; gap:4px; min-width:0; }
   .adoc-f.w-full{ grid-column:span 6; }
@@ -2639,7 +2656,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 15:17</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 15:29</span></div>
 </div>
 
 
@@ -4022,6 +4039,17 @@ const ADOC_FORM = {
     { k:"aName",   t:"승인자 성명",     w:"third" },
     { k:"aAt",     t:"승인 일자",       w:"third", d:1 }
   ]},
+  ev: { title:"평가서", pic:0, fields: [
+    { k:"co",     t:"제조업자 상호",     w:"half" },
+    { k:"site",   t:"제조소 명칭",       w:"half" },
+    { k:"addr",   t:"제조소 소재지",     w:"full" },
+    { k:"items",  t:"대상품목",          w:"full", ta:3 },
+    { k:"at",     t:"감사일자",          w:"third", d:1 },
+    { k:"result", t:"평가결과",          w:"full", ta:3 },
+    { k:"wName",  t:"작성자",            w:"third" },
+    { k:"wAt",    t:"작성 일자",         w:"third", d:1 },
+    { k:"mName",  t:"책임판매관리자",     w:"third" }
+  ]},
   ci: { title: "개선지시서(작성)", pic: 1, fields: [
     { k:"co",      t:"화장품제조업자",  w:"half" },
     { k:"due",     t:"회신 기한",       w:"half", d:1 },
@@ -4063,6 +4091,13 @@ function aDocSeed(key, sec, k){
     if(k === "co") return co;
     if(k === "at") return at;
     if(k === "seller") return "㈜올리브인터내셔널";
+    return "";
+  }
+  if(sec === "ev"){
+    if(k === "co" || k === "site") return co;
+    if(k === "at") return at;
+    if(k === "items") return aDocSeed(key, "cf", "items");
+    if(k === "result") return "상기 개선지시사항에 대하여 모두 적절하게 개선이 된 것을 확인하였습니다.";
     return "";
   }
   return "";
@@ -4907,25 +4942,66 @@ function aDocPicHTML_unused(key, sec){
     + '</div></div>';
 }
 
-function aDocHTML(key, sec){
-  const F = ADOC_FORM[sec];
+/* 갈래 셋 — 확인서 · 개선지시서 · 평가서 */
+const AW_TABS = [
+  { k:"cf", t:"확인서",     lists:["cfR", "cfF"] },
+  { k:"ci", t:"개선지시서", lists:["ciF"] },
+  { k:"ev", t:"평가서",     lists:[] }
+];
+function aDocCountOf(key, sec){
   const bag = aNoteBag(key, sec);
   const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
-  const secs = (sec === "cf") ? ["cfR", "cfF"] : ["ciF"];
-  const ni = secs.reduce(function(s, x){ return s + aDocList(key, x).length; }, 0);
-  return '<div class="adoc" data-adockey="' + esc(key) + '" data-adocsec="' + sec + '">'
+  const t = AW_TABS.filter(function(x){ return x.k === sec; })[0] || { lists:[] };
+  const ni = t.lists.reduce(function(s, x){ return s + aDocList(key, x).length; }, 0);
+  return { n: n, ni: ni };
+}
+function aDocBodyHTML(key, sec){
+  const F = ADOC_FORM[sec];
+  const t = AW_TABS.filter(function(x){ return x.k === sec; })[0] || { lists:[] };
+  return '<div class="adoc-grid">' + F.fields.map(function(f){ return aDocFieldHTML(key, sec, f); }).join("") + '</div>'
+    + t.lists.map(function(x){ return aDocListHTML(key, x); }).join("");
+}
+/* 적는 자리 셋을 한 토글에 담는다 */
+function aWriteHTML(key){
+  const cur = aNoteOf(key).wTab || "cf";
+  const sum = AW_TABS.map(function(t){
+    const c = aDocCountOf(key, t.k);
+    return t.t + ' <i>' + (c.ni ? c.ni + '건' : (c.n ? c.n + '칸' : '–')) + '</i>';
+  }).join(' · ');
+  return '<div class="adoc awrite" data-adockey="' + esc(key) + '" data-adocsec="' + esc(cur) + '">'
     + '<button type="button" class="aev-tog" data-adoctog="1" aria-expanded="false">'
-    +   '<span class="car">\u25b8</span><b>' + esc(F.title) + '</b>'
-    +   '<span class="aev-tn">' + (ni ? '등록 <i>' + ni + '</i>건' : '등록 없음')
-    +     (n ? ' · 적은 칸 <i>' + n + '</i>' : '') + '</span>'
+    +   '<span class="car">\u25b8</span><b>작성</b>'
+    +   '<em class="aw-sub">확인서 · 개선지시서 · 평가서</em>'
+    +   '<span class="aev-tn">' + sum + '</span>'
     + '</button>'
     + '<div class="aev-body adoc-body" hidden>'
-    +   '<div class="adoc-grid">' + F.fields.map(function(f){ return aDocFieldHTML(key, sec, f); }).join("") + '</div>'
-    +   (sec === "cf" ? aDocListHTML(key, "cfR") + aDocListHTML(key, "cfF") : aDocListHTML(key, "ciF"))
+    +   '<div class="aw-tabs">'
+    +     AW_TABS.map(function(t){
+            const c = aDocCountOf(key, t.k);
+            return '<button type="button" class="aw-t' + (t.k === cur ? " on" : "") + '" data-awtab="' + t.k + '">'
+              + esc(t.t) + (c.ni ? '<i>' + c.ni + '</i>' : (c.n ? '<i>' + c.n + '</i>' : '')) + '</button>';
+          }).join("")
+    +   '</div>'
+    +   '<div class="aw-body">' + aDocBodyHTML(key, cur) + '</div>'
     +   '<div class="aev-foot"><span class="aev-saved" data-asaved>'
     +     (aSavedAt ? "자동 저장됨 · " + aSavedAt : "적는 대로 이 브라우저에 자동 저장됩니다") + '</span></div>'
     + '</div></div>';
 }
+/* 갈래를 바꾼다 — 펴 둔 채로 속만 갈아 끼운다 */
+document.addEventListener("click", function(e){
+  const b = e.target.closest && e.target.closest("[data-awtab]");
+  if(!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const w = b.closest(".awrite");
+  if(!w) return;
+  const key = w.dataset.adockey, sec = b.dataset.awtab;
+  aNoteOf(key).wTab = sec;
+  aNoteSave();
+  w.dataset.adocsec = sec;
+  w.querySelectorAll("[data-awtab]").forEach(function(x){ x.classList.toggle("on", x.dataset.awtab === sec); });
+  const body = w.querySelector(".aw-body");
+  if(body) body.innerHTML = aDocBodyHTML(key, sec);
+});
 
 /* ── 누르기 · 적기 ── */
 document.addEventListener("click", function(e){
@@ -5010,14 +5086,19 @@ function aDocRedraw(key, sec){
   });
 }
 function aDocCount(wrap){
-  const key = wrap.dataset.adockey, sec = wrap.dataset.adocsec;
-  const bag = aNoteBag(key, sec);
-  const n = Object.keys(bag).filter(function(k){ return String(bag[k] || "").trim(); }).length;
-  const secs = (sec === "cf") ? ["cfR", "cfF"] : ["ciF"];
-  const ni = secs.reduce(function(s, x){ return s + aDocList(key, x).length; }, 0);
+  const key = wrap.dataset.adockey;
   const el = wrap.querySelector(".aev-tn");
-  if(el) el.innerHTML = (ni ? '등록 <i>' + ni + '</i>건' : '등록 없음')
-    + (n ? ' · 적은 칸 <i>' + n + '</i>' : '');
+  if(el) el.innerHTML = AW_TABS.map(function(t){
+    const c = aDocCountOf(key, t.k);
+    return t.t + ' <i>' + (c.ni ? c.ni + '건' : (c.n ? c.n + '칸' : '–')) + '</i>';
+  }).join(' · ');
+  wrap.querySelectorAll("[data-awtab]").forEach(function(x){
+    const c = aDocCountOf(key, x.dataset.awtab);
+    const i = x.querySelector("i");
+    const v = c.ni || c.n;
+    if(v){ if(i) i.textContent = v; else x.insertAdjacentHTML("beforeend", "<i>" + v + "</i>"); }
+    else if(i) i.remove();
+  });
 }
 
 /* 끌어놓기 · 붙여넣기 */
@@ -5064,8 +5145,7 @@ function aRefresh(key){
   };
   const wasPh = openOf("[data-phtog]", "phtog");
   const wasAev = !!(body.querySelector('[data-aevtog][aria-expanded="true"]'));
-  const wasDoc = [].slice.call(body.querySelectorAll('[data-adoctog][aria-expanded="true"]'))
-    .map(function(x){ return x.closest(".adoc").dataset.adocsec; });
+  const wasDoc = !!body.querySelector('.awrite [data-adoctog][aria-expanded="true"]');
   const wasFile = [].slice.call(body.querySelectorAll('[data-aftog][aria-expanded="true"]'))
     .map(function(x){ return x.closest(".afile").dataset.afsec; });
   const wasDb = openOf("[data-dbtog]", "dbtog");
@@ -5095,12 +5175,10 @@ function aRefresh(key){
     const tg = body.querySelector("[data-aevtog]");
     if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
   }
-  wasDoc.forEach(function(sec){
-    const w = [].slice.call(body.querySelectorAll(".adoc"))
-      .filter(function(x){ return x.dataset.adocsec === sec; })[0];
-    const tg = w && w.querySelector("[data-adoctog]");
+  if(wasDoc){
+    const tg = body.querySelector(".awrite [data-adoctog]");
     if(tg && tg.getAttribute("aria-expanded") !== "true") tg.click();
-  });
+  }
   wasFile.forEach(function(sec){
     const w = [].slice.call(body.querySelectorAll(".afile"))
       .filter(function(x){ return x.dataset.afsec === sec; })[0];
@@ -6141,14 +6219,14 @@ function phasePostHTML(key, det){
           : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`))
         + origPagesHTML(key, "confirm", "확인서"),
         !!(crHTML || (fd && fd.result)))}
-      ${aDocHTML(key, "cf")}
+
       ${docFoldHTML(key, "id", "개선지시서",
         (idHTML ? idHTML + legalChipsHTML(fd && fd.issue ? fd.issue : "")
           : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
           : `<div class="empty-note">개선지시서 내용 없음</div>`))
         + origPagesHTML(key, "issue", "개선지시서"),
         !!(idHTML || (fd && fd.issue)))}
-      ${aDocHTML(key, "ci")}
+
       ${docFoldHTML(key, "capa", "개선결과서",
         aPgHTML(key)
         + (items.length? `<div class="ba-count">${items.length}개 항목 시정조치 완료 · 사진을 누르면 전체화면으로 열리고 <b>+</b> 버튼이나 휠로 확대·이동할 수 있습니다</div>`:"")
@@ -6163,6 +6241,7 @@ function phasePostHTML(key, det){
         + ((!fd || !fd.capa) && !(evalPages[key]||[]).length ? `<div class="empty-note">평가서 내용 없음</div>` : "")
         + origPagesHTML(key, "eval", "평가서"),
         !!((evalPages[key]||[]).length || (fd && fd.capa)))}
+      ${aWriteHTML(key)}
     </div>
   </div>`;
 }
