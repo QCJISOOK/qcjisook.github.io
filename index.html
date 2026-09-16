@@ -1196,41 +1196,61 @@
   }
   .aev-tip{ font-size:10.5px; color:var(--muted); margin-bottom:9px; }
   .aev-left{ margin-left:8px; font-weight:750; color:var(--accent-strong); }
-  .aev-cat{
-    margin:12px 0 5px; font-size:11px; font-weight:800; letter-spacing:-.01em;
-    color:var(--rail); padding:4px 9px; border-radius:6px; background:var(--railbg); display:inline-block;
+  /* 점검 시트 틀 그대로 */
+  .aev-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+  .aev-t{ border-collapse:collapse; width:100%; min-width:1180px; font-size:11.5px; }
+  .aev-t th, .aev-t td{ border:1px solid var(--border); padding:6px 8px; vertical-align:middle; }
+  .aev-t thead th{
+    position:sticky; top:0; z-index:2; background:var(--surface-2); color:var(--ink);
+    font-size:11px; font-weight:800; text-align:center; line-height:1.35; white-space:nowrap;
   }
-  .aev-row{
-    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(180px,.8fr);
-    gap:9px; align-items:center; padding:6px 8px; border-radius:8px;
+  .aev-t thead th.g-A{ color:#1e7f4f; }
+  .aev-t thead th.g-B{ color:#b7791f; }
+  .aev-t thead th.g-C{ color:#c0392b; }
+  .aev-t tbody tr.on{ background:var(--surface-2); }
+  .ae-cat{
+    width:74px; text-align:center; font-weight:800; font-size:11px; color:var(--rail);
+    background:var(--railbg); vertical-align:middle;
   }
-  .aev-row + .aev-row{ border-top:1px solid var(--border); }
-  .aev-row.on{ background:var(--surface-2); }
-  .aev-q{ font-size:11.5px; line-height:1.5; color:var(--ink-2); }
-  .aev-no{
+  .ae-q{ width:250px; line-height:1.5; color:var(--ink); }
+  .ae-no{
     display:inline-block; min-width:18px; margin-right:6px; text-align:right;
     font-family:var(--font-mono); font-size:10px; color:var(--muted);
   }
-  .aev-g{ display:inline-flex; gap:4px; }
-  .aev-b{
-    width:26px; height:26px; padding:0; font-family:var(--font-mono); font-size:11.5px; font-weight:800;
-    cursor:pointer; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--muted);
+  .ae-std{
+    width:145px; cursor:pointer; line-height:1.45; color:var(--ink-2);
+    transition:background .12s, color .12s;
   }
-  .aev-b:hover{ border-color:var(--accent); }
-  .aev-b.g-A.on{ background:#1e7f4f; color:#fff; border-color:transparent; }
-  .aev-b.g-B.on{ background:#b7791f; color:#fff; border-color:transparent; }
-  .aev-b.g-C.on{ background:#c0392b; color:#fff; border-color:transparent; }
-  .aev-b.clr{ font-size:13px; }
-  .aev-b.clr.off{ opacity:.35; }
+  .ae-std:hover{ background:var(--accent-tint); }
+  .ae-gl{
+    display:inline-block; min-width:13px; margin-right:5px; font-style:normal;
+    font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--muted);
+  }
+  .ae-std.on{ color:#fff; }
+  .ae-std.on .ae-gl{ color:#fff; opacity:.85; }
+  .ae-std.g-A.on{ background:#1e7f4f; }
+  .ae-std.g-B.on{ background:#b7791f; }
+  .ae-std.g-C.on{ background:#c0392b; }
+  .ae-pt{
+    width:58px; text-align:center; font-family:var(--font-mono); font-size:13px; font-weight:800;
+  }
+  .ae-pt.self{ color:var(--muted); background:var(--surface-2); }
+  .ae-pt.olive b{ color:var(--accent-strong); }
+  .ae-none{ color:var(--border-strong); font-weight:400; }
+  .ae-x{
+    display:block; margin:2px auto 0; width:16px; height:16px; padding:0; line-height:1;
+    font-family:var(--font-mono); font-size:11px; cursor:pointer; color:var(--muted);
+    border:1px solid var(--border); border-radius:5px; background:var(--surface);
+  }
+  .ae-x:hover{ border-color:#c0392b; color:#c0392b; }
+  .ae-in{ width:168px; padding:4px 5px; }
   .aev-n{
-    font-family:inherit; font-size:11.5px; line-height:1.55; padding:6px 9px; min-width:0;
-    min-height:30px; resize:vertical; overflow:hidden; white-space:pre-wrap;
-    border:1px solid var(--border); border-radius:7px; background:var(--surface); color:var(--ink);
+    display:block; width:100%; box-sizing:border-box;
+    font-family:inherit; font-size:11px; line-height:1.55; padding:5px 7px; min-width:0;
+    min-height:28px; resize:vertical; overflow:hidden; white-space:pre-wrap;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink);
   }
   .aev-n:focus{ outline:none; border-color:var(--accent); overflow:auto; }
-  @media (max-width:900px){
-    .aev-row{ grid-template-columns:1fr; gap:6px; }
-  }
   .acard-top{
     width:100%; background:none; border:none; cursor:pointer; font-family:inherit; text-align:left;
     display:grid; grid-template-columns:132px minmax(0,1fr) 300px auto; gap:18px; align-items:center;
@@ -3380,19 +3400,13 @@ function aMemoHTML(key, sec, id, label, ph){
 
 /* ── 현장평가 — 자가점검 시트와 같은 틀 ── */
 const AEV_V = { A:3, B:2, C:1 };
-/* 표준 틀 — 항목이 가장 많은 시트를 그대로 빌린다 */
-let _aStd = null;
-function aStdFrame(){
-  if(_aStd) return _aStd;
-  let best = [];
-  if(typeof selfAll !== "undefined"){
-    Object.keys(selfAll).forEach(function(k){
-      const v = selfAll[k] || [];
-      if(v.length > best.length) best = v;
-    });
-  }
-  return (_aStd = best);
-}
+/* 점검 시트의 평가기준 원문 — 구분 · 평가항목 · A(우수) · B(보통) · C(미흡) */
+const AEV_STD = [{"c":"품질경영","i":"품질에 대한 목표수립 및 성과측정 실시하는가","a":"품질목표수립 및 분석실시","b":"품질목표만 수립","cc":"품질목표 미수립"},{"c":"품질경영","i":"ISO, CGMP, 제조업자 & 제조판매업자 업무 문서 등의 인증된 품질 매뉴얼 보유 현황","a":"공인메뉴얼 보유","b":"자체 매뉴얼 보유","cc":"미보유"},{"c":"품질경영","i":"품질관리체계 구축되어 있는가","a":"품질조직 2인 이상 구성","b":"품질조직 1일 구성","cc":"품질조직 없음"},{"c":"품질경영","i":"QC공정도 또는 품질계획서를 작성 및 유지관리 되는가","a":"작성되어 있으며 지속적으로 관리 및 Revision","b":"작성되어 있으나 지속관리 미흡","cc":"QC공정도 미작성"},{"c":"품질경영","i":"R&D 조직이 있으며 상품의 연구개발, 위해성에 대한 안전성 자료 확보, 관리 및 안정성 시험, 관리가 이루어 지고 있는가","a":"조직 있으며 연구개발, 안전 성, 안정성 관리 양호","b":"조직 있으나 활동 미흡","cc":"조직 없으며 미실시"},{"c":"품질경영","i":"연간 품질교육계획을 수립/실시 및 교육 결과보고서를 작성하는가","a":"계획 수립 및 실시, 교육 결과 기록관리","b":"계획이 수립되어 있으나 실시 미흡","cc":"미계획 및 미실시"},{"c":"품질경영","i":"접수되는 불만족정보(Claim)에 대한 처리절차 및 실시는 양호하게 진행되는가","a":"처리절차 수립 및 적용 중","b":"처리절차 있으나 적용미흡","cc":"절차 미수립"},{"c":"품질경영","i":"접수되는 불만족정보(Claim)는 문서화(이력관리)되고 해당공정, 작업자, 협력사 등에 전달/전파되는가","a":"이력관리가 문서화되고 전달/ 전파 등 개선작업 진행","b":"이력관리는 되나 개선작업 미흡","cc":"이력관리 미실시"},{"c":"검사","i":"모든 검사항목은 인정된 검사자 또는 고정적인 인원에 의하여 검사 되는가","a":"인정된 검사원","b":"인정되지 않은 검사원","cc":"검사인원 미지정"},{"c":"검사","i":"검사, 측정, 시험정비의 검,교정 절차는 문서화되어 있으며, 적절한 주기로 검,교정(Validation)이 시행되고 있는가","a":"검교정 List 및 실제검교정 상태 양호","b":"검교정 List는 없으나 검교정 상태 양호","cc":"검교정 List 없고 검교정 상태 미흡"},{"c":"검사","i":"원부자재, 반제품, 완제품에 대한 수입/공정/출하검사성적서 작성 및 검사 이력 관리, 표준품 및 관리품 취급, 기록 관리를 실시하는가","a":"입고/공정/완제품성적서 작성 및 이력 관리 실시","b":"성적서만 작성","cc":"성적서 작성 없고 이력관리 없음"},{"c":"검사","i":"유통화장품 안전관리 기준에 준한 시험 분석 및 관리를 실시하는가","a":"유통화장품 안전관리 기준에 준한 시험 관리 실시","b":"선택, 부분별 시험 관리 실시","cc":"미시행"},{"c":"검사","i":"검사는 제품의 추적성을 가지는가","a":"제품에 Lot no 직인","b":"제품에 직인은 없으나 생산일지 등에 기록","cc":"직인없으며, 기록관리 미흡"},{"c":"검사","i":"시험 대기중인 원료, 자재, 반제품 및 완제품에 대하여 적합, 부적합, 시험대기, 시험진행중 등을 식별할 수 있는 적절한 수단이 있는가","a":"식별 양호","b":"식별 보통","cc":"식별 미흡"},{"c":"검사","i":"모든 완제품은 품질부서의 승인 후에 출하되는가","a":"품질부서의 Lot별 샘플링 검사실시 (승인 후 출하)","b":"검사미실시 (승인 후 출하)","cc":"품질부서의 승인없이 출하"},{"c":"검사","i":"검사에 대한 결과 및 이력은 문서화 되어 있는가","a":"검사에 대한 결과 및 이력관리 문서화 (지속관리, Revision)","b":"검사에 대한 결과 및 이력관리 문서화","cc":"검사만 실시하고 이력관리 없음"},{"c":"공정관리","i":"작업표준을 관리하기 위한 절차화된 문서가 있는가","a":"작업표준서가 있고 각공정마 다 비치 및 작업자 숙지","b":"작업표준서 없고 작업자 숙지","cc":"작업표준서 없음"},{"c":"공정관리","i":"제품생산시 제조관리기준서, 공정별 기록 (칭량, 제조, 충전, 포장 등) 일지가 작성되는가","a":"일지 작성 및 내용 양호","b":"일지 작성 및 내용 미흡","cc":"미작성"},{"c":"공정관리","i":"각 설비별 예방보전 계획이 수립되어 있으며 계획에 의거하여 예방보전을 실시하고 있는가","a":"1. 예방보전 계획수립 2. 계획에 의거 예방보전활동 실시","b":"예방보전활동만 실시","cc":"예방보전 계획만 수립"},{"c":"공정관리","i":"원부자재에 현품표(식별표)가 부착되어 있고 부품과 일치하는가","a":"1. 원부자재 식별표기 2. 실제부품과 일치 3. 별도 보관","b":"1. 원부자재 식별표기 2. 실제부품과 일치","cc":"식별 표기 없이 별도 보관"},{"c":"공정관리","i":"생산장비 관리에 대한 규정은 마련되어 있으며, 생산장비 점검은 주기적으로 시행, 기록되고 있는가","a":"1. 생산장비 관리규정 수립 2. 생산장비 점검 시행 3. 생산장비 점검 기록","b":"1. 생산장비 관리규정 수립 2. 생산장비 점검 시행","cc":"생산장비 관리규정만 수립"},{"c":"작업장관리","i":"작업구역과 비작업구역(흡연실, 식당, 화장실 등) 은 구획정리 되어 있는가","a":"작업구역과 비작업구역 구획 정리 표시 및 관리","b":"작업구역과 비작업구역 구획 정리 표시만 되어있음","cc":"작업구역과 비작업구역 구획 정리 불문명"},{"c":"작업장관리","i":"작업장내외부는 정리정돈되어 있는가","a":"정리정돈 양호","b":"정리정돈 보통","cc":"정리정돈 미흡"},{"c":"작업장관리","i":"설비/공조/방충/방서/조도/온도/제조설비/순수 등에 대한 현장 실행 및 위생관리 기록이 유지 관리(교차 오염) 되고 있는가","a":"실행 및 기록관리","b":"실행만 함","cc":"실행 미흡"},{"c":"작업장관리","i":"폐기물은 처리절차에 따라 실행되고 실행된 기록을 유지하는가","a":"1. 처리절차 매뉴얼 있음 2. 처리절차에 따라 실행 3. 기록 유지","b":"1. 처리절차 매뉴얼 있음 2. 처리절차에 따라 실행","cc":"매뉴얼 없이 폐기물 처리함"},{"c":"작업장관리","i":"개인 및 작업장의 위생관리에 대한 정기적인 점검을 하며 기록을 유지하는가","a":"1. 정기적 점검 2. 기록관리 3. 위생관리 양호","b":"1. 정기적 점검 2. 기록관리","cc":"위생관리 미흡"},{"c":"작업장관리","i":"생산설비의 관리상태, 청소상태는 양호한가","a":"생산설비 관리상태, 청소상태 양호","b":"생산설비 관리상태, 청소상태 보통","cc":"생산설비 관리상태, 청소상태 미흡"},{"c":"작업장관리","i":"분말이 날리는 공정에는 분말제거 시설이 있는가","a":"양호","b":"보통","cc":"미흡"},{"c":"협력업체관리","i":"원부자재에 대한 협력업체 관리가 적정한가","a":"양호","b":"보통","cc":"미흡"},{"c":"협력업체관리","i":"협력업체에 대한 정기적인 평가 및 지도 기록을 작성하고 유지하고 있는가","a":"양호","b":"보통","cc":"미흡"},{"c":"부적합관리","i":"부적합품은 별도 보관되고 식별되는가","a":"1. 부적합품 식별표기 2. 부적합품 별도보관","b":"부적합품 식별표기","cc":"부적합품 별도보관"},{"c":"부적합관리","i":"원료,자재,반제품,완제품 부적합 제품은 부적합의 관리 절차에 따라 처리, 이력관리하며 부적합 처리 (식별, 추적성) 관련 기록이 있는가","a":"양호","b":"보통","cc":"미흡"},{"c":"부적합관리","i":"시정조치의 내용에 다음 사항을 포함 하고 있는가 1. 고객불만 및 부적합 보고서에 대한 효과적인 조치 2. 부적합 원인, 대체","a":"양호","b":"보통","cc":"미흡"},{"c":"부적합관리","i":"부적합 또는 불량에 대한 시정조치 활동을 실시하는가","a":"1. 부적합품 원인분석 실시 2. 개선활동 실시 3. 지속관리 실시 4. 기록관리 실시 * 4가지 항목 전부 실행","b":"1. 부적합품 원인분석 실시 2. 개선활동 실시 3. 지속관리 실시 4. 기록관리 실시 * 4가지 항목 중 2개 이상 실행","cc":"1. 부적합품 원인분석 실시 2. 개선활동 실시 3. 지속관리 실시 4. 기록관리 실시 * 4가지 항목 중 1개 이하 실행"},{"c":"제품식별 및 추적성","i":"원료,자재,반제품,완제품에 대한 로트표기 등은 이루어지며 식별, 추적성은 기록관리 되고 있는가","a":"양호","b":"보통","cc":"미흡"},{"c":"제품식별 및 추적성","i":"완제품 출하시 선입선출은 실행되는가","a":"선입선출 실행","b":"보통","cc":"미흡"},{"c":"5S관리","i":"생산과 무관한 유독물질등은 위해가 없게 구분관리하고 있는가?","a":"1. 유독물질 식별표기 2. 유독물질 별도보관","b":"유독물질 식별표기","cc":"유독물질 별도보관"},{"c":"5S관리","i":"공정내의 5S상태는 문제가 없는가 (정리,정돈,청소,청결,습관화)","a":"1. 공정내 5S상태 양호 2. 개선활동 실시","b":"1. 공정내 5S상태 보통 2. 개선활동 실시 미흡","cc":"공정내 5S상태 미흡"}];
+function aevNorm(s){ return String(s || "").replace(/\s+/g, "").replace(/[·.,\/()\[\]]/g, ""); }
+const AEV_IDX = (function(){ const m = {}; AEV_STD.forEach(function(x){ m[aevNorm(x.i)] = x; }); return m; })();
+function aStdOf(it){ return AEV_IDX[aevNorm(it && it.i)] || { a:"", b:"", cc:"" }; }
+/* 표준 틀 — 점검 시트 원문 그대로 */
+function aStdFrame(){ return AEV_STD; }
 const aFrames = {};
 function aSelf(key){
   const s = (typeof selfAll !== "undefined" && selfAll[key]) || [];
@@ -3462,23 +3476,48 @@ function aEvalHTML(key){
   }
   const meta = aNoteOf(key);
   const left = items.length - r.done;
-  let cat = "";
+
+  /* 구분 칸을 시트처럼 하나로 묶는다 */
+  const span = {};
+  items.forEach(function(it, i){
+    for(var j = i; j >= 0; j--){ if(!j || items[j - 1].c !== it.c) break; }
+    span[j] = (span[j] || 0) + 1;
+  });
+
+  const GN = { A:"우수", B:"보통", C:"미흡" };
   const rows = items.map(function(it, i){
     const g = aGrade(items, ev, i);
-    const n = (ev[i] && ev[i].n) || "";
-    const head = (it.c !== cat) ? (cat = it.c, '<div class="aev-cat">' + esc(it.c) + '</div>') : "";
-    return head + '<div class="aev-row' + (g ? " on" : "") + '">'
-      + '<div class="aev-q"><span class="aev-no">' + (i + 1) + '</span>' + esc(it.i) + '</div>'
-      + '<div class="aev-g">'
-      +   ["A","B","C"].map(function(x){
-            return '<button type="button" class="aev-b g-' + x + (g === x ? " on" : "") + '"'
-              + ' data-aevg="' + i + '::' + x + '" title="' + (x === "A" ? "우수 3점" : x === "B" ? "보통 2점" : "미흡 1점") + '">' + x + '</button>';
-          }).join("")
-      +   '<button type="button" class="aev-b clr' + (g ? "" : " off") + '" data-aevg="' + i + '::" title="지우기">\u00d7</button>'
-      + '</div>'
-      + '<textarea class="aev-n" data-aevn="' + i + '" rows="1" placeholder="비고 — 근거 자료 · 지적 사항">' + esc(n) + '</textarea>'
-      + '</div>';
+    const st = aStdOf(it);
+    const cell = ev[i] || {};
+    const first = span[i] ? '<td class="ae-cat" rowspan="' + span[i] + '">' + esc(it.c) + '</td>' : "";
+    return '<tr' + (g ? ' class="on"' : '') + ' data-aevrow="' + i + '">'
+      + first
+      + '<td class="ae-q"><span class="ae-no">' + (i + 1) + '</span>' + esc(it.i) + '</td>'
+      + ["A","B","C"].map(function(x){
+          const txt = x === "A" ? st.a : x === "B" ? st.b : st.cc;
+          return '<td class="ae-std g-' + x + (g === x ? " on" : "") + '" data-aevg="' + i + '::' + x + '"'
+            + ' title="' + x + ' (' + GN[x] + ') ' + AEV_V[x] + '점 — 눌러서 매깁니다">'
+            + '<i class="ae-gl">' + x + '</i>' + esc(txt) + '</td>';
+        }).join("")
+      + '<td class="ae-pt self">' + (it.m ? AEV_V[it.m] : "") + '</td>'
+      + '<td class="ae-pt olive" data-aevres="' + i + '">'
+      +   (g ? '<b>' + AEV_V[g] + '</b><button type="button" class="ae-x" data-aevg="' + i + '::" title="지우기">\u00d7</button>' : '<span class="ae-none">–</span>')
+      + '</td>'
+      + '<td class="ae-in"><textarea class="aev-n" data-aevn="' + i + '" rows="1" placeholder="근거 자료">' + esc(cell.n || "") + '</textarea></td>'
+      + '<td class="ae-in"><textarea class="aev-n" data-aevn2="' + i + '" rows="1" placeholder="개선 지적 사항">' + esc(cell.n2 || "") + '</textarea></td>'
+      + '</tr>';
   }).join("");
+
+  const table = '<div class="aev-scroll"><table class="aev-t">'
+    + '<thead>'
+    +   '<tr><th rowspan="2">구분</th><th rowspan="2">평가항목</th>'
+    +     '<th colspan="3">평가기준</th>'
+    +     '<th rowspan="2">제조업자<br>평가결과</th>'
+    +     '<th rowspan="2">제조판매업자<br>평가결과</th>'
+    +     '<th rowspan="2">근거 자료</th>'
+    +     '<th rowspan="2">개선 지적 사항</th></tr>'
+    +   '<tr><th class="g-A">A (우수)</th><th class="g-B">B (보통)</th><th class="g-C">C (미흡)</th></tr>'
+    + '</thead><tbody>' + rows + '</tbody></table></div>';
 
   return '<div class="aev" data-aevkey="' + esc(key) + '">'
     + '<div class="aev-hd">'
@@ -3490,8 +3529,8 @@ function aEvalHTML(key){
     +   '<label class="aev-by">평가자<input data-aevmeta="by" value="' + esc(meta.evBy || "") + '" placeholder="이름" /></label>'
     +   '<label class="aev-by">평가일<input type="date" data-aevmeta="at" value="' + esc(meta.evAt || "") + '" /></label>'
     + '</div>'
-    + '<div class="aev-tip">A 우수 3점 · B 보통 2점 · C 미흡 1점 — 누르면 바로 저장됩니다. 비고는 칸을 벗어날 때 저장됩니다.</div>'
-    + '<div class="aev-list">' + rows + '</div>'
+    + '<div class="aev-tip">기준 : A(3점), B(2점), C(1점) — 평가기준 칸을 누르면 그 등급으로 매겨집니다. 적은 것은 칸을 벗어날 때 저장됩니다.</div>'
+    + table
     + '<div class="aev-foot">'
     +   '<span class="aev-left" data-aevleft>' + (left ? "아직 " + left + "항목 남았습니다 — 다 매기면 점수판에 올라갑니다." : "전 항목 평가 완료") + '</span>'
     +   '<button type="button" class="aev-go" data-aevdraw="1">평가 완료</button>'
@@ -3657,16 +3696,20 @@ document.addEventListener("click", function(e){
     const ev = aNoteBag(key, "ev");
     const cell = ev[i] || (ev[i] = {});
     cell.g = g;
-    if(!g && !String(cell.n || "").trim()) delete ev[i];
+    if(!g && !String(cell.n || "").trim() && !String(cell.n2 || "").trim()) delete ev[i];
     aNoteSave();
 
-    const row = gb.closest(".aev-row");
+    const row = gb.closest("tr");
     row.classList.toggle("on", !!g);
-    row.querySelectorAll(".aev-b").forEach(function(b){
-      const x = b.dataset.aevg.split("::")[1] || "";
-      if(x) b.classList.toggle("on", x === g);
-      else b.classList.toggle("off", !g);
+    row.querySelectorAll(".ae-std").forEach(function(b){
+      b.classList.toggle("on", (b.dataset.aevg.split("::")[1] || "") === g);
     });
+    const res = row.querySelector("[data-aevres]");
+    if(res){
+      res.innerHTML = g
+        ? '<b>' + AEV_V[g] + '</b><button type="button" class="ae-x" data-aevg="' + i + '::" title="지우기">\u00d7</button>'
+        : '<span class="ae-none">–</span>';
+    }
 
     aEvalApply(key);
     const r = aEvalSum(key);
@@ -3746,12 +3789,14 @@ document.addEventListener("change", function(e){
     return;
   }
 
-  if(t.dataset.aevn !== undefined){
+  if(t.dataset.aevn !== undefined || t.dataset.aevn2 !== undefined){
     const wrap = t.closest(".aev"); if(!wrap) return;
+    const two = t.dataset.aevn2 !== undefined;
+    const i = two ? t.dataset.aevn2 : t.dataset.aevn;
     const ev = aNoteBag(wrap.dataset.aevkey, "ev");
-    const cell = ev[t.dataset.aevn] || (ev[t.dataset.aevn] = {});
-    cell.n = t.value;
-    if(!cell.g && !String(cell.n || "").trim()) delete ev[t.dataset.aevn];
+    const cell = ev[i] || (ev[i] = {});
+    cell[two ? "n2" : "n"] = t.value;
+    if(!cell.g && !String(cell.n || "").trim() && !String(cell.n2 || "").trim()) delete ev[i];
     aNoteSave();
     return;
   }
