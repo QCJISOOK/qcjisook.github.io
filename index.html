@@ -2688,7 +2688,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:12</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:30</span></div>
 </div>
 
 
@@ -5398,8 +5398,12 @@ function asvWhoNag(){
   }
   return true;
 }
+let asvBase = false;                      /* 바탕(마지막으로 올린 모습)을 떠 놓았나 */
+let asvFirst = true;                      /* 아직 한 번도 못 받아 왔다 */
 function asvMark(){
   if(!asvOn()){ asvNag(); return; }
+  /* 바탕이 없으면 전부 새것으로 보여 남의 기록까지 덮는다 — 설 때까지 기다린다 */
+  if(!asvBase) return;
   asvWhoNag();
   let last;
   try { last = JSON.parse(asvSnap); } catch(e){ last = { kv:{}, items:{} }; }
@@ -5494,6 +5498,28 @@ async function asvPull(){
 
     try { n += asvTakeFiles(j.files); } catch(e){}
     asvSince = j.at;
+
+    /* 처음 받아 온 참이면, 끊긴 동안 적어 둔 것을 살려 올린다.
+       서버가 아직 모르는 칸만 올린다 — 남이 적어 둔 것은 그대로 둔다. */
+    if(asvFirst){
+      asvFirst = false;
+      const 서버가안다 = {};
+      (j.kv || []).forEach(function(r2){ 서버가안다[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field] = 1; });
+      const 내것 = asvFlat(aNote);
+      let 살릴것 = 0;
+      Object.keys(내것).forEach(function(id){
+        if(서버가안다[id]) return;                       /* 서버가 아는 칸은 서버를 따른다 */
+        if(!String(내것[id] || "").trim()) return;       /* 빈 칸은 올릴 것이 없다 */
+        const p = id.split("\u0001");
+        asvQ.kv.push({ key: p[0], sec: p[1], field: p[2], value: 내것[id] });
+        살릴것++;
+      });
+      if(살릴것){
+        asvSay("끊겨 있는 동안 적어 둔 " + 살릴것 + "군데를 올립니다");
+        asvSoon();
+      }
+    }
+
     if(n){
       try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); } catch(e){}
       asvSnap = JSON.stringify((function(){
@@ -5653,6 +5679,7 @@ function asvStart(){
     Object.keys(it).forEach(function(x){ s.items[x] = it[x].json; });
     return s;
   })());
+  asvBase = true;                         /* 이제부터 견줄 바탕이 있다 */
   /* 서버를 붙이기 전에 담아 둔 사진·서류가 있으면 한 번 밀어 올린다 */
   setTimeout(function(){
     Object.keys(aPicMem).forEach(function(bag){
