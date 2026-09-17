@@ -2688,7 +2688,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:44</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 10:28</span></div>
 </div>
 
 
@@ -5459,6 +5459,19 @@ async function asvPush(){
   } finally { asvBusy = false; }
 }
 
+/* 속이 빈 값인가 — 현장평가는 줄이 통째로 담기니 껍데기만 보면 안 된다 */
+function p0sec(id){ return String(id).split("\u0001")[1] || ""; }
+function asvHollow(sec, v){
+  const s = String(v == null ? "" : v);
+  if(!s.trim()) return true;
+  if(sec === "ev"){
+    try {
+      const o = JSON.parse(s);
+      return !Object.keys(o).some(function(k){ return String(o[k] == null ? "" : o[k]).trim(); });
+    } catch(e){ return false; }
+  }
+  return false;
+}
 /* 남이 적은 것을 받아 얹는다 — 내가 방금 적은 칸은 건드리지 않는다 */
 async function asvPull(){
   if(!asvOn()) return;
@@ -5469,6 +5482,8 @@ async function asvPull(){
     const j = await r.json();
     if(!j.ok){ asvSay(asvSay2(j), 1); return; }
     let n = 0;
+    /* 얹기 전 내 모습 — 되살릴 것을 여기서 찾는다 */
+    const 붙기전 = asvFirst ? asvFlat(aNote) : null;
     const mine = {};
     asvQ.kv.forEach(function(x){ mine[x.key + "\u0001" + x.sec + "\u0001" + x.field] = 1; });
 
@@ -5505,17 +5520,24 @@ async function asvPull(){
       asvFirst = false;
       const 서버가안다 = {};
       (j.kv || []).forEach(function(r2){
-        if(!String(r2.value == null ? "" : r2.value).trim()) return;   /* 비워 둔 칸은 모르는 것으로 본다 */
+        if(asvHollow(r2.sec, r2.value)) return;   /* 속이 빈 칸은 모르는 것으로 본다 */
         서버가안다[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field] = 1;
       });
-      const 내것 = asvFlat(aNote);
+      const 내것 = 붙기전 || {};
       let 살릴것 = 0;
       Object.keys(내것).forEach(function(id){
         if(서버가안다[id]) return;                       /* 서버가 아는 칸은 서버를 따른다 */
-        if(!String(내것[id] || "").trim()) return;       /* 빈 칸은 올릴 것이 없다 */
+        if(asvHollow(p0sec(id), 내것[id])) return;        /* 속이 빈 칸은 올릴 것이 없다 */
         const p = id.split("\u0001");
+        /* 방금 내려온 빈 값에 지워졌으면 곳간에 되돌려 놓는다 */
+        if(p[1] === "@") aNoteOf(p[0])[p[2]] = 내것[id];
+        else {
+          const bag = aNoteBag(p[0], p[1]);
+          if(p[1] === "ev"){ try { bag[p[2]] = JSON.parse(내것[id]); } catch(e){ return; } }
+          else bag[p[2]] = 내것[id];
+        }
         asvQ.kv.push({ key: p[0], sec: p[1], field: p[2], value: 내것[id] });
-        살릴것++;
+        살릴것++; n++;
       });
       if(살릴것){
         asvSay("끊겨 있는 동안 적어 둔 " + 살릴것 + "군데를 올립니다");
