@@ -309,6 +309,8 @@
     padding:14px 16px; box-shadow:none;
   }
   .panel + .panel{ margin-top:12px; }
+  /* 격자 안에서는 gap 이 사이를 벌린다 — 마진까지 먹으면 오른쪽만 내려간다 */
+  .chart-grid > .panel + .panel{ margin-top:0; }
   .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
   .panel-title{ font-size:17px; font-weight:700; letter-spacing:-.01em; }
   .panel-sub{ font-size:14.5px; color:var(--muted); }
@@ -2686,7 +2688,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-16 19:07</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:12</span></div>
 </div>
 
 
