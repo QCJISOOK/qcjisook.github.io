@@ -2688,7 +2688,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:30</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 09:44</span></div>
 </div>
 
 
@@ -5504,7 +5504,10 @@ async function asvPull(){
     if(asvFirst){
       asvFirst = false;
       const 서버가안다 = {};
-      (j.kv || []).forEach(function(r2){ 서버가안다[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field] = 1; });
+      (j.kv || []).forEach(function(r2){
+        if(!String(r2.value == null ? "" : r2.value).trim()) return;   /* 비워 둔 칸은 모르는 것으로 본다 */
+        서버가안다[r2.key + "\u0001" + r2.sec + "\u0001" + r2.field] = 1;
+      });
       const 내것 = asvFlat(aNote);
       let 살릴것 = 0;
       Object.keys(내것).forEach(function(id){
