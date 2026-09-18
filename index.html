@@ -2719,7 +2719,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 16:51</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 16:57</span></div>
 </div>
 
 
@@ -6901,9 +6901,9 @@ function aXlList(key, sec){
 /* ── 칸 맞춰 적기 ── */
 /* 어느 칸에 무엇을 놓을지 — 칸 번호는 1 부터 (A=1) */
 const XL_GEO = {
-  cfR: { r0:11, r1:16, c0:6,  cNo:7,  cL0:8, cL1:10, cT0:11, c1:26, cap:54 },
-  cfF: { r0:17, r1:21, c0:6,  cNo:7,  cL0:8, cL1:10, cT0:11, c1:26, cap:54 },
-  ciF: { r0:12, r1:31, c0:2,  cNo:3,  cL0:4, cL1:6,  cT0:7,  c1:26, cap:68 }
+  cfR: { r0:11, r1:16, c0:6,  cNo:7,  cL0:8, cL1:10, cT0:11, c1:26, cap:50 },
+  cfF: { r0:17, r1:21, c0:6,  cNo:7,  cL0:8, cL1:10, cT0:11, c1:26, cap:50 },
+  ciF: { r0:12, r1:31, c0:2,  cNo:3,  cL0:4, cL1:6,  cT0:7,  c1:26, cap:64 }
 };
 function xCol(n){
   let s = "";
@@ -6945,10 +6945,15 @@ function xGridRows(key, sec){
 
 /* ── 모양 만들기 ── 테두리와 굵기만 갈아 끼운 모양을 새로 찍어 낸다 ── */
 function xBord(SY, L, R, T, B){
-  const k = "b" + (L?1:0) + (R?1:0) + (T?1:0) + (B?1:0);
+  /* true 는 또렷한 줄, "hair" 는 스치는 줄, 0 은 없음 */
+  const w = function(v){ return v === true ? "thin" : (v || ""); };
+  const l = w(L), r = w(R), t = w(T), b = w(B);
+  const k = "b|" + l + "|" + r + "|" + t + "|" + b;
   if(SY.bseen[k] !== undefined) return SY.bseen[k];
-  const one = function(t, on){ return on ? ('<' + t + ' style="thin"><color indexed="64"/></' + t + '>') : ('<' + t + '/>'); };
-  SY.borders.push("<border>" + one("left", L) + one("right", R) + one("top", T) + one("bottom", B) + "<diagonal/></border>");
+  const one = function(tag, s){
+    return s ? ('<' + tag + ' style="' + s + '"><color indexed="64"/></' + tag + '>') : ('<' + tag + '/>');
+  };
+  SY.borders.push("<border>" + one("left", l) + one("right", r) + one("top", t) + one("bottom", b) + "<diagonal/></border>");
   return (SY.bseen[k] = SY.borders.length - 1);
 }
 function xXf(SY, base, bid, bold, align, indent){
@@ -7022,8 +7027,14 @@ function xBody(box, SY, geo, list){
   for(let i = 0; i <= last - geo.r0; i++){
     const r = geo.r0 + i;
     const it = list[i] || { k:"e" };
-    const top = (i === 0) || (it.k === "g" && i > 0) || (it.k === "t");
-    const bot = (r === last);
+    /* 구분이 바뀔 때만 또렷하게. 같은 구분 안 항목 사이는 스치듯.
+       구분 머리와 첫 항목은 붙여 둔다 — 갈라져 보이지 않게 */
+    const prev = list[i - 1];
+    const top = (i === 0) ? true
+              : (it.k === "g") ? true
+              : (it.k === "t" && prev && prev.k !== "g") ? "hair"
+              : 0;
+    const bot = (r === last) ? true : 0;
     let cells = "", h = 17;
 
     for(let c = geo.c0; c <= geo.c1; c++){
@@ -7039,15 +7050,16 @@ function xBody(box, SY, geo, list){
         ? '<c r="' + xCol(c) + r + '" s="' + st + '"/>'
         : '<c r="' + xCol(c) + r + '" s="' + st + '" t="inlineStr"><is><t xml:space="preserve">' + xEsc(v) + '</t></is></c>';
     }
-    if(it.k === "g"){ merges.push(xCol(geo.c0) + r + ":" + xCol(geo.c1) + r); h = 21; }
+    if(it.k === "g"){ merges.push(xCol(geo.c0) + r + ":" + xCol(geo.c1) + r); h = 23; }
     else if(it.k === "t"){
       merges.push(xCol(geo.c0) + r + ":" + xCol(geo.cNo) + r);
       merges.push(xCol(geo.cL0) + r + ":" + xCol(geo.c1) + r);
-      h = 20;
+      h = 21;
     } else if(it.k === "f"){
       merges.push(xCol(geo.cL0) + r + ":" + xCol(geo.cL1) + r);
       merges.push(xCol(geo.cT0) + r + ":" + xCol(geo.c1) + r);
-      h = Math.max(17, Math.round(xLines(it.t, geo.cap) * 14.6 + 4));
+      /* 넉넉히 — 빠듯하면 마지막 줄이 잘린다 */
+      h = Math.max(19, Math.round(xLines(it.t, geo.cap) * 16.2 + 8));
     }
     rowXml[r] = { h: h, cells: cells };
   }
@@ -7252,7 +7264,8 @@ function xPCss(land){
     /* 칸 맞춤 표 — 번호 · 이름표 · 내용 */
     + '.gt{ width:100%; table-layout:fixed; }'
     + '.gt td{ border:0; padding:0.8mm 2mm; vertical-align:top; }'
-    + '.gh{ font-weight:800; border-top:0.3mm solid #999 !important; padding-top:1.6mm !important; }'
+    + '.gh{ font-weight:800; border-top:0.3mm solid #666 !important; padding-top:2mm !important; }'
+    + '.gt tr.it > td{ border-top:0.15mm solid #ccc !important; }'
     + '.gn{ width:9%; text-align:right; color:#555; }'
     + '.gb{ font-weight:800; }'
     + '.gl{ width:13%; color:#555; }'
@@ -7270,7 +7283,8 @@ function xGridHTML(key, sec){
   if(!rows.length) return "";
   return '<table class="gt">' + rows.map(function(it){
     if(it.k === "g") return '<tr><td class="gh" colspan="3">' + xP(it.t) + '</td></tr>';
-    if(it.k === "t") return '<tr><td class="gn">' + xP(it.n) + '</td><td class="gb" colspan="2">' + xP(it.t) + '</td></tr>';
+    if(it.k === "t") return '<tr' + (it.n === "1)" ? "" : ' class="it"') + '><td class="gn">' + xP(it.n)
+      + '</td><td class="gb" colspan="2">' + xP(it.t) + '</td></tr>';
     return '<tr><td></td><td class="gl">' + xP(it.l) + '</td><td class="gv">' + xP(it.t) + '</td></tr>';
   }).join("") + '</table>';
 }
@@ -7680,7 +7694,7 @@ function aXlDocs(key, only){
   s1 = xSet(s1, sh("K25", d1), V("cf", "aName"));
   s1 = xSet(s1, sh("V25", d1), xDays(V("cf", "aAt")), 1);
 
-  s2 = xSet(s2, sh("Q32", d2), xDays(V("ci", "wAt")), 1);
+  s2 = xSet(s2, sh("Q32", d2), V("ci", "wAt") ? xKorDate(V("ci", "wAt")) : "");
   s2 = xSet(s2, sh("Q33", d2), V("ci", "seller"));
   s2 = xSet(s2, sh("Q34", d2), V("ci", "wName") ? " " + V("ci", "wName") + "  (서명)" : "");
   s2 = xSet(s2, sh("Q35", d2), V("ci", "mName") ? V("ci", "mName") + "  (서명)" : "");
