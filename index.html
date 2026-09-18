@@ -2719,7 +2719,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:17</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:21</span></div>
 </div>
 
 
@@ -6978,6 +6978,26 @@ function xBox(xml, ref, SY){
   return xml.slice(0, m.index) + m[0].replace(/s="\d+"/, 's="' + SY.xseen[k] + '"') + xml.slice(m.index + m[0].length);
 }
 
+/* 이름표 폭만큼 들여쓸 빈 칸 수를 글꼴로 재어 구한다 — 칸이 맞아야 읽힌다 */
+const xMeasure = (function(){
+  let ctx = null;
+  return function(s){
+    if(!ctx){
+      ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = '11pt "맑은 고딕", "Malgun Gothic", sans-serif';
+    }
+    return ctx.measureText(s).width;
+  };
+})();
+function xPad(prefix){
+  let n;
+  try {
+    const sp = xMeasure(" ");
+    n = sp > 0 ? Math.round(xMeasure(prefix) / sp) : prefix.length * 2;
+  } catch(e){ n = prefix.length * 2; }
+  return new Array(Math.max(1, n) + 1).join(" ");
+}
+
 /* 받아 둔 문서와 같은 꼴로 엮는다 — 구분 · 번호 · 현황/요청 */
 function aXlText(key, sec){
   const D = ADOC_ITEM[sec];
@@ -6988,7 +7008,9 @@ function aXlText(key, sec){
       const first = String(it[D.f[0].k] == null ? "" : it[D.f[0].k]).trim();
       const rest = D.f.slice(1).map(function(f){
         const v = String(it[f.k] == null ? "" : it[f.k]).trim();
-        return v ? (" - " + f.t + ": " + v.split("\n").join("\n   ")) : "";
+        if(!v) return "";
+        const pre = " - " + f.t + ": ";
+        return pre + v.split("\n").join("\n" + xPad(pre));      /* 이름표 폭만큼 들여쓴다 */
       }).filter(Boolean).join("\n");
       return " " + (i + 1) + ") " + first + (rest ? "\n" + rest : "");
     }).join("\n\n");
