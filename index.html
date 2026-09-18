@@ -1153,6 +1153,16 @@
   .acard.open{ border-color:var(--accent); }
   /* 감사 현장에서 적는 칸 */
   /* 함께 적기 */
+  .db-xl{
+    position:absolute; top:10px; right:36px;
+    padding:4px 11px; border-radius:7px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface);
+    font-family:inherit; font-size:12.5px; font-weight:750; color:var(--ink-2);
+    transition:background-color .15s, color .15s, border-color .15s;
+  }
+  .db-xl:hover{ background:#1c774a; border-color:transparent; color:#fff; }
+  .db-xl:disabled{ opacity:.55; cursor:default; }
+  .aw-xl{ font-size:12.5px; color:var(--muted); }
   .aev-go.xl{ border-color:var(--border); color:var(--ink-2); font-weight:750; }
   .aev-go.xl:hover{ background:#1c774a; border-color:transparent; color:#fff; }
   .aev-go.xl:disabled{ opacity:.55; cursor:default; }
@@ -1811,7 +1821,7 @@
   .doc-block{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:13px 15px; }
   .doc-block.wide{ grid-column:1 / -1; }
   /* 접었다 펴는 서류 칸 */
-  .dbf{ padding:0; overflow:hidden; }
+  .dbf{ padding:0; overflow:hidden; position:relative; }
   .db-hd{
     width:100%; display:flex; align-items:center; gap:9px;
     background:none; border:0; cursor:pointer; font-family:inherit; text-align:left;
@@ -2709,7 +2719,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 16:25</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 16:30</span></div>
 </div>
 
 
@@ -3825,14 +3835,19 @@ function phaseHeadHTML(n, title){
 }
 /* 접었다 펴는 서류 칸 — 제목을 누르면 본문이 접힌다.
    id 는 감사마다 달라야 하므로 감사 열쇠를 섞어 만든다. */
-function docFoldHTML(key, id, name, body, open){
+function docFoldHTML(key, id, name, body, open, xl){
   if(!body) return "";
   const g = esc(key) + "::" + id;
+  /* 머리 단추 안에 단추를 넣을 수 없어, 옆에 얹어 둔다 */
+  const xlb = xl
+    ? `<button type="button" class="db-xl" data-axl="${esc(xl)}" data-axlkey="${esc(key)}"
+        title="${esc(name)} 를 받으신 양식 그대로 엑셀로 내려받습니다">엑셀</button>`
+    : "";
   return `<div class="doc-block wide dbf">
     <button class="db-hd" data-dbtog="${g}" aria-expanded="${open?"true":"false"}">
       <span class="doc-name">${esc(name)}</span>
       <span class="db-car" aria-hidden="true"></span>
-    </button>
+    </button>${xlb}
     <div class="db-body" data-dbgrp="${g}"${open?"":" hidden"}>${body}</div>
   </div>`;
 }
@@ -5046,7 +5061,7 @@ function aWriteHTML(key){
     +   '<div class="aw-body">' + aDocBodyHTML(key, cur) + '</div>'
     +   '<div class="aev-foot"><span class="aev-saved" data-asaved>'
     +     (aSavedAt ? "자동 저장됨 · " + aSavedAt : "적는 대로 이 브라우저에 자동 저장됩니다") + '</span>'
-    +     '<button type="button" class="aev-go xl" data-axl="docs">엑셀로 뽑기 — 확인서 · 개선지시서 · 평가서</button>'
+    +     '<span class="aw-xl">엑셀은 위 「확인서 · 개선지시서 · 평가서」 칸 옆에서 뽑습니다</span>'
     +   '</div>'
     + '</div></div>';
 }
@@ -6873,8 +6888,62 @@ function aXlList(key, sec){
   }).join("\n\n");
 }
 
+/* 세 장짜리 양식에서 한 장만 남긴다 — 「확인서」 단추는 확인서만 */
+const XL_SHEET = { cf: 1, ci: 2, er: 3 };
+const XL_TITLE = { cf: "확인서", ci: "개선지시서", er: "평가서" };
+
+function xlOnly(files, no){
+  const dec = new TextDecoder("utf-8");
+  const gone = {};
+  [1, 2, 3].forEach(function(i){
+    if(i === no) return;
+    gone["xl/worksheets/sheet" + i + ".xml"] = 1;
+    gone["xl/worksheets/_rels/sheet" + i + ".xml.rels"] = 1;
+    gone["xl/printerSettings/printerSettings" + i + ".bin"] = 1;
+  });
+  const txt = function(d){ return (typeof d === "string") ? d : dec.decode(d); };
+  const out = [];
+  files.forEach(function(f){
+    if(gone[f.name]) return;
+    let d = f.data;
+
+    if(f.name === "xl/workbook.xml"){
+      let x = txt(d);
+      x = x.replace(/<sheets>[\s\S]*?<\/sheets>/, function(s){
+        const one = s.match(new RegExp('<sheet[^>]*r:id="rId' + no + '"[^>]*/>'));
+        return "<sheets>" + (one ? one[0] : "") + "</sheets>";
+      });
+      /* 인쇄 범위는 이 장 것만 남기고 번호를 0 으로 돌린다 */
+      x = x.replace(/<definedNames>[\s\S]*?<\/definedNames>/, function(s){
+        const mine = s.match(new RegExp('<definedName[^>]*localSheetId="' + (no - 1) + '"[^>]*>[\\s\\S]*?</definedName>'));
+        return mine ? ('<definedNames>' + mine[0].replace(/localSheetId="\d+"/, 'localSheetId="0"') + '</definedNames>') : "";
+      });
+      x = x.replace(/activeTab="\d+"/, 'activeTab="0"');
+      d = x;
+    }
+    if(f.name === "xl/_rels/workbook.xml.rels"){
+      let x = txt(d);
+      [1, 2, 3].forEach(function(i){
+        if(i === no) return;
+        x = x.replace(new RegExp('<Relationship[^>]*Target="worksheets/sheet' + i + '\\.xml"[^>]*/>'), "");
+      });
+      d = x;
+    }
+    if(f.name === "[Content_Types].xml"){
+      let x = txt(d);
+      [1, 2, 3].forEach(function(i){
+        if(i === no) return;
+        x = x.replace(new RegExp('<Override[^>]*PartName="/xl/worksheets/sheet' + i + '\\.xml"[^>]*/>'), "");
+      });
+      d = x;
+    }
+    out.push({ name: f.name, data: d });
+  });
+  return out;
+}
+
 /* ══════ ① 확인서 · 개선지시서 · 평가서 ══════ */
-function aXlDocs(key){
+function aXlDocs(key, only){
   const z = xzRead(xB64(XL_FORM_B64));
   const dec = new TextDecoder("utf-8");
   const S = {};
@@ -6928,9 +6997,11 @@ function aXlDocs(key){
   s3 = xSet(s3, "G29", V("er", "mName"));
 
   const put = { "xl/worksheets/sheet1.xml": s1, "xl/worksheets/sheet2.xml": s2, "xl/worksheets/sheet3.xml": s3 };
-  const files = z.order.map(function(n){ return { name: n, data: put[n] !== undefined ? put[n] : z.part[n] }; });
+  let files = z.order.map(function(n){ return { name: n, data: put[n] !== undefined ? put[n] : z.part[n] }; });
   const at = V("cf", "at") || V("ci", "at") || "";
-  xSave(xzWrite(files), xName("확인서_개선지시서_평가서_" + co + (at ? "_" + at : "")) + ".xlsx");
+  let title = "확인서_개선지시서_평가서";
+  if(only && XL_SHEET[only]){ files = xlOnly(files, XL_SHEET[only]); title = XL_TITLE[only]; }
+  xSave(xzWrite(files), xName(title + "_" + co + (at ? "_" + at : "")) + ".xlsx");
 }
 
 /* ══════ ② 현장평가 점검Sheet ══════ */
@@ -7092,12 +7163,13 @@ document.addEventListener("click", function(e){
   const b = e.target.closest && e.target.closest("[data-axl]");
   if(!b) return;
   const wrap = b.closest("[data-adockey]") || b.closest("[data-aevkey]");
-  const key = wrap && (wrap.dataset.adockey || wrap.dataset.aevkey);
+  const key = b.dataset.axlkey || (wrap && (wrap.dataset.adockey || wrap.dataset.aevkey));
   if(!key) return;
+  const kind = b.dataset.axl;
   const was = b.textContent;
   b.disabled = true; b.textContent = "만드는 중…";
   setTimeout(function(){
-    try { (b.dataset.axl === "eval" ? aXlEval : aXlDocs)(key); }
+    try { if(kind === "eval") aXlEval(key); else aXlDocs(key, XL_SHEET[kind] ? kind : null); }
     catch(err){ alert("엑셀을 만들지 못했습니다 — " + err.message); }
     b.disabled = false; b.textContent = was;
   }, 20);
@@ -7208,7 +7280,7 @@ function phasePostHTML(key, det){
           : (fd && fd.result ? `<div class="txt-block">${esc(fd.result)}</div>`
           : `<div class="empty-note">확인서 문서 없음${det.note?" — "+esc(det.note):""}</div>`))
         + origPagesHTML(key, "confirm", "확인서"),
-        !!(aWrote(key, "cf") || crHTML || (fd && fd.result)))}
+        !!(aWrote(key, "cf") || crHTML || (fd && fd.result)), "cf")}
 
       ${docFoldHTML(key, "id", "개선지시서",
         aWrote(key, "ci")
@@ -7216,7 +7288,7 @@ function phasePostHTML(key, det){
           : (fd && fd.issue ? `<div class="txt-block">${esc(fd.issue)}</div>${legalChipsHTML(fd.issue)}`
           : `<div class="empty-note">개선지시서 내용 없음</div>`))
         + origPagesHTML(key, "issue", "개선지시서"),
-        !!(aWrote(key, "ci") || idHTML || (fd && fd.issue)))}
+        !!(aWrote(key, "ci") || idHTML || (fd && fd.issue)), "ci")}
 
       ${docFoldHTML(key, "capa", "개선결과서",
         aWrote(key, "cr")
@@ -7233,7 +7305,7 @@ function phasePostHTML(key, det){
         + evalPagesHTML(key)
         + ((!fd || !fd.capa) && !(evalPages[key]||[]).length ? `<div class="empty-note">평가서 내용 없음</div>` : "")
         + origPagesHTML(key, "eval", "평가서"),
-        !!(aWrote(key, "er") || (evalPages[key]||[]).length || (fd && fd.capa)))}
+        !!(aWrote(key, "er") || (evalPages[key]||[]).length || (fd && fd.capa)), "er")}
       ${aWriteHTML(key)}
     </div>
   </div>`;
