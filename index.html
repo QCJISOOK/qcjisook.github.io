@@ -2719,7 +2719,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:03</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:13</span></div>
 </div>
 
 
@@ -6898,6 +6898,104 @@ function aXlList(key, sec){
   }).join("\n\n");
 }
 
+/* 칸 하나를 끼워 넣거나, 있으면 모양만 갈아 끼운다 (칸은 번호 순서라야 한다) */
+function xPut(xml, ref, style){
+  const col = (ref.match(/^[A-Z]+/) || ["A"])[0];
+  const row = (ref.match(/\d+$/) || ["1"])[0];
+  const re = new RegExp('<c r="' + ref + '"((?:[^>"]|"[^"]*")*?)(/)?>');
+  const m = xml.match(re);
+  if(m){
+    const head = (m[0].indexOf('s="') >= 0)
+      ? m[0].replace(/s="\d+"/, 's="' + style + '"')
+      : m[0].replace('<c r="' + ref + '"', '<c r="' + ref + '" s="' + style + '"');
+    return xml.slice(0, m.index) + head + xml.slice(m.index + m[0].length);
+  }
+  const rre = new RegExp('<row r="' + row + '"((?:[^>"]|"[^"]*")*?)(/)?>');
+  const rm = xml.match(rre);
+  if(!rm) return xml;
+  if(rm[2]){                                     /* 빈 줄이면 열어 준다 */
+    const open = rm[0].replace(/\/>$/, ">");
+    return xml.slice(0, rm.index) + open + '<c r="' + ref + '" s="' + style + '"/></row>'
+         + xml.slice(rm.index + rm[0].length);
+  }
+  const start = rm.index + rm[0].length;
+  const end = xml.indexOf("</row>", start);
+  const cells = (xml.slice(start, end).match(/<c [^>]*\/>|<c [^>]*>[\s\S]*?<\/c>/g) || []);
+  const mine = xColNo(col);
+  let out = "", done = false;
+  cells.forEach(function(c){
+    const cc = xColNo(((c.match(/r="([A-Z]+)/) || [])[1] || "A"));
+    if(!done && cc > mine){ out += '<c r="' + ref + '" s="' + style + '"/>'; done = true; }
+    out += c;
+  });
+  if(!done) out += '<c r="' + ref + '" s="' + style + '"/>';
+  return xml.slice(0, start) + out + xml.slice(end);
+}
+/* 그 칸이 쓰던 모양은 그대로 두고 테두리만 바꿔 끼운다 */
+function xEdge(xml, ref, SY, bid){
+  const re = new RegExp('<c r="' + ref + '"((?:[^>"]|"[^"]*")*?)(/)?>');
+  const m = xml.match(re);
+  const cur = m ? (m[1].match(/s="(\d+)"/) || [])[1] : undefined;
+  const k = "edge|" + (cur === undefined ? "-" : cur) + "|" + bid;
+  if(SY.xseen[k] === undefined){
+    let xf = (cur !== undefined && SY.xfs[+cur]) ? SY.xfs[+cur]
+           : '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+    xf = xf.replace(/borderId="\d+"/, 'borderId="' + bid + '"');
+    if(xf.indexOf("applyBorder=") < 0) xf = xf.replace("<xf ", '<xf applyBorder="1" ');
+    SY.xfs.push(xf);
+    SY.xseen[k] = SY.xfs.length - 1;
+  }
+  return xPut(xml, ref, SY.xseen[k]);
+}
+/* 한 자리에 네모를 두른다 — 가장자리에 닿는 칸마다 그 쪽만 */
+function xBoxRange(xml, SY, c0, c1, r0, r1){
+  for(let r = r0; r <= r1; r++){
+    for(let c = c0; c <= c1; c++){
+      const L = (c === c0), R = (c === c1), T = (r === r0), B = (r === r1);
+      if(!L && !R && !T && !B) continue;
+      xml = xEdge(xml, xCol(c) + r, SY, xBord(SY, L, R, T, B));
+    }
+  }
+  return xml;
+}
+
+/* 본문 칸에 테두리를 두른다 — 모양은 그대로 두고 테두리만 갈아 끼운다 */
+function xBox(xml, ref, SY){
+  const re = new RegExp('<c r="' + ref + '"((?:[^>"]|"[^"]*")*?)(/)?>');
+  const m = xml.match(re);
+  if(!m) return xml;
+  const cur = (m[1].match(/s="(\d+)"/) || [])[1];
+  if(cur === undefined) return xml;
+  const k = "box|" + cur;
+  if(SY.xseen[k] === undefined){
+    const bid = xBord(SY, true, true, true, true);
+    let xf = SY.xfs[+cur] || '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+    xf = xf.replace(/borderId="\d+"/, 'borderId="' + bid + '"');
+    if(xf.indexOf("applyBorder=") < 0) xf = xf.replace("<xf ", '<xf applyBorder="1" ');
+    SY.xfs.push(xf);
+    SY.xseen[k] = SY.xfs.length - 1;
+  }
+  return xml.slice(0, m.index) + m[0].replace(/s="\d+"/, 's="' + SY.xseen[k] + '"') + xml.slice(m.index + m[0].length);
+}
+
+/* 받아 둔 문서와 같은 꼴로 엮는다 — 구분 · 번호 · 현황/요청 */
+function aXlText(key, sec){
+  const D = ADOC_ITEM[sec];
+  if(!D) return "";
+  return aDocGroups(key, sec).map(function(g, gi){
+    const head = (gi + 1) + ". " + (g.cat || "기타");
+    const body = g.items.map(function(it, i){
+      const first = String(it[D.f[0].k] == null ? "" : it[D.f[0].k]).trim();
+      const rest = D.f.slice(1).map(function(f){
+        const v = String(it[f.k] == null ? "" : it[f.k]).trim();
+        return v ? (" - " + f.t + ": " + v.split("\n").join("\n   ")) : "";
+      }).filter(Boolean).join("\n");
+      return " " + (i + 1) + ") " + first + (rest ? "\n" + rest : "");
+    }).join("\n\n");
+    return head + "\n" + body;
+  }).join("\n\n");
+}
+
 /* ── 칸 맞춰 적기 ── */
 /* 어느 칸에 무엇을 놓을지 — 칸 번호는 1 부터 (A=1) */
 const XL_GEO = {
@@ -7259,6 +7357,8 @@ function xPCss(land){
     + '.gt{ width:100%; table-layout:fixed; }'
     + '.gt td{ border:0; padding:0.8mm 2mm; vertical-align:top; }'
     + '.gh{ font-weight:800; padding-top:2.4mm !important; }'
+    /* 들여쓴 그대로 보이게 — 앞의 빈 칸이 사라지면 줄이 어긋난다 */
+    + '.tx{ white-space:pre-wrap; }'
     + '.gn{ width:9%; text-align:right; color:#555; }'
     + '.gb{ font-weight:800; }'
     + '.gl{ width:13%; color:#555; }'
@@ -7293,10 +7393,10 @@ function aPdfCF(key){
     + '<tr><td class="l" colspan="2">감사일자</td><td>' + esc(xKD(V("at"))) + '</td></tr>'
     + '<tr><td class="l" colspan="2">피감사자</td><td>' + xP(V("auditee")) + '</td></tr>'
     + '<tr><td class="l" colspan="2">감사자</td><td>' + xP(V("auditor")) + '</td></tr>'
-    + '<tr><td class="l" colspan="2">결과</td><td class="big" style="height:34mm">'
-    +   (xGridHTML(key, "cfR") || xP(V("result"))) + '</td></tr>'
-    + '<tr><td class="l" colspan="2">개선 지적 사항</td><td class="big" style="height:56mm">'
-    +   xGridHTML(key, "cfF") + '</td></tr>'
+    + '<tr><td class="l" colspan="2">결과</td><td class="big" style="height:34mm"><div class="tx">'
+    +   esc(aDocList(key, "cfR").length ? aXlText(key, "cfR") : V("result")) + '</div></td></tr>'
+    + '<tr><td class="l" colspan="2">개선 지적 사항</td><td class="big" style="height:56mm"><div class="tx">'
+    +   esc(aXlText(key, "cfF")) + '</div></td></tr>'
     + '</table>'
     + '<table class="foot"><colgroup><col style="width:18%"><col style="width:22%"><col><col style="width:24%"></colgroup>'
     + '<tr><th>구 분</th><th>직 책</th><th>성 명</th><th>일 자</th></tr>'
@@ -7319,7 +7419,8 @@ function aPdfCI(key){
     +   '아래와 같이 개선을 요청 드리오니 개선실시 결과에 관한 회신을 ' + esc(xKorDate(V("due"))) + '까지 회신해 바랍니다.</p>'
     + '<table><colgroup><col style="width:24%"><col></colgroup>'
     + '<tr><td class="l">1. 확인 일자</td><td>' + esc(xKD(V("at"))) + '</td></tr>'
-    + '<tr><td class="l">2. 개선 사항</td><td class="big" style="height:120mm">' + xGridHTML(key, "ciF") + '</td></tr>'
+    + '<tr><td class="l">2. 개선 사항</td><td class="big" style="height:120mm"><div class="tx">'
+    +   esc(aXlText(key, "ciF")) + '</div></td></tr>'
     + '</table>'
     + '<table class="foot right"><colgroup><col style="width:44%"><col></colgroup>'
     + '<tr><td class="l">작성일자</td><td>' + esc(xKD(V("wAt"))) + '</td></tr>'
@@ -7658,24 +7759,23 @@ function aXlDocs(key, only){
 
   const SY = xStyles(dec.decode(z.part["xl/styles.xml"]));
 
-  /* ── 지적사항을 칸 맞춰 다시 적는다 ── 아래 자리부터 손대야 줄 번호가 안 엉킨다 */
-  const box1 = { xml: s1 };
-  const dF = xBody(box1, SY, XL_GEO.cfF, xGridRows(key, "cfF"));
-  /* 결과는 한 건씩 등록한 것이 있으면 그것을, 없으면 총평을 싣는다 */
-  const gR = xGridRows(key, "cfR");
-  let dR = 0;
-  if(gR.length){
-    dR = xBody(box1, SY, XL_GEO.cfR, gR);
-  } else {
-    const tot = V("cf", "result");
-    box1.xml = xS11(xFit(xSet(box1.xml, "F11", tot), 11, 16, tot, 70), "F11", SY);
-  }
-  s1 = box1.xml;
-  const d1 = dF + dR;
+  /* ── 받아 둔 문서와 같은 꼴로 한 칸에 적는다. 칸 높이는 글에 맞춰 늘린다 ── */
+  const d1 = 0, d2 = 0;
 
-  const box2 = { xml: s2 };
-  const d2 = xBody(box2, SY, XL_GEO.ciF, xGridRows(key, "ciF"));
-  s2 = box2.xml;
+  /* 결과 — 한 건씩 등록한 것이 있으면 그것을, 없으면 총평을 싣는다 */
+  const cfR = aDocList(key, "cfR").length ? aXlText(key, "cfR") : V("cf", "result");
+  s1 = xS11(xFit(xSet(s1, "F11", cfR), 11, 16, cfR, 50), "F11", SY);
+
+  const cfF = aXlText(key, "cfF");
+  s1 = xS11(xFit(xSet(s1, "F17", cfF), 17, 21, cfF, 50), "F17", SY);
+
+  const ciF = aXlText(key, "ciF");
+  s2 = xS11(xFit(xSet(s2, "B12", ciF), 12, 31, ciF, 64), "B12", SY);
+
+  /* 본문 자리에 네모 — 원래 보시던 틀. 칸 높이를 늘린 뒤라야 자리가 맞다 */
+  s1 = xBoxRange(s1, SY, 6, 26, 11, 16);     /* 결과 F11:Z16 */
+  s1 = xBoxRange(s1, SY, 6, 26, 17, 21);     /* 개선 지적 사항 F17:Z21 */
+  s2 = xBoxRange(s2, SY, 2, 26, 12, 31);     /* 개선 사항 B12:Z31 */
 
   /* 늘어난 만큼 내려간 자리 */
   const sh = function(ref, d){ return ref.replace(/\d+$/, function(n){ return +n + d; }); };
