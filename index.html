@@ -2688,7 +2688,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-17 10:28</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 11:46</span></div>
 </div>
 
 
@@ -5293,7 +5293,10 @@ function aScoreBar(card, key){
 const ASV_LS  = "oi-audit-server-v1";     /* 서버 주소 */
 const ASV_WHO = "oi-audit-who-v1";        /* 내 이름 */
 const ASV_KEY = "oi-audit-srvkey-v1";     /* 열쇠말 */
-const ASV_URL_BAKED = "";                 /* 여기에는 박지 않는다 — 공개된 곳이라 */
+/* 주소는 박아 둔다. 열쇠말이 없으면 서버가 읽기·쓰기를 모두 막으므로
+   주소만으로는 아무것도 못 한다 — 붙는 데 필요한 것은 열쇠말뿐이다.
+   덕분에 213자짜리 링크가 잘려도 짧은 열쇠말만 넣으면 붙는다. */
+const ASV_URL_BAKED = "https://script.google.com/macros/s/AKfycbzPchqprUCokJwlJomEmoOcJbWb71izDX0pdbnxxjBPSdLbdxpHjjbWpTLZcVoEsqu1Vw/exec";
 
 let asvUrl  = (function(){ try { return localStorage.getItem(ASV_LS) || ASV_URL_BAKED; } catch(e){ return ASV_URL_BAKED; } })();
 let asvWho  = (function(){ try { return localStorage.getItem(ASV_WHO) || ""; } catch(e){ return ""; } })();
@@ -5335,7 +5338,7 @@ let asvBusy = false, asvTimer = null, asvPullT = null;
 let asvSnap = "{}";                       /* 마지막으로 올린 모습 — 무엇이 바뀌었는지 가린다 */
 let asvQ = { kv: [], items: [] };         /* 올릴 것 */
 
-function asvOn(){ return !!asvUrl; }
+function asvOn(){ return !!asvUrl && !!asvKey; }
 function asvSay(msg, bad){
   document.querySelectorAll("[data-asvsay]").forEach(function(el){
     el.textContent = msg || "";
@@ -5664,23 +5667,21 @@ function asvBarHTML(){
     + '<span class="asv-say' + (asvOn() ? "" : " bad") + '" data-asvsay>'
     +   (asvOn() ? "" : "적는 것이 이 브라우저에만 남습니다 — 받으신 설정 링크를 한 번 열어 주세요") + '</span>'
     + '<label class="asv-f">이름<input id="asv-who" value="' + esc(asvWho) + '" placeholder="심상훈" /></label>'
-    + '<button type="button" class="asv-b" id="asv-set">서버 주소</button>'
+    + '<button type="button" class="asv-b" id="asv-set">' + (asvOn() ? "서버 주소" : "열쇠말 넣기") + '</button>'
+    + '<button type="button" class="asv-b" id="asv-chk">연결 검사</button>'
     + '</div>';
 }
 document.addEventListener("click", function(e){
   if(!e.target.closest) return;
   if(e.target.closest("#asv-set")){
-    const v = prompt("받으신 설정 링크를 그대로 붙여 넣어 주세요.\n(또는 /exec 로 끝나는 주소)", asvUrl || "");
+    const v = prompt("열쇠말을 넣어 주세요.\n(받으신 설정 링크를 통째로 붙여 넣어도 됩니다)", asvKey || "");
     if(v === null) return;
     const t = v.trim();
     const m = t.match(/[#&]srv=([^&\s]+)/);
     if(m){ if(!asvTake(m[1])){ alert("설정 링크를 못 읽었습니다."); return; } }
-    else {
-      asvUrl = t;
-      const k = prompt("열쇠말을 넣어 주세요 (없으면 비워 두세요)", asvKey || "");
-      if(k !== null) asvKey = k.trim();
-      try { localStorage.setItem(ASV_LS, asvUrl); localStorage.setItem(ASV_KEY, asvKey); } catch(e2){}
-    }
+    else if(/^https?:\/\//.test(t)){ asvUrl = t; }      /* 주소를 넣은 경우 */
+    else { asvKey = t; if(!asvUrl) asvUrl = ASV_URL_BAKED; }
+    try { localStorage.setItem(ASV_LS, asvUrl); localStorage.setItem(ASV_KEY, asvKey); } catch(e2){}
     asvSince = "";
     location.reload();
   }
@@ -5693,6 +5694,79 @@ function asvWhoSet(e){
 }
 document.addEventListener("change", asvWhoSet);
 document.addEventListener("input", asvWhoSet);   /* 칸을 벗어나지 않아도 담긴다 */
+
+/* ── 연결 검사 ── 무엇이 막혔는지 그 자리에서 말해 준다 ── */
+async function asvCheck(){
+  const L = [];
+  const 판 = (document.querySelector(".build-stamp") || {}).textContent || "";
+  L.push("● 화면 " + (판 || "판 모름"));
+  L.push(asvUrl ? "○ 서버 주소 : 있음" : "✕ 서버 주소 : 없음");
+  L.push(asvKey ? "○ 열쇠말 : 있음" : "✕ 열쇠말 : 없음  ← 「열쇠말 넣기」를 누르세요");
+  L.push(asvWho ? ("○ 이름 : " + asvWho) : "✕ 이름 : 비어 있음  ← 옆 칸에 적어 주세요");
+  if(!asvUrl || !asvKey){ alert(L.join("\n")); return; }
+
+  L.push("");
+  L.push("서버에 말을 걸어 보는 중…");
+  asvSay("연결 검사 중…");
+
+  /* 1. 닿는가 */
+  let t0 = Date.now(), j = null, 탈 = "";
+  try {
+    const r = await fetch(asvUrl + "?k=" + encodeURIComponent(asvKey) + "&since=2030-01-01%2000:00:00", { cache: "no-store" });
+    const txt = await r.text();
+    try { j = JSON.parse(txt); } catch(e){ 탈 = "서버가 글자 대신 딴 화면을 보냈습니다 (" + txt.slice(0,40) + "…)"; }
+  } catch(e){ 탈 = "닿지 못했습니다 — " + e.message; }
+  const 걸림 = ((Date.now() - t0) / 1000).toFixed(1) + "초";
+
+  if(!j){
+    L.push("✕ 서버에 닿지 못함 (" + 걸림 + ")");
+    L.push("   " + 탈);
+    L.push("");
+    L.push("회사망이나 보안 프로그램이 script.google.com 을");
+    L.push("막고 있을 수 있습니다. 다른 망(휴대폰 테더링)으로");
+    L.push("한 번 열어 보시면 바로 가려집니다.");
+    alert(L.join("\n")); asvSay("연결 검사 — 서버에 닿지 못함", 1); return;
+  }
+  if(!j.ok){
+    L.push("✕ 서버가 거절 (" + 걸림 + ") — " + (j.err || "까닭 모름"));
+    L.push("   열쇠말이 다릅니다. 받으신 열쇠말을 다시 넣어 주세요.");
+    alert(L.join("\n")); asvSay("연결 검사 — 열쇠말이 다릅니다", 1); return;
+  }
+  L.push("○ 서버에 닿음 (" + 걸림 + ") · 서버 시각 " + j.at);
+
+  /* 2. 적고 되읽기 */
+  const 표 = "검사" + Date.now().toString(36);
+  t0 = Date.now();
+  let 적음 = false, 되읽음 = false;
+  try {
+    const w = await fetch(asvUrl, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify({ by: asvWho || "검사", k: asvKey, kv:[{ key:"진단", sec:"ping", field:표, value:"1" }] }) });
+    const wt = await w.text();
+    적음 = wt[0] === "{" && JSON.parse(wt).ok;
+  } catch(e){}
+  if(적음){
+    try {
+      const r2 = await fetch(asvUrl + "?k=" + encodeURIComponent(asvKey), { cache:"no-store" });
+      const j2 = JSON.parse(await r2.text());
+      되읽음 = (j2.kv || []).some(function(x){ return x.key === "진단" && x.field === 표 && String(x.value) === "1"; });
+    } catch(e){}
+    try { await fetch(asvUrl, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify({ by:"정리", k: asvKey, kv:[{ key:"진단", sec:"ping", field:표, value:"" }] }) }); } catch(e){}
+  }
+  const 왕복 = ((Date.now() - t0) / 1000).toFixed(1) + "초";
+  L.push(적음 ? ("○ 적기 됨 (" + 왕복 + ")") : "✕ 적기 안 됨 — 서버가 받지 않았습니다");
+  L.push(되읽음 ? "○ 되읽기 됨 — 남이 적은 것도 보입니다" : (적음 ? "✕ 되읽기 안 됨" : ""));
+
+  L.push("");
+  L.push((적음 && 되읽음)
+    ? "▶ 이 컴퓨터는 정상입니다. 적는 대로 서로 보입니다."
+    : "▶ 여기가 막혔습니다. 이 내용을 그대로 알려 주세요.");
+  alert(L.join("\n"));
+  asvSay((적음 && 되읽음) ? "연결 검사 — 정상" : "연결 검사 — 막힌 데가 있습니다", !(적음 && 되읽음));
+}
+document.addEventListener("click", function(e){
+  if(e.target.closest && e.target.closest("#asv-chk")) asvCheck();
+});
 
 /* ── 굴리기 ── */
 function asvStart(){
