@@ -2719,7 +2719,7 @@
     <a class="tab tab-ext" href="issue.html" target="_top" rel="noopener">이슈 현황 <span class="n">02</span><span class="ext">↗</span></a>
       <a class="tab tab-ext" href="summary.html" target="_top" rel="noopener">요약 <span class="n">03</span><span class="ext">↗</span></a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:13</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-18 17:17</span></div>
 </div>
 
 
@@ -7359,6 +7359,23 @@ function xPCss(land){
     + '.gh{ font-weight:800; padding-top:2.4mm !important; }'
     /* 들여쓴 그대로 보이게 — 앞의 빈 칸이 사라지면 줄이 어긋난다 */
     + '.tx{ white-space:pre-wrap; }'
+    /* 받아 둔 문서 틀 — 바깥 네모 하나, 가로줄 둘 */
+    + '.frm{ border:0.35mm solid #000; display:flex; flex-direction:column; min-height:252mm; }'
+    + '.ttl{ font-size:19pt; font-weight:800; text-align:center; letter-spacing:.04em;'
+    +   ' padding:7mm 4mm 6mm; border-bottom:0.35mm solid #000; }'
+    + '.to{ display:flex; justify-content:flex-end; align-items:baseline; gap:10mm;'
+    +   ' padding:5mm 10mm 7mm; }'
+    + '.to > b{ font-weight:400; min-width:34mm; text-align:center; }'
+    + '.to > i{ font-style:normal; }'
+    + '.par{ padding:0 10mm; margin-bottom:5mm; }'
+    + '.ln{ padding:0 10mm; margin-bottom:3mm; display:flex; gap:8mm; }'
+    + '.lb{ min-width:26mm; }'
+    + '.bd{ padding:2mm 12mm 6mm; white-space:pre-wrap; flex:1 1 auto; }'
+    + '.sig{ border-top:0.35mm solid #000; padding:3mm 0; }'
+    + '.sr{ display:flex; justify-content:flex-end; align-items:center; gap:6mm; padding:1.6mm 12mm; }'
+    + '.sr > span{ min-width:42mm; text-align:right; }'
+    + '.sr > b{ min-width:46mm; font-weight:400; text-align:center; }'
+    + '.pg{ display:flex; justify-content:space-between; font-size:9pt; padding:2mm 1mm 0; }'
     + '.gn{ width:9%; text-align:right; color:#555; }'
     + '.gb{ font-weight:800; }'
     + '.gl{ width:13%; color:#555; }'
@@ -7412,22 +7429,27 @@ function aPdfCF(key){
 function aPdfCI(key){
   const V = function(k){ return aDocVal(key, "ci", k); };
   const co = String(key).split("|")[2] || "";
-  return '<h1>화장품제조업자의 제조·품질관리 개선지시서</h1>'
-    + '<p class="note" style="text-align:center;font-size:12pt;font-weight:700">'
-    +   '화장품제조업자 &nbsp;&nbsp;' + xP(V("co") || co) + '&nbsp;&nbsp; 귀하</p>'
-    + '<p class="note">제조소에 있어서의 제조관리 및 품질관리업무에 관하여 확인을 한 바, 개선이 필요하다고 판단되므로 '
-    +   '아래와 같이 개선을 요청 드리오니 개선실시 결과에 관한 회신을 ' + esc(xKorDate(V("due"))) + '까지 회신해 바랍니다.</p>'
-    + '<table><colgroup><col style="width:24%"><col></colgroup>'
-    + '<tr><td class="l">1. 확인 일자</td><td>' + esc(xKD(V("at"))) + '</td></tr>'
-    + '<tr><td class="l">2. 개선 사항</td><td class="big" style="height:120mm"><div class="tx">'
-    +   esc(aXlText(key, "ciF")) + '</div></td></tr>'
-    + '</table>'
-    + '<table class="foot right"><colgroup><col style="width:44%"><col></colgroup>'
-    + '<tr><td class="l">작성일자</td><td>' + esc(xKD(V("wAt"))) + '</td></tr>'
-    + '<tr><td class="l">화장품책임판매업자</td><td>' + xP(V("seller")) + '</td></tr>'
-    + '<tr><td class="l">작성자</td><td>' + xP(V("wName")) + ' (서명)' + xImg(V("wName"), 9) + '</td></tr>'
-    + '<tr><td class="l">책임판매관리자</td><td>' + xP(V("mName")) + ' (서명)' + xImg(V("mName"), 9) + '</td></tr>'
-    + '</table>';
+  const row = function(t, v, sig){
+    return '<div class="sr"><span>' + esc(t) + '</span><b>' + xP(v) + (sig || "") + '</b></div>';
+  };
+  return '<div class="frm">'
+    + '<div class="ttl">화장품제조업자의 제조·품질관리 개선지시서</div>'
+    + '<div class="to"><span>화장품제조업자</span><b>' + xP(V("co") || co) + '</b><i>귀하</i></div>'
+    + '<div class="par">제조소에 있어서의 제조관리 및 품질관리업무에 관하여 확인을 한 바, 개선이 필요하다고 판단되므로</div>'
+    + '<div class="par">아래와 같이 개선을 요청 드리오니 개선실시 결과에 관한 회신을 '
+    +   esc(xKorDate(V("due"))) + '까지 회신해 주시기</div>'
+    + '<div class="par">바랍니다.</div>'
+    + '<div class="ln"><span class="lb">1. 확인 일자</span><span class="lv">' + esc(xKD(V("at"))) + '</span></div>'
+    + '<div class="ln"><span class="lb">2. 개선 사항</span></div>'
+    + '<div class="bd">' + esc(aXlText(key, "ciF")) + '</div>'
+    + '<div class="sig">'
+    +   row("작성일자", V("wAt"))
+    +   row("화장품책임판매업자", V("seller"))
+    +   row("작성자", V("wName"), xImg(V("wName"), 8))
+    +   row("책임판매관리자", V("mName"), xImg(V("mName"), 8))
+    + '</div>'
+    + '</div>'
+    + '<div class="pg"><span>OLIVE-01-001</span><span>(주)올리브인터내셔널</span></div>';
 }
 
 function aPdfER(key){
@@ -7511,12 +7533,15 @@ function aPdfOpen(key, sec){
   const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8" />'
     + '<title>' + esc(name) + '</title>' + xPCss(land) + '</head><body>' + body + '</body></html>';
 
+  /* A4 에서 여백을 뺀 인쇄 자리 (96dpi 기준) */
+  const pw = land ? 1062 : 710, ph = land ? 726 : 1032;
+
   const gone = document.getElementById("a-pdf-frame");
   if(gone) gone.remove();
   const fr = document.createElement("iframe");
   fr.id = "a-pdf-frame";
   fr.setAttribute("aria-hidden", "true");
-  fr.style.cssText = "position:fixed; right:0; bottom:0; width:0; height:0; border:0; visibility:hidden;";
+  fr.style.cssText = "position:fixed; left:-20000px; top:0; width:" + pw + "px; height:" + ph + "px; border:0;";
   document.body.appendChild(fr);
 
   const d = fr.contentWindow.document;
@@ -7526,10 +7551,16 @@ function aPdfOpen(key, sec){
   const was = document.title;
   document.title = name;
   setTimeout(function(){
+    /* 넘치면 줄인다 — 엑셀의 「한 페이지에 맞추기」 와 같은 몫 */
+    try {
+      const b = fr.contentDocument.body;
+      const s = Math.min(1, ph / (b.scrollHeight || ph), pw / (b.scrollWidth || pw));
+      if(s < 0.995) b.style.zoom = String(Math.floor(s * 1000) / 1000);
+    } catch(e){}
     try { fr.contentWindow.focus(); fr.contentWindow.print(); }
     catch(e){ alert("인쇄 화면을 열지 못했습니다 — " + e.message); }
     setTimeout(function(){ document.title = was; }, 2500);
-  }, 450);
+  }, 550);
 }
 document.addEventListener("click", function(e){
   const b = e.target.closest && e.target.closest("[data-apdf]");
@@ -7731,7 +7762,7 @@ function aXlDocs(key, only){
   let s2 = S.sheet2;
   s2 = xSet(s2, "Q4",  V("ci", "co") || co);
   s2 = xSet(s2, "A7",  "아래와 같이 개선을 요청 드리오니 개선실시 결과에 관한 회신을 "
-                       + xKorDate(V("ci", "due")) + "까지 회신해");
+                       + xKorDate(V("ci", "due")) + "까지 회신해 주시기");
   s2 = xSet(s2, "F10", xDays(V("ci", "at")), 1);
   s2 = xFitPage(s2);
   /* 개선 사항은 아래에서 칸을 맞춰 다시 적는다 */
@@ -7772,10 +7803,8 @@ function aXlDocs(key, only){
   const ciF = aXlText(key, "ciF");
   s2 = xS11(xFit(xSet(s2, "B12", ciF), 12, 31, ciF, 64), "B12", SY);
 
-  /* 본문 자리에 네모 — 원래 보시던 틀. 칸 높이를 늘린 뒤라야 자리가 맞다 */
-  s1 = xBoxRange(s1, SY, 6, 26, 11, 16);     /* 결과 F11:Z16 */
-  s1 = xBoxRange(s1, SY, 6, 26, 17, 21);     /* 개선 지적 사항 F17:Z21 */
-  s2 = xBoxRange(s2, SY, 2, 26, 12, 31);     /* 개선 사항 B12:Z31 */
+  /* 네모는 따로 두르지 않는다 — 양식이 이미 두른 것만 쓴다.
+     실제 문서를 보면 개선 사항 자리에는 네모가 없다. */
 
   /* 늘어난 만큼 내려간 자리 */
   const sh = function(ref, d){ return ref.replace(/\d+$/, function(n){ return +n + d; }); };
@@ -7787,7 +7816,7 @@ function aXlDocs(key, only){
   s1 = xSet(s1, sh("K25", d1), V("cf", "aName"));
   s1 = xSet(s1, sh("V25", d1), xDays(V("cf", "aAt")), 1);
 
-  s2 = xSet(s2, sh("Q32", d2), V("ci", "wAt") ? xKorDate(V("ci", "wAt")) : "");
+  s2 = xSet(s2, sh("Q32", d2), xDays(V("ci", "wAt")), 1);
   s2 = xSet(s2, sh("Q33", d2), V("ci", "seller"));
   s2 = xSet(s2, sh("Q34", d2), V("ci", "wName") ? " " + V("ci", "wName") + "  (서명)" : "");
   s2 = xSet(s2, sh("Q35", d2), V("ci", "mName") ? V("ci", "mName") + "  (서명)" : "");
