@@ -1145,6 +1145,106 @@
 
   /* ---------- audit cards (page 1 main list) ---------- */
   .audit-cards{ display:flex; flex-direction:column; gap:12px; }
+
+  /* ── 제조업체 AUDIT 등록 ── */
+  .ar-open{
+    margin-left:12px; vertical-align:middle;
+    font-size:14px; font-weight:700; color:#fff; background:var(--accent);
+    border:0; border-radius:999px; padding:7px 15px; cursor:pointer;
+  }
+  .ar-open:hover{ filter:brightness(1.08); }
+  .ar-wrap{
+    position:fixed; inset:0; z-index:90; background:rgba(15,23,42,.45);
+    display:flex; align-items:flex-start; justify-content:center; padding:28px 16px; overflow:auto;
+  }
+  .ar-box{
+    width:min(1080px,100%); background:var(--surface); border-radius:14px;
+    box-shadow:0 24px 64px rgba(15,23,42,.28); overflow:hidden;
+  }
+  .ar-hd{
+    display:flex; align-items:center; gap:10px; padding:14px 18px;
+    border-bottom:1px solid var(--border); background:var(--surface-2);
+  }
+  .ar-hd b{ font-size:16.5px; }
+  .ar-hd .ar-sub{ font-size:13px; color:var(--muted); }
+  .ar-load{
+    margin-left:auto; font:inherit; font-size:12.5px; color:var(--ink-2);
+    border:1px solid var(--border-strong); border-radius:7px; padding:5px 8px; background:var(--surface); max-width:260px;
+  }
+  .ar-x{ margin-left:8px; border:0; background:none; font-size:19px; color:var(--muted); cursor:pointer; padding:2px 6px; }
+  .ar-hd .ar-load + .ar-x{ margin-left:8px; }
+  .ar-steps{ display:flex; gap:6px; padding:12px 18px 0; flex-wrap:wrap; }
+  .ar-step{
+    border:1px solid var(--border); background:var(--surface); border-radius:999px;
+    padding:6px 14px; font-size:13.5px; font-weight:700; color:var(--muted); cursor:pointer;
+  }
+  .ar-step.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-tint); }
+  .ar-bd{ padding:16px 18px 20px; }
+  .ar-pane[hidden]{ display:none; }
+  .ar-sec{
+    font-size:12.5px; font-weight:800; letter-spacing:.04em; color:var(--muted);
+    margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid var(--border);
+  }
+  .ar-sec:first-child{ margin-top:2px; }
+  .ar-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:10px 12px; }
+  .ar-grid label, .ar-f{ display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--ink-2); font-weight:600; }
+  .ar-grid input, .ar-grid select, .ar-f input, .ar-f textarea{
+    font:inherit; font-size:14px; font-weight:500; color:var(--ink);
+    border:1px solid var(--border-strong); border-radius:7px; padding:7px 9px; background:var(--surface);
+  }
+  .ar-grid input:focus, .ar-f input:focus, .ar-f textarea:focus, .ar-grid select:focus{
+    outline:2px solid var(--accent); outline-offset:-1px;
+  }
+  .ar-wide{ grid-column:1/-1; }
+  .ar-t{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  .ar-t th, .ar-t td{ border:1px solid var(--border-strong); padding:5px 7px; text-align:center; }
+  .ar-t th{ background:var(--surface-2); font-weight:700; font-size:13px; }
+  .ar-t td.l{ text-align:left; }
+  .ar-t input{
+    width:100%; box-sizing:border-box; font:inherit; font-size:13.5px;
+    border:0; background:transparent; padding:2px 3px; color:var(--ink);
+  }
+  .ar-t input:focus{ outline:1px solid var(--accent); border-radius:4px; }
+  .ar-del{ border:0; background:none; color:var(--muted); cursor:pointer; font-size:15px; padding:0 3px; }
+  .ar-del:hover{ color:var(--bad,#c0392b); }
+  .ar-add{
+    margin-top:8px; border:1px dashed var(--border-strong); background:var(--surface);
+    border-radius:7px; padding:6px 12px; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer;
+  }
+  .ar-add:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .ar-pick{ max-height:330px; overflow:auto; border:1px solid var(--border); border-radius:9px; }
+  .ar-pk{
+    display:grid; grid-template-columns:26px 1fr 96px 92px; gap:8px; align-items:center;
+    padding:7px 10px; border-bottom:1px solid var(--border); font-size:13.5px;
+  }
+  .ar-pk:last-child{ border-bottom:0; }
+  .ar-pk:hover{ background:var(--surface-2); }
+  .ar-pk .t{ min-width:0; }
+  .ar-pk .t b{ display:block; font-weight:700; }
+  .ar-pk .t i{ font-style:normal; font-size:12px; color:var(--muted); }
+  .ar-pk select{ font:inherit; font-size:12.5px; padding:3px 5px; border:1px solid var(--border-strong); border-radius:6px; background:var(--surface); }
+  .ar-pk .ty{ font-size:12px; color:var(--muted); text-align:right; }
+  .ar-none{ padding:18px; text-align:center; color:var(--muted); font-size:13.5px; }
+  .ar-note{ font-size:12.5px; color:var(--muted); line-height:1.65; margin-top:8px; }
+  .ar-ft{
+    display:flex; gap:8px; align-items:center; padding:13px 18px;
+    border-top:1px solid var(--border); background:var(--surface-2);
+  }
+  .ar-msg{ font-size:13px; color:var(--muted); }
+  .ar-msg.bad{ color:#c0392b; }
+  .ar-btn{
+    border:1px solid var(--border-strong); background:var(--surface); border-radius:8px;
+    padding:8px 14px; font-size:13.5px; font-weight:700; color:var(--ink-2); cursor:pointer;
+  }
+  .ar-btn:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .ar-btn.go{ background:var(--accent); border-color:var(--accent); color:#fff; margin-left:auto; }
+  .ar-btn.go:hover{ filter:brightness(1.08); color:#fff; }
+  .ar-btn[disabled]{ opacity:.45; cursor:default; }
+  .ar-paste{
+    width:100%; box-sizing:border-box; min-height:84px; font:inherit; font-size:12.5px;
+    font-family:var(--font-mono); border:1px solid var(--border-strong); border-radius:7px;
+    padding:7px 9px; background:var(--surface); color:var(--ink);
+  }
   .acard{
     border:1px solid var(--border); border-radius:14px; background:var(--surface);
     overflow:hidden; transition:border-color .15s, box-shadow .15s;
@@ -2714,7 +2814,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 품질 이슈 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-23 11:11</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-09-23 13:00</span></div>
 </div>
 
 
@@ -2726,7 +2826,7 @@
     </div>
     <div class="ah-txt">
       <div class="eyebrow">PAGE 01 · SUPPLIER AUDIT</div>
-      <h1>올리브인터내셔널 협력업체 AUDIT</h1>
+      <h1>올리브인터내셔널 협력업체 AUDIT<button class="ar-open" id="ar-open">＋ 제조업체 AUDIT 등록</button></h1>
     </div>
   </div>
 
@@ -5489,6 +5589,8 @@ async function asvPull(){
       asvSay("남이 적은 것 " + n + "군데를 받았습니다");
       /* 새로 등록된 클레임이 왔으면 꾸러미에 얹고 나서 그린다 */
       if(ixNewSeen){ ixNewSeen = 0; try { applyNewClaims(); } catch(e){} }
+      /* 남이 등록한 감사가 왔으면 목록에 얹고 다시 세운다 */
+      try { if(applyNewAudits()) initAuditPage(); } catch(e){}
       asvRedraw();
     } else if((j.files || []).length){
       asvRedraw();
@@ -10962,6 +11064,655 @@ function applyNewClaims(){
 
 /* 원래 꾸러미 위에 ERP 건과 등록한 건을 얹는다 — 02 와 같은 238건이 된다 */
 try { applyNewClaims(); } catch(e){ console.warn("applyNewClaims", e); }
+
+
+/* ══════════════ 제조업체 AUDIT 등록 ══════════════
+   적은 것은 aNote[열쇠].reg 에 담긴다 — 이 칸은 이미 서버로 오간다. */
+
+/* 제조사 주소록 — 한 번 적어 두면 다음부터 따라 붙는다 */
+const ADDR_LS = "oi-audit-mfraddr-v1";
+const ADDR_SEED = {
+  "이앤씨": { full: "주식회사 이앤씨", addr: "경기도 용인시 처인구 이동읍 덕성산단2로50번길21" }
+};
+let MFR_ADDR = (function(){
+  try { return Object.assign({}, ADDR_SEED, JSON.parse(localStorage.getItem(ADDR_LS) || "{}")); }
+  catch(e){ return Object.assign({}, ADDR_SEED); }
+})();
+function addrSave(){ try { localStorage.setItem(ADDR_LS, JSON.stringify(MFR_ADDR)); } catch(e){} }
+
+/* 별첨00 의 기본 일정 */
+const PLAN_SEED = [
+  ["10:30 ~ 11:00", "Opening 및 불만협의체 Review"],
+  ["11:00 ~ 12:00", "현장 점검"],
+  ["12:00 ~ 13:00", "점심 시간"],
+  ["13:00 ~ 16:00", "품질문서 검토"],
+  ["16:00 ~ 17:00", "질의 응답 후 종료"]
+];
+
+/* 별첨03 의 준비 서류 — 고칠 수 있다 */
+const PREP_SEED = [
+  { no: "1) 품질", t: "품질관리 매뉴얼 (ISO / CGMP 매뉴얼), 제품표준서, 성적서(원료, 자재, 반제품, 완제품)\n유통화장품 안전관리 문서, 외주협력업체 관리문서 외" },
+  { no: "2) 생산", t: "제조지시서 (칭량, 작업공정, 원료시험번호), 충전 및 포장일지, 계측시 검교정 일지 외" },
+  { no: "3) 매뉴얼 업데이트, 시행 점검 등", t: "(내부 심사 및 교육 활동, 부적합 처리, 공정관리, 이력관리 등)", wide: 1 }
+];
+
+/* ERP 납품(입고) 자료 — SCM납품진행조회에서 옮겨 온다.
+   이 화면은 사내 ERP 를 직접 부르지 못한다(주소가 사내에 있고 응답도 잠겨 있다).
+   비어 있으면 창에서 ERP 표를 그대로 붙여 넣으면 된다. */
+const ERPIN_LS = "oi-audit-erpin-v1";
+let ERP_IN = (function(){
+  try { return JSON.parse(localStorage.getItem(ERPIN_LS) || "[]"); } catch(e){ return []; }
+})();
+function erpInSave(){ try { localStorage.setItem(ERPIN_LS, JSON.stringify(ERP_IN)); } catch(e){} }
+
+/* ERP 그리드를 그대로 붙여 넣으면 골라 담는다.
+   열 이름이 있는 줄을 찾아 자리를 잡고, 없으면 흔한 차례로 짐작한다. */
+function erpInTake(text){
+  const rows = String(text || "").split(/\r?\n/).map(function(s){ return s.split("\t"); }).filter(function(a){ return a.join("").trim(); });
+  if(rows.length < 2) return 0;
+  let head = -1;
+  for(let i = 0; i < Math.min(6, rows.length); i++){
+    if(rows[i].some(function(c){ return /구매거래처|품번|납품일/.test(c); })){ head = i; break; }
+  }
+  if(head < 0) return 0;
+  const H = rows[head].map(function(s){ return String(s).replace(/\s/g, ""); });
+  const at = function(re){ return H.findIndex(function(c){ return re.test(c); }); };
+  const iCo = at(/^구매거래처$/), iCode = at(/^품번$/), iName = at(/^품명$|^제품명$/),
+        iQty = at(/납품수량|입고수량|^수량$/), iDate = at(/^납품일$|^입고일$/),
+        iLot = at(/^Lot|로트/i), iExp = at(/사용기한|유효기한/);
+  if(iCo < 0 || iCode < 0) return 0;
+
+  const got = [];
+  rows.slice(head + 1).forEach(function(r){
+    const co = String(r[iCo] || "").trim();
+    const code = String(r[iCode] || "").trim();
+    if(!co || !code) return;
+    got.push({
+      co: co.replace(/^주식회사\s*|\s*주식회사$|^\(주\)\s*/g, "").trim() || co,
+      code: code,
+      name: iName >= 0 ? String(r[iName] || "").trim() : "",
+      qty: iQty >= 0 ? (parseFloat(String(r[iQty]).replace(/[^0-9.\-]/g, "")) || 0) : 0,
+      date: iDate >= 0 ? String(r[iDate] || "").trim() : "",
+      lot: iLot >= 0 ? String(r[iLot] || "").trim() : "",
+      exp: iExp >= 0 ? String(r[iExp] || "").trim() : ""
+    });
+  });
+  if(!got.length) return 0;
+  ERP_IN = ERP_IN.concat(got);
+  erpInSave();
+  return got.length;
+}
+
+/* 한 업체·한 기간의 입고량을 품번별로 모아 많은 차례로 */
+function erpInTop(co, from, to){
+  const box = {};
+  ERP_IN.forEach(function(r){
+    if(co && r.co !== co) return;
+    const d = String(r.date || "").slice(0, 10);
+    if(from && d && d < from) return;
+    if(to && d && d > to) return;
+    const b = box[r.code] || (box[r.code] = { code: r.code, name: r.name, qty: 0, lot: "", exp: "", n: 0 });
+    b.qty += (+r.qty || 0); b.n++;
+    if(!b.name && r.name) b.name = r.name;
+    if(!b.lot && r.lot) b.lot = r.lot;
+    if(!b.exp && r.exp) b.exp = r.exp;
+  });
+  return Object.keys(box).map(function(k){ return box[k]; })
+    .sort(function(a, b){ return b.qty - a.qty || a.code.localeCompare(b.code); });
+}
+
+/* ── 적어 둔 것 꺼내고 담기 ── */
+function regOf(key){
+  const bag = aNoteBag(key, "reg");
+  const get = function(f, dflt){
+    try { const v = JSON.parse(bag[f] || "null"); return v == null ? dflt : v; } catch(e){ return dflt; }
+  };
+  return {
+    base: get("base", {}),
+    plan: get("plan", null),
+    cx:   get("cx", {}),
+    prep: get("prep", null),
+    docs: get("docs", null)
+  };
+}
+function regPut(key, r){
+  const bag = aNoteBag(key, "reg");
+  bag.base = JSON.stringify(r.base || {});
+  bag.plan = JSON.stringify(r.plan || []);
+  bag.cx   = JSON.stringify(r.cx || {});
+  bag.prep = JSON.stringify(r.prep || []);
+  bag.docs = JSON.stringify(r.docs || []);
+  try { localStorage.setItem(ANOTE_LS, JSON.stringify(aNote)); } catch(e){}
+  try { asvMark(); } catch(e){}
+}
+
+/* 등록한 감사를 목록에 얹는다 — reg.base 가 있는데 원래 자료에 없는 열쇠가 그것이다 */
+function applyNewAudits(){
+  let n = 0;
+  Object.keys(aNote || {}).forEach(function(key){
+    const bag = (aNote[key] || {}).reg;
+    if(!bag || !bag.base) return;
+    let b = null;
+    try { b = JSON.parse(bag.base); } catch(e){ return; }
+    if(!b || !b.company) return;
+    if(auditData.some(function(a){ return aKeyOf(a) === key; })) return;
+    const p = String(key).split("|");
+    auditData.push({
+      year: +p[0] || new Date().getFullYear(), quarter: p[1] || "", company: p[2] || b.company,
+      date: b.date || "", finalOutput: "진행", capa: "없음",
+      note: "화면에서 등록"
+    });
+    n++;
+  });
+  return n;
+}
+function aKeyOf(a){ return a.year + "|" + a.quarter + "|" + a.company; }
+
+/* ── 창 ── */
+let arKey = "", arTab = "plan", arDraft = null;
+
+function arCos(){
+  const s = new Set();
+  auditData.forEach(function(a){ if(a.company && !/^\(/.test(a.company)) s.add(a.company); });
+  try { issueData.forEach(function(d){ if(d.company && !/^\(/.test(d.company)) s.add(d.company); }); } catch(e){}
+  return [...s].sort(function(a, b){ return a.localeCompare(b, "ko"); });
+}
+function arQ(){ return ["1분기", "2분기", "3분기", "4분기", "상반기", "하반기", "수시1", "수시2"]; }
+
+function arOpen(key){
+  const now = new Date();
+  const p = key ? String(key).split("|") : [];
+  arKey = key || "";
+  arTab = "plan";
+
+  arDraft = arDraftOf(key);
+
+  const gone = document.getElementById("ar-wrap");
+  if(gone) gone.remove();
+  const w = document.createElement("div");
+  w.className = "ar-wrap"; w.id = "ar-wrap";
+  w.innerHTML = arBoxHTML();
+  document.body.appendChild(w);
+  arPaint();
+}
+
+/* 열쇠 하나를 초안으로 푼다 — 없으면 빈 초안 */
+function arDraftOf(key){
+  const now = new Date();
+  const p = key ? String(key).split("|") : [];
+  const r = key ? regOf(key) : { base: {}, plan: null, cx: {}, prep: null, docs: null };
+  const co = p[2] || r.base.company || "";
+  return {
+    company: co,
+    year: +p[0] || r.base.year || now.getFullYear(),
+    quarter: p[1] || r.base.quarter || "",
+    date: r.base.date || "",
+    t1: r.base.t1 || "10:30", t2: r.base.t2 || "17:00",
+    full: r.base.full || (MFR_ADDR[co] || {}).full || "",
+    addr: r.base.addr || (MFR_ADDR[co] || {}).addr || "",
+    who: r.base.who || "품질 이지숙 매니저, 심상훈 매니저",
+    plan: (r.plan && r.plan.length) ? r.plan.map(function(x){ return x.slice(); }) : PLAN_SEED.map(function(x){ return x.slice(); }),
+    cx: r.cx || {},
+    prep: (r.prep && r.prep.length) ? r.prep.map(function(x){ return { no: x.no, t: x.t, wide: x.wide || 0 }; })
+                                    : PREP_SEED.map(function(x){ return { no: x.no, t: x.t, wide: x.wide || 0 }; }),
+    docs: (r.docs && r.docs.length) ? r.docs.map(function(x){ return Object.assign({}, x); }) : [],
+    from: r.base.from || "", to: r.base.to || ""
+  };
+}
+
+/* 적어 둔 감사 목록 — 원래 자료에 있든 없든 reg.base 가 있으면 들어간다 */
+function arSaved(){
+  return Object.keys(aNote || {}).filter(function(k){
+    const b = (aNote[k] || {}).reg;
+    return b && b.base && b.base !== "{}";
+  }).sort().reverse();
+}
+
+/* 업체·연도·차수가 맞는 감사가 이미 있으면 불러온다 */
+function arTryLoad(){
+  if(!arDraft.company || !arDraft.quarter) return 0;
+  const key = arDraft.year + "|" + arDraft.quarter + "|" + arDraft.company;
+  if(key === arKey) return 0;
+  const bag = (aNote[key] || {}).reg;
+  if(!bag || !bag.base || bag.base === "{}"){ arKey = key; return 0; }
+  arKey = key;
+  arDraft = arDraftOf(key);
+  return 1;
+}
+function arBoxHTML(){
+  return '<div class="ar-box" role="dialog" aria-label="제조업체 AUDIT 등록">'
+    + '<div class="ar-hd"><b>제조업체 AUDIT 등록</b>'
+    +   '<span class="ar-sub" id="ar-who" style="margin-right:auto"></span>'
+    +   arPickHTML()
+    +   '<button class="ar-x" data-arclose="1" aria-label="닫기">✕</button></div>'
+    + '<div class="ar-steps">'
+    +   '<button class="ar-step" data-artab="plan">1 · 방문일정</button>'
+    +   '<button class="ar-step" data-artab="cx">2 · 불만협의체</button>'
+    +   '<button class="ar-step" data-artab="doc">3 · 문서점검 항목</button>'
+    + '</div>'
+    + '<div class="ar-bd" id="ar-bd"></div>'
+    + '<div class="ar-ft">'
+    +   '<button class="ar-btn" data-arpdf="plan">일정안내 PDF</button>'
+    +   '<button class="ar-btn" data-arppt="1">불만협의체 PPT</button>'
+    +   '<button class="ar-btn" data-arpdf="doc">문서점검 PDF</button>'
+    +   '<span class="ar-msg" id="ar-msg"></span>'
+    +   '<button class="ar-btn go" data-arsave="1">등록</button>'
+    + '</div></div>';
+}
+function arPickHTML(){
+  const list = arSaved();
+  if(!list.length) return "";
+  return '<select class="ar-load" id="ar-load" title="적어 둔 감사를 불러옵니다">'
+    + '<option value="">— 적어 둔 감사 불러오기 —</option>'
+    + list.map(function(k){
+        return '<option value="' + esc(k) + '"' + (k === arKey ? " selected" : "") + '>'
+          + esc(String(k).split("|").join(" · ")) + '</option>';
+      }).join("")
+    + '</select>';
+}
+function arSay(m, bad){
+  const el = document.getElementById("ar-msg");
+  if(el){ el.textContent = m || ""; el.classList.toggle("bad", !!bad); }
+}
+function arPaint(){
+  document.querySelectorAll("[data-artab]").forEach(function(b){
+    b.classList.toggle("on", b.dataset.artab === arTab);
+  });
+  const who = document.getElementById("ar-who");
+  if(who) who.textContent = arDraft.company ? (arDraft.company + " · " + arDraft.year + " " + (arDraft.quarter || "")) : "";
+  const bd = document.getElementById("ar-bd");
+  if(!bd) return;
+  bd.innerHTML = arHeadHTML()
+    + (arTab === "plan" ? arPlanHTML() : arTab === "cx" ? arCxHTML() : arDocHTML());
+}
+function arHeadHTML(){
+  const opt = function(list, v){
+    return list.map(function(x){ return '<option value="' + esc(x) + '"' + (x === v ? " selected" : "") + '>' + esc(x) + '</option>'; }).join("");
+  };
+  const yrs = []; const y0 = new Date().getFullYear();
+  for(let y = y0 + 1; y >= y0 - 4; y--) yrs.push(String(y));
+  return '<div class="ar-sec">기본</div>'
+    + '<div class="ar-grid">'
+    +   '<label>제조사 <span style="color:#c0392b">*</span>'
+    +     '<input list="ar-cos" id="ar-co" value="' + esc(arDraft.company) + '" placeholder="목록에서 고르거나 적습니다" /></label>'
+    +   '<datalist id="ar-cos">' + arCos().map(function(c){ return '<option value="' + esc(c) + '"></option>'; }).join("") + '</datalist>'
+    +   '<label>연도<select id="ar-year">' + opt(yrs, String(arDraft.year)) + '</select></label>'
+    +   '<label>차수 <span style="color:#c0392b">*</span><select id="ar-q"><option value=""></option>' + opt(arQ(), arDraft.quarter) + '</select></label>'
+    +   '<label>실사일<input type="date" id="ar-date" value="' + esc(arDraft.date) + '" /></label>'
+    +   '<label>시작<input type="time" id="ar-t1" value="' + esc(arDraft.t1) + '" /></label>'
+    +   '<label>종료<input type="time" id="ar-t2" value="' + esc(arDraft.t2) + '" /></label>'
+    +   '<label class="ar-wide">상호 (문서에 적히는 이름)'
+    +     '<input id="ar-full" value="' + esc(arDraft.full) + '" placeholder="예) 주식회사 이앤씨" /></label>'
+    +   '<label class="ar-wide">주소'
+    +     '<input id="ar-addr" value="' + esc(arDraft.addr) + '" placeholder="제조사를 고르면 적어 둔 주소가 따라 붙습니다" /></label>'
+    +   '<label class="ar-wide">참석인원<input id="ar-whoin" value="' + esc(arDraft.who) + '" /></label>'
+    + '</div>';
+}
+function arPlanHTML(){
+  return '<div class="ar-sec">상세 일정</div>'
+    + '<table class="ar-t"><thead><tr><th style="width:170px">시간</th><th>상세 일정</th><th style="width:34px"></th></tr></thead><tbody>'
+    + arDraft.plan.map(function(row, i){
+        return '<tr><td><input data-arplan="' + i + '" data-c="0" value="' + esc(row[0]) + '" /></td>'
+          + '<td><input data-arplan="' + i + '" data-c="1" value="' + esc(row[1]) + '" /></td>'
+          + '<td><button class="ar-del" data-arplandel="' + i + '" title="이 줄 지우기">✕</button></td></tr>';
+      }).join("")
+    + '</tbody></table>'
+    + '<button class="ar-add" data-arplanadd="1">＋ 줄 넣기</button>'
+    + '<div class="ar-note">※ 상황에 따라 인원 및 일정 변경 될 수 있음. — 이 글귀는 PDF 아래에 그대로 붙습니다.</div>';
+}
+function arCxHTML(){
+  const co = arDraft.company;
+  if(!co) return '<div class="ar-sec">불만협의체</div><div class="ar-none">먼저 제조사를 고르세요.</div>';
+  let pool = [];
+  try { pool = issueData.filter(function(d){ return d.company === co; }); } catch(e){}
+  if(!pool.length) return '<div class="ar-sec">불만협의체</div>'
+    + '<div class="ar-none">' + esc(co) + ' 로 등록된 클레임이 없습니다.</div>';
+
+  pool.sort(function(a, b){ return String(issueDatesOf(b).cust || issueDatesOf(b).start || "").localeCompare(String(issueDatesOf(a).cust || issueDatesOf(a).start || "")); });
+  const n = Object.keys(arDraft.cx).filter(function(k){ return arDraft.cx[k]; }).length;
+
+  return '<div class="ar-sec">불만협의체에 담을 클레임 — 고른 것 ' + n + '건</div>'
+    + '<div class="ar-pick">'
+    + pool.map(function(d){
+        const k = issueKeyOf(d), p = issueParts(d), dt = issueDatesOf(d);
+        const now = arDraft.cx[k] || "";
+        const guess = cxStageOf(d) === "pre" ? "사전" : "사후";
+        return '<label class="ar-pk">'
+          + '<input type="checkbox" data-arcx="' + esc(k) + '"' + (now ? " checked" : "") + ' />'
+          + '<span class="t"><b>' + esc(p.product || d.title) + '</b>'
+          +   '<i>' + esc(dt.cust || dt.start || "일자 미상") + ' · ' + esc(p.code || "") + '</i></span>'
+          + '<select data-arcxs="' + esc(k) + '">'
+          +   '<option value="사후"' + ((now || guess) === "사후" ? " selected" : "") + '>사후</option>'
+          +   '<option value="사전"' + ((now || guess) === "사전" ? " selected" : "") + '>사전</option></select>'
+          + '<span class="ty">' + esc(d.oldType || d.type || "") + '</span></label>';
+      }).join("")
+    + '</div>'
+    + '<div class="ar-note">고른 건은 「불만협의체 PPT」 단추로 뽑습니다 — 클레임 접수 현황에서 뽑는 것과 같은 양식입니다.</div>';
+}
+function arDocHTML(){
+  const co = arDraft.company;
+  const top = erpInTop(co, arDraft.from, arDraft.to);
+  const picked = {};
+  arDraft.docs.forEach(function(x){ picked[x.code] = 1; });
+
+  return '<div class="ar-sec">문서점검 시 준비 서류</div>'
+    + arDraft.prep.map(function(x, i){
+        return '<div class="ar-f" style="margin-bottom:8px"><span>' + esc(x.no) + (x.wide ? "" : " :") + '</span>'
+          + '<textarea data-arprep="' + i + '" rows="' + (x.wide ? 1 : 2) + '">' + esc(x.t) + '</textarea></div>';
+      }).join("")
+
+    + '<div class="ar-sec">입고량으로 품목 고르기</div>'
+    + '<div class="ar-grid">'
+    +   '<label>기간 시작<input type="date" id="ar-from" value="' + esc(arDraft.from) + '" /></label>'
+    +   '<label>기간 끝<input type="date" id="ar-to" value="' + esc(arDraft.to) + '" /></label>'
+    + '</div>'
+    + (top.length
+        ? '<table class="ar-t" style="margin-top:10px"><thead><tr><th style="width:34px"></th><th style="width:92px">코드</th>'
+          + '<th>제품명</th><th style="width:96px">입고량</th><th style="width:60px">건수</th></tr></thead><tbody>'
+          + top.slice(0, 30).map(function(b){
+              return '<tr><td><input type="checkbox" data-ardoc="' + esc(b.code) + '"' + (picked[b.code] ? " checked" : "") + ' /></td>'
+                + '<td>' + esc(b.code) + '</td><td class="l">' + esc(b.name || "") + '</td>'
+                + '<td>' + b.qty.toLocaleString() + '</td><td>' + b.n + '</td></tr>';
+            }).join("")
+          + '</tbody></table>'
+          + '<div class="ar-note">입고량이 많은 차례로 30개까지 보여 줍니다 · 담아 둔 납품 줄 ' + ERP_IN.length + '개</div>'
+        : '<div class="ar-none" style="margin-top:10px">담아 둔 입고 자료가 없습니다.<br />'
+          + 'ERP 「SCM납품진행조회」 에서 조회한 표를 아래에 붙여 넣으세요.</div>')
+
+    + '<div class="ar-sec">ERP 납품 표 붙여 넣기</div>'
+    + '<textarea class="ar-paste" id="ar-paste" placeholder="ERP 그리드를 골라 Ctrl+C 한 뒤 여기에 Ctrl+V 하세요 — 머리글 줄(구매거래처 · 품번 · 납품일 …)이 함께 있어야 합니다."></textarea>'
+    + '<button class="ar-add" data-arerp="1">붙여 넣은 표 담기</button>'
+    + (ERP_IN.length ? ' <button class="ar-add" data-arerpclear="1">담아 둔 것 비우기</button>' : '')
+
+    + '<div class="ar-sec">점검 품목</div>'
+    + '<table class="ar-t"><thead><tr><th style="width:92px">코드</th><th>제품명</th>'
+    +   '<th style="width:110px">Lot.no</th><th style="width:110px">사용기한</th><th style="width:34px"></th></tr></thead><tbody>'
+    + (arDraft.docs.length ? arDraft.docs.map(function(x, i){
+        return '<tr><td><input data-ardocf="' + i + '" data-f="code" value="' + esc(x.code || "") + '" /></td>'
+          + '<td class="l"><input data-ardocf="' + i + '" data-f="name" value="' + esc(x.name || "") + '" /></td>'
+          + '<td><input data-ardocf="' + i + '" data-f="lot" value="' + esc(x.lot || "") + '" /></td>'
+          + '<td><input data-ardocf="' + i + '" data-f="exp" value="' + esc(x.exp || "") + '" /></td>'
+          + '<td><button class="ar-del" data-ardocdel="' + i + '" title="이 줄 지우기">✕</button></td></tr>';
+      }).join("") : '<tr><td colspan="5" style="color:var(--muted); padding:12px">위에서 고르거나 아래 단추로 줄을 넣으세요.</td></tr>')
+    + '</tbody></table>'
+    + '<button class="ar-add" data-ardocadd="1">＋ 줄 넣기</button>';
+}
+
+/* ── 창 안의 손짓 ── */
+function arGrab(){
+  const v = function(id){ const el = document.getElementById(id); return el ? el.value : ""; };
+  if(document.getElementById("ar-co")) arDraft.company = v("ar-co").trim();
+  if(document.getElementById("ar-year")) arDraft.year = +v("ar-year") || arDraft.year;
+  if(document.getElementById("ar-q")) arDraft.quarter = v("ar-q");
+  if(document.getElementById("ar-date")) arDraft.date = v("ar-date");
+  if(document.getElementById("ar-t1")) arDraft.t1 = v("ar-t1");
+  if(document.getElementById("ar-t2")) arDraft.t2 = v("ar-t2");
+  if(document.getElementById("ar-full")) arDraft.full = v("ar-full");
+  if(document.getElementById("ar-addr")) arDraft.addr = v("ar-addr");
+  if(document.getElementById("ar-whoin")) arDraft.who = v("ar-whoin");
+  if(document.getElementById("ar-from")) arDraft.from = v("ar-from");
+  if(document.getElementById("ar-to")) arDraft.to = v("ar-to");
+}
+document.addEventListener("input", function(e){
+  const t = e.target;
+  if(!t || !document.getElementById("ar-wrap")) return;
+
+  if(t.id === "ar-co"){                              /* 제조사를 고르면 주소가 따라 붙는다 */
+    const co = t.value.trim();
+    const m = MFR_ADDR[co];
+    if(m){
+      const f = document.getElementById("ar-full"), a = document.getElementById("ar-addr");
+      if(f && !f.value.trim()) f.value = m.full || "";
+      if(a && !a.value.trim()) a.value = m.addr || "";
+    }
+    arDraft.company = co;
+    const who = document.getElementById("ar-who");
+    if(who) who.textContent = co ? (co + " · " + arDraft.year + " " + (arDraft.quarter || "")) : "";
+    return;
+  }
+  if(t.dataset.arplan !== undefined){ arDraft.plan[+t.dataset.arplan][+t.dataset.c] = t.value; return; }
+  if(t.dataset.arprep !== undefined){ arDraft.prep[+t.dataset.arprep].t = t.value; return; }
+  if(t.dataset.ardocf !== undefined){ arDraft.docs[+t.dataset.ardocf][t.dataset.f] = t.value; return; }
+});
+document.addEventListener("change", function(e){
+  const t = e.target;
+  if(!t || !document.getElementById("ar-wrap")) return;
+
+  if(t.dataset.arcx !== undefined){
+    const k = t.dataset.arcx;
+    const sel = document.querySelector('[data-arcxs="' + (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+    if(t.checked) arDraft.cx[k] = (sel && sel.value) || "사후";
+    else delete arDraft.cx[k];
+    return;
+  }
+  if(t.dataset.arcxs !== undefined){
+    const k = t.dataset.arcxs;
+    if(arDraft.cx[k]) arDraft.cx[k] = t.value;
+    return;
+  }
+  if(t.dataset.ardoc !== undefined){
+    const code = t.dataset.ardoc;
+    if(t.checked){
+      if(!arDraft.docs.some(function(x){ return x.code === code; })){
+        const b = erpInTop(arDraft.company, arDraft.from, arDraft.to).find(function(x){ return x.code === code; }) || {};
+        arDraft.docs.push({ code: code, name: b.name || "", lot: b.lot || "", exp: b.exp || "" });
+      }
+    } else {
+      arDraft.docs = arDraft.docs.filter(function(x){ return x.code !== code; });
+    }
+    arPaint();
+    return;
+  }
+  if(t.id === "ar-load"){
+    const k = t.value;
+    if(!k) return;
+    arKey = k; arDraft = arDraftOf(k); arPaint();
+    arSay("적어 둔 것을 불러왔습니다 — " + k.split("|").join(" · "));
+    return;
+  }
+  if(t.id === "ar-q" || t.id === "ar-year" || t.id === "ar-co"){
+    arGrab();
+    if(arTryLoad()){ arPaint(); arSay("이미 등록된 감사입니다 — 적어 둔 것을 불러왔습니다."); return; }
+    arPaint();
+    return;
+  }
+  if(t.id === "ar-from" || t.id === "ar-to"){ arGrab(); arPaint(); }
+});
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t || !t.closest) return;
+
+  if(t.closest("#ar-open")){ arOpen(""); return; }
+  const card = t.closest("[data-arcard]");
+  if(card){ e.stopPropagation(); arOpen(card.dataset.arcard); return; }
+
+  const wrap = document.getElementById("ar-wrap");
+  if(!wrap) return;
+  if(t.closest("[data-arclose]") || t === wrap){ wrap.remove(); return; }
+
+  const tab = t.closest("[data-artab]");
+  if(tab){ arGrab(); arTab = tab.dataset.artab; arPaint(); return; }
+
+  if(t.closest("[data-arplanadd]")){ arGrab(); arDraft.plan.push(["", ""]); arPaint(); return; }
+  const pd = t.closest("[data-arplandel]");
+  if(pd){ arGrab(); arDraft.plan.splice(+pd.dataset.arplandel, 1); arPaint(); return; }
+
+  if(t.closest("[data-ardocadd]")){ arGrab(); arDraft.docs.push({ code: "", name: "", lot: "", exp: "" }); arPaint(); return; }
+  const dd = t.closest("[data-ardocdel]");
+  if(dd){ arGrab(); arDraft.docs.splice(+dd.dataset.ardocdel, 1); arPaint(); return; }
+
+  if(t.closest("[data-arerp]")){
+    const box = document.getElementById("ar-paste");
+    const n = erpInTake(box ? box.value : "");
+    if(!n) arSay("표를 알아보지 못했습니다 — 머리글 줄(구매거래처·품번)이 함께 있어야 합니다.", 1);
+    else { arSay("납품 " + n + "줄을 담았습니다."); if(box) box.value = ""; arGrab(); arPaint(); }
+    return;
+  }
+  if(t.closest("[data-arerpclear]")){
+    if(!confirm("담아 둔 납품 자료 " + ERP_IN.length + "줄을 모두 지울까요?")) return;
+    ERP_IN = []; erpInSave(); arPaint(); arSay("비웠습니다.");
+    return;
+  }
+
+  const pdf = t.closest("[data-arpdf]");
+  if(pdf){ arGrab(); arMakePdf(pdf.dataset.arpdf); return; }
+
+  if(t.closest("[data-arppt]")){
+    arGrab();
+    const picked = Object.keys(arDraft.cx).filter(function(k){ return arDraft.cx[k]; });
+    if(!picked.length){ arSay("협의체에 담을 클레임을 고르세요.", 1); return; }
+    arCxExport(t.closest("[data-arppt]"));
+    return;
+  }
+
+  if(t.closest("[data-arsave]")){ arGrab(); arSave(); return; }
+});
+
+document.addEventListener("focusout", function(e){
+  if(!document.getElementById("ar-wrap")) return;
+  if(!e.target || e.target.id !== "ar-co") return;
+  arGrab();
+  if(arTryLoad()){ arPaint(); arSay("이미 등록된 감사입니다 — 적어 둔 것을 불러왔습니다."); }
+});
+
+function arNeed(){
+  if(!arDraft.company){ arSay("제조사를 적으세요.", 1); arTab = "plan"; arPaint(); return 0; }
+  if(!arDraft.quarter){ arSay("차수를 고르세요.", 1); return 0; }
+  return 1;
+}
+function arSave(){
+  if(!arNeed()) return;
+  const key = arDraft.year + "|" + arDraft.quarter + "|" + arDraft.company;
+
+  if(arDraft.full || arDraft.addr){
+    MFR_ADDR[arDraft.company] = { full: arDraft.full, addr: arDraft.addr };
+    addrSave();
+  }
+  regPut(key, {
+    base: { company: arDraft.company, year: arDraft.year, quarter: arDraft.quarter, date: arDraft.date,
+            t1: arDraft.t1, t2: arDraft.t2, full: arDraft.full, addr: arDraft.addr, who: arDraft.who,
+            from: arDraft.from, to: arDraft.to },
+    plan: arDraft.plan, cx: arDraft.cx, prep: arDraft.prep, docs: arDraft.docs
+  });
+  applyNewAudits();
+  try { initAuditPage(); } catch(e){ console.warn("initAuditPage", e); }
+  const w = document.getElementById("ar-wrap");
+  if(w) w.remove();
+  alert("등록했습니다 — " + key.split("|").join(" · "));
+}
+
+/* 고른 클레임으로 협의체 PPT — 이 화면이 이미 가진 손을 그대로 쓴다.
+   잠깐만 cxPick·cxStage 를 갈아 끼웠다 되돌린다. 서버에는 올리지 않는다. */
+async function arCxExport(btn){
+  const wasPick = new Set(cxPick), wasStage = Object.assign({}, cxStage);
+  try {
+    cxPick = new Set(Object.keys(arDraft.cx).filter(function(k){ return arDraft.cx[k]; }));
+    cxPick.forEach(function(k){ cxStage[k] = (arDraft.cx[k] === "사전") ? "pre" : "post"; });
+    await cxExportFor(arDraft.company, btn);
+  } catch(e){ arSay("PPT 를 만들지 못했습니다 — " + e.message, 1); }
+  finally { cxPick = wasPick; cxStage = wasStage; }
+}
+
+/* ── PDF ── */
+function arMakePdf(which){
+  if(!arNeed()) return;
+  const key = arDraft.year + "|" + arDraft.quarter + "|" + arDraft.company;
+  const body = (which === "plan") ? arPdfPlanBody(arDraft) : arPdfDocBody(arDraft);
+  const name = (which === "plan" ? "방문실사 일정 안내" : "문서 점검 항목 및 품목 리스트") + " · " + arDraft.company;
+  arPdfShow(name, body);
+}
+function arPdfPlanBody(d){
+  const t = function(s){ return esc(s || ""); };
+  const when = d.date
+    ? (d.date.slice(0, 4) + "년 " + d.date.slice(5, 7) + "월 " + d.date.slice(8, 10) + "일 " + t(d.t1) + " ~ " + t(d.t2))
+    : (t(d.t1) + " ~ " + t(d.t2));
+  return '<div class="ar-p">'
+    + '<div class="ar-logo">OLIVE<span>INTERNATIONAL</span></div>'
+    + '<div class="ar-ttl">' + d.year + '년 ' + t(d.full || d.company) + ' 방문실사 일정 안내</div>'
+    + '<div class="ar-li"><b>일 시 :</b> ' + when + '</div>'
+    + '<div class="ar-li"><b>장 소 :</b> ' + t(d.full || d.company) + ' ' + t(d.addr) + '</div>'
+    + '<div class="ar-li"><b>참석인원 :</b> ' + t(d.who) + '</div>'
+    + '<table class="ar-pt"><thead><tr><th style="width:150px">시간</th><th>상세 일정</th></tr></thead><tbody>'
+    + d.plan.filter(function(r){ return (r[0] || r[1]); })
+        .map(function(r){ return '<tr><td>' + t(r[0]) + '</td><td>' + t(r[1]) + '</td></tr>'; }).join("")
+    + '</tbody></table>'
+    + '<div class="ar-foot">※ 상황에 따라 인원 및 일정 변경 될 수 있음.</div>'
+    + '</div>';
+}
+function arPdfDocBody(d){
+  const t = function(s){ return esc(s || ""); };
+  const rows = d.docs.slice();
+  while(rows.length < 4) rows.push({ code: "", name: "", lot: "", exp: "" });
+  return '<div class="ar-p">'
+    + '<div class="ar-tag">별첨3.</div>'
+    + '<div class="ar-frm">'
+    +   '<div class="ar-h2">※ 문서점검 시 준비 서류</div>'
+    +   d.prep.map(function(x){
+          if(x.wide)                                   /* 3) 은 콜론 없이 한 줄로 흐른다 */
+            return '<div class="ar-prep w">' + t(x.no) + ' ' + t(x.t).split("\n").join(" ") + '</div>';
+          return '<div class="ar-prep"><span class="n">' + t(x.no) + '</span>'
+            + '<span class="c">:</span>'
+            + '<span class="v">' + t(x.t).split("\n").join("<br />") + '</span></div>';
+        }).join("")
+    +   '<div class="ar-h2" style="margin-top:14px">※ 점검 품목</div>'
+    +   '<table class="ar-pt"><thead><tr><th style="width:90px">코드</th><th>제품명</th>'
+    +     '<th style="width:90px">Lot.no</th><th style="width:100px">사용기한</th></tr></thead><tbody>'
+    +   rows.map(function(x){
+          return '<tr><td>' + t(x.code) + '</td><td class="l">' + t(x.name) + '</td>'
+            + '<td class="s">' + t(x.lot) + '</td><td>' + t(x.exp) + '</td></tr>';
+        }).join("")
+    +   '</tbody></table>'
+    + '</div></div>';
+}
+function arPdfShow(name, body){
+  const css = '<style>'
+    + '@page{ size:A4 portrait; margin:18mm 16mm; }'
+    + 'body{ margin:0; font-family:"맑은 고딕","Malgun Gothic",sans-serif; color:#000; font-size:11pt; }'
+    + '.ar-p{ width:100%; }'
+    + '.ar-logo{ text-align:center; font-size:30pt; font-weight:900; letter-spacing:.18em; margin:6mm 0 2mm; }'
+    + '.ar-logo span{ display:block; font-size:10.5pt; font-weight:700; letter-spacing:.34em; margin-top:1mm; }'
+    + '.ar-ttl{ border:1.5pt solid #9bbb59; text-align:center; font-size:14pt; font-weight:800; padding:3mm 4mm; margin:8mm auto 9mm; width:fit-content; }'
+    + '.ar-li{ font-size:11pt; margin:0 0 5mm 2mm; }'
+    + '.ar-li b{ font-weight:800; }'
+    + '.ar-pt{ border-collapse:collapse; margin:8mm auto 0; width:105mm; }'
+    + '.ar-pt th,.ar-pt td{ border:.8pt solid #000; padding:1.8mm 2mm; text-align:center; font-size:10.5pt; }'
+    + '.ar-pt th{ font-weight:800; }'
+    + '.ar-pt td.l{ text-align:left; }'
+    + '.ar-pt td.s{ font-size:9.5pt; }'
+    + '.ar-foot{ margin:7mm 0 0 8mm; font-size:10.5pt; }'
+    + '.ar-tag{ font-size:10.5pt; margin:0 0 1mm 4mm; }'
+    + '.ar-frm{ border:1pt solid #000; padding:3mm 4mm 5mm; }'
+    + '.ar-h2{ font-size:11pt; font-weight:800; margin:1mm 0 2.5mm; }'
+    + '.ar-prep{ display:flex; gap:2mm; font-size:10.5pt; line-height:1.55; margin-bottom:1.5mm; }'
+    + '.ar-prep .n{ flex:0 0 30mm; }'
+    + '.ar-prep .c{ flex:0 0 2mm; }'
+    + '.ar-prep .v{ flex:1; }'
+    + '.ar-prep.w{ display:block; margin-top:2.5mm; }'
+    + '.ar-frm .ar-pt{ width:100%; margin-top:2mm; }'
+    + '</style>';
+  const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8" />'
+    + '<title>' + esc(name) + '</title>' + css + '</head><body>' + body + '</body></html>';
+
+  const gone = document.getElementById("ar-pdf-frame");
+  if(gone) gone.remove();
+  const fr = document.createElement("iframe");
+  fr.id = "ar-pdf-frame";
+  fr.setAttribute("aria-hidden", "true");
+  fr.style.cssText = "position:fixed; left:-20000px; top:0; width:710px; height:1032px; border:0;";
+  document.body.appendChild(fr);
+  const doc = fr.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+
+  const was = document.title;
+  document.title = name;
+  setTimeout(function(){
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch(e){}
+    setTimeout(function(){ document.title = was; }, 900);
+  }, 350);
+}
+
+/* 등록한 감사를 목록에 얹는다 */
+try { applyNewAudits(); } catch(e){ console.warn("applyNewAudits", e); }
 
 /* ============================== INIT ============================== */
 if(document.getElementById("page-audit")) { try { initAuditPage(); } catch(e){ console.warn("initAuditPage", e); } }
