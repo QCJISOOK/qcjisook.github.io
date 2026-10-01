@@ -254,7 +254,7 @@
   <section class="block">
     <div class="block-head">
       <h2>입고건수 1~5위 업체 협력도 점수</h2>
-      <p class="desc">이번 조회 구간(9/1~10/1) 입고건수가 가장 많은 5개사의 확인소계(100점 환산)입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 따로 뽑았습니다.</p>
+      <p class="desc">이번 조회 구간(9/1~10/1) 입고건수가 가장 많은 5개사를 뽑아, 확인소계(100점 환산) 점수가 높은 순으로 나열한 것입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 5개사를 뽑되, 비교는 점수 순으로 보기 쉽게 정렬했습니다.</p>
     </div>
     <div class="surface-card">
       <svg class="chart-svg" id="top5Chart" viewBox="0 0 560 250" role="img" aria-label="입고건수 1~5위 업체 협력도 점수"></svg>
@@ -750,7 +750,7 @@
     var W = 560, H = 250;
     var padL = 30, padR = 10, padT = 26, padB = 56;
     var plotW = W - padL - padR, plotH = H - padT - padB;
-    var top5 = ranked.slice(0, 5);
+    var top5 = ranked.slice(0, 5).sort(function (a, b) { return b.subtotal - a.subtotal; }); // 선정은 입고건수 1~5위, 정렬은 점수 높은 순
     var maxVal = 100; // fixed 0-100 scale, honest against the point scale
 
     // gridlines at 0/25/50/75/100 with tick labels
