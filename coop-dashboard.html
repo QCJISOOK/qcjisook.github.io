@@ -1110,7 +1110,7 @@
     /* 목표선 라벨은 선 높이가 아니라 차트 맨 위 여백에 고정 — 막대 값 숫자와 겹치지 않도록 */
     histSvg.appendChild(el("text", { x: W - padR, y: padT - 6, "text-anchor": "end" }, "target-label")).textContent = "목표 " + target + "점";
 
-    var barW = 15, barGap = 3;
+    var barW = 11, barGap = 2; /* 막대를 조금 가늘게 해서 월 사이 여백(간격)을 확보 */
     history.forEach(function (h, gi) {
       var groupX = padL + groupW * gi;
       var setW = h.top.length * barW + (h.top.length - 1) * barGap;
