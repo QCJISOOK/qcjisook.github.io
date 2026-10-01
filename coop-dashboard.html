@@ -1409,92 +1409,119 @@
   var histExportBtn = document.getElementById("histExportBtn");
   if (histExportBtn) histExportBtn.addEventListener("click", exportHistChartPng);
 
-  /* "협력도 점수 산정 기준" 표를 고해상도 PNG로 내려받기 — 복잡한 병합 표라 SVG로 다시 그리는 대신
-     foreignObject로 실제 DOM(HTML/CSS)을 그대로 캡처한다. 구글폰트는 CORS 허용 리소스라 캔버스가 오염되지 않는다. */
+  /* "협력도 점수 산정 기준" 표를 고해상도 PNG로 내려받기.
+     foreignObject로 실제 DOM을 그대로 캡처하는 방법은 간단하지만, 크롬에서 foreignObject가 들어간 SVG는
+     내용과 무관하게 캔버스를 "오염"시켜 toBlob()이 SecurityError로 막힌다(직접 확인) — 그래서 못 쓴다.
+     대신 화면 밖(off-screen)에 고정 너비로 복제본을 렌더링한 뒤, 각 셀의 실제 배치(getBoundingClientRect)를
+     그대로 읽어 SVG rect/line/text로 다시 그린다 — 줄바꿈 없는 폭을 보장해 텍스트가 셀 안에 한 줄로 들어간다. */
   function buildScoreRuleBlob() {
     return new Promise(function (resolve, reject) {
-      var box = document.getElementById("scoreRuleBox");
-      var rect = box.getBoundingClientRect();
-      var w = Math.ceil(rect.width), h = Math.ceil(rect.height);
-      var cs = getComputedStyle(document.documentElement);
-      function cv(name, fallback) { var v = cs.getPropertyValue(name); return v ? v.trim() : fallback; }
-      var ink = cv("--ink", "#111a24"), inkSoft = cv("--ink-soft", "#465262"), inkFaint = cv("--ink-faint", "#7c8794");
-      var line = cv("--line", "#dfe3e9"), surface = cv("--surface", "#f7f8fa"), paper = cv("--paper", "#ffffff");
-      var accent = cv("--accent", "#1f3b63"), accentSoft = cv("--accent-soft", "#e7ecf2"), accentInk = cv("--accent-ink", "#fdfdfe");
-
-      var clone = box.cloneNode(true);
+      var original = document.getElementById("scoreRuleBox");
+      var EXPORT_W = 900;
+      var holder = document.createElement("div");
+      holder.style.cssText = "position:fixed;left:-9999px;top:0;width:" + EXPORT_W + "px;";
+      var clone = original.cloneNode(true);
       clone.removeAttribute("id");
       var btn = clone.querySelector("#scoreRuleExportBtn");
       if (btn) btn.remove();
-      var head = clone.querySelector(".score-rule-head");
-      if (head) head.style.marginBottom = "8px";
+      holder.appendChild(clone);
+      document.body.appendChild(holder);
 
-      var style = document.createElement("style");
-      style.textContent =
-        "*{box-sizing:border-box;margin:0;padding:0;font-family:'IBM Plex Sans KR','IBM Plex Sans',sans-serif;}" +
-        ".score-rule-box{background:" + surface + ";border:1px solid " + line + ";border-radius:12px;padding:12px 14px;}" +
-        ".score-rule-title{font-size:13px;font-weight:700;color:" + ink + ";}" +
-        ".score-rule-tables{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;}" +
-        ".score-table-wrap{flex:1 1 540px;min-width:300px;}" +
-        "table.score-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;background:" + paper + ";}" +
-        "table.score-table th{background:" + accent + ";color:" + accentInk + ";font-weight:700;padding:4px 8px;border:1px solid " + accent + ";text-align:center;}" +
-        "table.score-table td{padding:3px 8px;border:1px solid " + line + ";color:" + inkSoft + ";overflow-wrap:break-word;line-height:1.35;}" +
-        "table.score-table td.st-cat{text-align:center;font-weight:700;color:" + ink + ";background:" + accentSoft + ";vertical-align:middle;}" +
-        "table.score-table td.st-cat small{display:block;font-size:9px;font-weight:500;color:" + inkFaint + ";margin-top:2px;}" +
-        "table.score-table td.st-sub{font-weight:700;color:" + ink + ";background:" + surface + ";}" +
-        "table.score-table td:last-child{text-align:center;font-weight:700;color:" + accent + ";font-family:'IBM Plex Mono',monospace;white-space:nowrap;}" +
-        "table.score-table tr.st-total td{font-weight:700;color:" + ink + ";background:" + accentSoft + ";text-align:center;}" +
-        ".grade-table-wrap{flex:0 0 180px;}" +
-        "table.grade-table{width:100%;border-collapse:collapse;font-size:11px;background:" + paper + ";}" +
-        "table.grade-table th{background:" + accent + ";color:" + accentInk + ";font-weight:700;padding:4px 8px;border:1px solid " + accent + ";text-align:center;}" +
-        "table.grade-table td{padding:3px 8px;border:1px solid " + line + ";text-align:center;}" +
-        "table.grade-table td.grade-letter{font-weight:700;color:" + ink + ";background:" + accentSoft + ";}" +
-        "table.grade-table td.grade-range{color:" + inkSoft + ";font-family:'IBM Plex Mono',monospace;}" +
-        ".score-rule-note{margin-top:8px;padding-top:8px;border-top:1px dashed " + line + ";font-size:10.5px;color:" + inkFaint + ";line-height:1.45;}";
+      try {
+        var origin = clone.getBoundingClientRect();
+        var W = Math.ceil(origin.width), H = Math.ceil(origin.height);
+        var svgNS2 = "http://www.w3.org/2000/svg";
+        var svgEls = [];
+        function addEl(tag, attrs, text) {
+          var e = document.createElementNS(svgNS2, tag);
+          Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+          if (text !== undefined) e.textContent = text;
+          svgEls.push(e);
+          return e;
+        }
+        var bgColor = getComputedStyle(clone).backgroundColor || "#f7f8fa";
+        addEl("rect", { x: 0, y: 0, width: W, height: H, fill: bgColor });
 
-      var wrapper = document.createElement("div");
-      wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-      wrapper.style.cssText = "width:" + w + "px;background:" + paper + ";";
-      wrapper.appendChild(style);
-      wrapper.appendChild(clone);
+        function walk(el) {
+          var rect = el.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return;
+          var cs = getComputedStyle(el);
+          var x = rect.left - origin.left, y = rect.top - origin.top;
+          var bg = cs.backgroundColor;
+          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+            addEl("rect", { x: x, y: y, width: rect.width, height: rect.height, fill: bg });
+          }
+          if (el.tagName === "TD" || el.tagName === "TH") {
+            ["Top", "Bottom", "Left", "Right"].forEach(function (side) {
+              var bw = parseFloat(cs["border" + side + "Width"]) || 0;
+              if (bw <= 0) return;
+              var color = cs["border" + side + "Color"];
+              var L = x, T = y, R = x + rect.width, B = y + rect.height;
+              var x1, y1, x2, y2;
+              if (side === "Top") { x1 = L; y1 = T; x2 = R; y2 = T; }
+              else if (side === "Bottom") { x1 = L; y1 = B; x2 = R; y2 = B; }
+              else if (side === "Left") { x1 = L; y1 = T; x2 = L; y2 = B; }
+              else { x1 = R; y1 = T; x2 = R; y2 = B; }
+              addEl("line", { x1: x1, y1: y1, x2: x2, y2: y2, stroke: color, "stroke-width": Math.max(bw, 1) });
+            });
+          }
+          Array.prototype.forEach.call(el.childNodes, function (node) {
+            if (node.nodeType === 1) {
+              walk(node);
+            } else if (node.nodeType === 3 && node.textContent.trim()) {
+              var range = document.createRange();
+              range.selectNodeContents(node);
+              var r = range.getBoundingClientRect();
+              if (r.width <= 0 || r.height <= 0) return;
+              var fs = parseFloat(cs.fontSize);
+              var align = cs.textAlign;
+              var rx = r.left - origin.left, ry = r.top - origin.top;
+              var tx = rx, anchor = "start";
+              if (align === "center") { tx = rx + r.width / 2; anchor = "middle"; }
+              else if (align === "right" || align === "end") { tx = rx + r.width; anchor = "end"; }
+              var ty = ry + r.height * 0.82;
+              addEl("text", {
+                x: tx, y: ty, "font-size": fs, "font-weight": cs.fontWeight,
+                "font-family": cs.fontFamily, fill: cs.color, "text-anchor": anchor
+              }, node.textContent.trim());
+            }
+          });
+        }
+        walk(clone);
 
-      var svgNS2 = "http://www.w3.org/2000/svg";
-      var svg = document.createElementNS(svgNS2, "svg");
-      svg.setAttribute("xmlns", svgNS2);
-      svg.setAttribute("width", w);
-      svg.setAttribute("height", h);
-      svg.setAttribute("viewBox", "0 0 " + w + " " + h);
-      var fo = document.createElementNS(svgNS2, "foreignObject");
-      fo.setAttribute("width", w);
-      fo.setAttribute("height", h);
-      fo.appendChild(wrapper);
-      svg.appendChild(fo);
+        var svg = document.createElementNS(svgNS2, "svg");
+        svg.setAttribute("xmlns", svgNS2);
+        svg.setAttribute("width", W);
+        svg.setAttribute("height", H);
+        svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+        svgEls.forEach(function (e) { svg.appendChild(e); });
+        document.body.removeChild(holder);
 
-      var svgStr = new XMLSerializer().serializeToString(svg);
-      var svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-      var url = URL.createObjectURL(svgBlob);
-      var img = new Image();
-      img.onload = function () {
-        var scale = 3;
-        var canvas = document.createElement("canvas");
-        canvas.width = w * scale; canvas.height = h * scale;
-        var ctx = canvas.getContext("2d");
-        ctx.fillStyle = paper; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        try {
+        var svgStr = new XMLSerializer().serializeToString(svg);
+        var svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+        var url = URL.createObjectURL(svgBlob);
+        var img = new Image();
+        img.onload = function () {
+          var scale = 3;
+          var canvas = document.createElement("canvas");
+          canvas.width = W * scale; canvas.height = H * scale;
+          var ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
           canvas.toBlob(function (blob) {
             if (blob) resolve(blob); else reject(new Error("canvas.toBlob returned null"));
           }, "image/png");
-        } catch (e) {
-          reject(e);
-        }
-      };
-      img.onerror = function () {
-        URL.revokeObjectURL(url);
-        reject(new Error("svg image load failed"));
-      };
-      img.src = url;
+        };
+        img.onerror = function () {
+          URL.revokeObjectURL(url);
+          reject(new Error("svg image load failed"));
+        };
+        img.src = url;
+      } catch (e) {
+        if (holder.parentNode) document.body.removeChild(holder);
+        reject(e);
+      }
     });
   }
   async function exportScoreRulePng() {
