@@ -1,3 +1,4 @@
+
 <title>협력도 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +48,7 @@
     font-family: "IBM Plex Sans KR", "IBM Plex Sans", -apple-system, sans-serif;
     padding-inline: 20px; padding-block: 30px 60px;
   }
-  .wrap { max-width: 1220px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+  .wrap { max-width: 1720px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
   .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 
   header.page { display: flex; flex-direction: column; gap: 8px; }
@@ -163,11 +164,11 @@
   .dt-score { font-size: 13px; font-weight: 700; color: var(--accent); font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
   .dt-note { font-size: 11.5px; color: var(--ink-soft); line-height: 1.55; }
   .dt-scroll { max-height: 340px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
-  table.dt { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
-  table.dt th, table.dt td { padding: 8px 12px; text-align: left; white-space: nowrap; }
+  table.dt { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: auto; }
+  table.dt th, table.dt td { padding: 7px 9px; text-align: left; white-space: nowrap; }
   table.dt thead th { position: sticky; top: 0; background: var(--surface); font-weight: 600; color: var(--ink-soft); border-bottom: 1px solid var(--line); font-size: 11px; z-index: 1; }
   table.dt td.dt-num, table.dt th.dt-num { text-align: right; font-family: "IBM Plex Mono", monospace; }
-  table.dt td.dt-name, table.dt th.dt-name { white-space: normal; min-width: 240px; }
+  table.dt td.dt-name, table.dt th.dt-name { white-space: normal; min-width: 180px; max-width: 260px; }
   table.dt td.dt-content, table.dt th.dt-content { white-space: normal; min-width: 200px; color: var(--ink-soft); }
   table.dt tbody tr { border-bottom: 1px solid var(--line); }
   table.dt tbody tr:last-child { border-bottom: none; }
@@ -1140,3 +1141,4 @@
   });
 })();
 </script>
+
