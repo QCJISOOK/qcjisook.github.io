@@ -127,13 +127,25 @@
   .hist-table-grid { display: grid; gap: 0; margin-top: 16px; border-top: 1px solid var(--line); box-sizing: border-box; }
   .hist-table-col { border-left: 1px solid var(--line); padding: 12px 12px; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
   .hist-table-col:first-child { border-left: none; }
-  .score-rule-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0 16px; }
+  .score-rule-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 10px 0 16px; }
   .score-rule-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
-  .score-rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px 18px; }
-  .score-rule-grid > div { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
-  .score-rule-grid b { color: var(--ink); font-weight: 700; }
-  .score-rule-grid .num { float: right; color: var(--accent); font-weight: 700; font-family: "IBM Plex Mono", monospace; }
-  .score-rule-note { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
+  .score-rule-tables { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .score-table-wrap { flex: 1 1 540px; min-width: 300px; overflow-x: auto; }
+  table.score-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--paper); }
+  table.score-table th { background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 7px 10px; border: 1px solid var(--accent); text-align: center; }
+  table.score-table td { padding: 6px 10px; border: 1px solid var(--line); color: var(--ink-soft); }
+  table.score-table td.st-cat { text-align: center; font-weight: 700; color: var(--ink); background: var(--accent-soft); vertical-align: middle; }
+  table.score-table td.st-cat small { display: block; font-size: 10px; font-weight: 500; color: var(--ink-faint); margin-top: 3px; }
+  table.score-table td.st-sub { font-weight: 700; color: var(--ink); background: var(--surface); }
+  table.score-table td.num { text-align: center; font-weight: 700; color: var(--accent); font-family: "IBM Plex Mono", monospace; width: 56px; white-space: nowrap; }
+  table.score-table tr.st-total td { font-weight: 700; color: var(--ink); background: var(--accent-soft); text-align: center; }
+  .grade-table-wrap { flex: 0 0 210px; }
+  table.grade-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--paper); }
+  table.grade-table th { background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 7px 10px; border: 1px solid var(--accent); text-align: center; }
+  table.grade-table td { padding: 6px 10px; border: 1px solid var(--line); text-align: center; }
+  table.grade-table td.grade-letter { font-weight: 700; color: var(--ink); background: var(--accent-soft); }
+  table.grade-table td.grade-range { color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; }
+  .score-rule-note { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; }
   .hist-table-col .htc-month { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
   .hist-table-col .htc-row { display: grid; grid-template-columns: 9px 1fr auto; gap: 7px; align-items: center; font-size: 13.5px; }
   .hist-table-col .htc-dot { width: 9px; height: 9px; border-radius: 2px; }
@@ -280,14 +292,68 @@
       <p class="desc">입고건수 많은 순. 채점 대상(입고 6건 이상) 제조사는 고정되어 있지 않고 매일 이 구간 기준으로 다시 정해집니다. 제조업체명을 누르면 배점 산출 근거가 펼쳐집니다. 성적서·관리품 제출속도는 영업일(토·일·공휴일 제외) 기준입니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 계산에서 제외했습니다. 클레임발생은 "제조사 귀책=참"으로 확인된 건만 집계합니다. 펼침 패널의 품목별 목록은 품질관리 포털의 "입고+출하" 원장에서 이번 조회 구간(9/1~10/1) 입고분을 그대로 가져온 것이라, LOT·판정 단위로 줄이 나뉘어 상단 평균 점수의 표본 수와 정확히 일치하지 않을 수 있습니다.</p>
       <div class="score-rule-box">
         <div class="score-rule-title">협력도 점수 산정 기준 (100점 만점)</div>
-        <div class="score-rule-grid">
-          <div><b>성적서 제출속도</b><span class="num">30점</span><br>영업일 기준 — 0일 30 · 1~3일 20 · 4~5일 10 · 6~7일 5 · 8일 이상 0</div>
-          <div><b>관리품 제출속도</b><span class="num">30점</span><br>영업일 기준 — 0일 30 · 1~2일 20 · 3~4일 10 · 5~6일 5 · 7일 이상 0</div>
-          <div><b>클레임 발생</b><span class="num">12점</span><br>제조사 귀책 클레임 없으면 만점, 발생 건은 담당자가 확인 후 수기 차감</div>
-          <div><b>재발 방지</b><span class="num">8점</span><br>동일 건 재발 없으면 만점, 재발 확인 시 담당자가 수기 차감</div>
-          <div><b>회신율</b><span class="num">20점</span><br>클레임 회신속도 10 + 공통문의 회신율 10 — 각 3일 이내 10 · 7일 이내 6 · 8일 이상 3, 미회신 0</div>
+        <div class="score-rule-tables">
+          <div class="score-table-wrap">
+            <table class="score-table">
+              <thead><tr><th>항목</th><th>내용</th><th>배점</th></tr></thead>
+              <tbody>
+                <tr><td rowspan="6" class="st-cat">성적서</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">배점 : 30점</td></tr>
+                <tr><td>입고 당일</td><td class="num">30</td></tr>
+                <tr><td>입고일로부터 3일 이내</td><td class="num">20</td></tr>
+                <tr><td>입고일로부터 5일 이내</td><td class="num">10</td></tr>
+                <tr><td>입고일로부터 7일 이내</td><td class="num">5</td></tr>
+                <tr><td>입고일로부터 7일 초과(미제출 포함)</td><td class="num">0</td></tr>
+
+                <tr><td rowspan="6" class="st-cat">관리품</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">배점 : 30점</td></tr>
+                <tr><td>입고 당일</td><td class="num">30</td></tr>
+                <tr><td>입고일로부터 2일 이내</td><td class="num">20</td></tr>
+                <tr><td>입고일로부터 4일 이내</td><td class="num">10</td></tr>
+                <tr><td>입고일로부터 6일 이내</td><td class="num">5</td></tr>
+                <tr><td>입고일로부터 6일 초과(미제출 포함)</td><td class="num">0</td></tr>
+
+                <tr><td rowspan="11" class="st-cat">클레임<small>발생 12 + 재발 8</small></td><td class="st-sub">클레임 발생건수 (제조사 귀책 건만)</td><td class="st-sub">배점 : 12점</td></tr>
+                <tr><td>0건</td><td class="num">12</td></tr>
+                <tr><td>1건</td><td class="num">8</td></tr>
+                <tr><td>2건</td><td class="num">4</td></tr>
+                <tr><td>3건</td><td class="num">2</td></tr>
+                <tr><td>4건 이상</td><td class="num">0</td></tr>
+                <tr><td class="st-sub">클레임 재발건수 (동일 귀책 유형)</td><td class="st-sub">배점 : 8점</td></tr>
+                <tr><td>재발 없음</td><td class="num">8</td></tr>
+                <tr><td>1회 재발(누적 2회)</td><td class="num">5</td></tr>
+                <tr><td>누적 정확히 3회</td><td class="num">2</td></tr>
+                <tr><td>누적 4회 이상</td><td class="num">0</td></tr>
+
+                <tr><td rowspan="12" class="st-cat">회신률<small>클레임 10 + 공통문의 10</small></td><td class="st-sub">클레임 회신속도 (이메일 기준)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
+                <tr><td>전 건 3일 이내 회신</td><td class="num">10</td></tr>
+                <tr><td>전 건 회신, 평균 4~7일</td><td class="num">6</td></tr>
+                <tr><td>전 건 회신, 평균 8일 이상</td><td class="num">3</td></tr>
+                <tr><td>회신률 100% 미만 (회신률%×10)</td><td class="num">0~9</td></tr>
+                <tr><td class="st-sub">공통문의 회신률 (이메일 기준)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
+                <tr><td>전 건 3일 이내 회신</td><td class="num">10</td></tr>
+                <tr><td>전 건 회신, 평균 4~7일</td><td class="num">6</td></tr>
+                <tr><td>전 건 회신, 평균 8일 이상</td><td class="num">3</td></tr>
+                <tr><td>회신률 100% 미만 (회신률%×10)</td><td class="num">0~9</td></tr>
+
+                <tr class="st-total"><td colspan="2">총점</td><td>100점</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="grade-table-wrap">
+            <table class="grade-table">
+              <thead><tr><th colspan="2">제조사 협력도 등급</th></tr></thead>
+              <tbody>
+                <tr><td class="grade-letter">S등급</td><td class="grade-range">90 ~ 100점</td></tr>
+                <tr><td class="grade-letter">A등급</td><td class="grade-range">80 ~ 89점</td></tr>
+                <tr><td class="grade-letter">B등급</td><td class="grade-range">70 ~ 79점</td></tr>
+                <tr><td class="grade-letter">C등급</td><td class="grade-range">60 ~ 69점</td></tr>
+                <tr><td class="grade-letter">D등급</td><td class="grade-range">60점 미만</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="score-rule-note">※ 성적서·관리품은 미제출 시 "평가 제외"가 아니라 <b>오늘 날짜 기준 경과 영업일을 그대로 감점으로 반영</b>합니다 — 늦어질수록 페이지를 다시 열 때마다 점수가 더 떨어집니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 성적서·관리품 평균에서 제외됩니다. 클레임(12)·재발방지(8)는 현재 건별 확인 후 수동으로 반영하는 항목입니다.</div>
+        <div class="score-rule-note">※ 성적서·관리품은 미제출 시 "평가 제외"가 아니라 <b>오늘 날짜 기준 경과 영업일을 그대로 감점으로 반영</b>합니다 — 늦어질수록 페이지를 다시 열 때마다 점수가 더 떨어집니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 성적서·관리품 평균에서 제외됩니다. 클레임·재발 20점은 현재 건별 확인 후 수동으로 반영하는 항목입니다. 등급은 현재 화면에 표시되지는 않고 기준만 참고용으로 정리한 것입니다.</div>
       </div>
     </div>
     <div class="surface-card">
@@ -1113,6 +1179,7 @@
 
   var histSvg = document.getElementById("histChart");
   var histTableGrid = document.getElementById("histTableGrid");
+  var histLastLayout = null; /* renderHistory()가 채워주는 정확한 좌표 — 이미지 내보내기에서 그대로 재사용해 화면과 어긋나지 않게 한다 */
   function renderHistory() {
     var history = HISTORY_PAST.concat([currentMonthEntry()]);
     histSvg.innerHTML = "";
@@ -1124,6 +1191,7 @@
     var minVal = 60, maxVal = 100, target = 80;
     function yOf(v) { return padT + plotH * (1 - (v - minVal) / (maxVal - minVal)); }
     var groupW = plotW / history.length;
+    histLastLayout = { history: history, W: W, H: H, padL: padL, padR: padR, groupW: groupW };
 
     /* 월 구간을 한눈에 구분할 수 있도록 한 달씩 번갈아 옅은 배경 띠 + 경계선을 가장 먼저(맨 뒤에) 그린다 */
     history.forEach(function (h, gi) {
@@ -1184,17 +1252,64 @@
   }
   renderHistory();
 
-  /* 월별 협력도 차트를 고해상도 PNG로 내려받기 — CSS 변수(var(--ink) 등)는 분리된 SVG 이미지에서 해석되지 않으므로 실제 색상값을 직접 넣어서 내보낸다 */
-  function buildHistChartBlob() {
+  /* 월별 협력도 차트 + 아래 월별 표를 하나의 고해상도 PNG로 내려받기 — CSS 변수(var(--ink) 등)는 분리된 SVG 이미지에서 해석되지 않으므로 실제 색상값을 직접 넣어서 내보낸다.
+     표는 별도 HTML 캡처 대신, 차트와 같은 SVG 좌표계(0~860) 안에 차트 바로 아래로 이어 그린다 — foreignObject로 HTML을 그대로 넣으면 웹폰트 로드 실패로 캔버스가 오염되어(toBlob 실패) 다운로드가 막힐 수 있어 피한다. */
+  function svgNode(tag, attrs) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function fitKoreanText(text, widthUnits, fontSize) {
+    var perChar = fontSize * 0.98; /* 한글 1자 폭 근사치 */
+    var maxChars = Math.max(1, Math.floor(widthUnits / perChar));
+    if (text.length <= maxChars) return text;
+    return text.slice(0, Math.max(1, maxChars - 1)) + "…";
+  }
+  function buildHistFullBlob() {
     return new Promise(function (resolve, reject) {
-      var svgEl = document.getElementById("histChart");
-      var vw = 860, vh = 300;
+      if (!histLastLayout) { reject(new Error("no layout")); return; }
+      var L = histLastLayout;
       var cs = getComputedStyle(document.documentElement);
       function cv(name, fallback) { var v = cs.getPropertyValue(name); return v ? v.trim() : fallback; }
       var ink = cv("--ink", "#111a24"), inkSoft = cv("--ink-soft", "#465262"), inkFaint = cv("--ink-faint", "#7c8794");
       var line = cv("--line", "#dfe3e9"), surface = cv("--surface", "#f7f8fa"), paper = cv("--paper", "#ffffff");
+      var svgEl = document.getElementById("histChart");
       var clone = svgEl.cloneNode(true);
       clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+      /* 표 영역 치수 — 차트와 같은 860 좌표계 안에서 차트(H) 바로 아래부터 그린다 */
+      var marginTop = 10, colPadX = 6, colPadTop = 8, colPadBottom = 10;
+      var monthFS = 11, monthGap = 3, rowFS = 9.5, rowLineH = 13, rowGap = 3;
+      var dotSize = 6, dotGap = 3, scoreGap = 3, scoreReserve = 15;
+      var numRows = L.history[0].top.length;
+      var colContentH = monthFS + monthGap + numRows * rowLineH + (numRows - 1) * rowGap;
+      var colH = colPadTop + colContentH + colPadBottom;
+      var tableTop = L.H + marginTop;
+      var totalH = tableTop + colH;
+
+      clone.appendChild(svgNode("line", { x1: 0, x2: L.W, y1: tableTop, y2: tableTop, stroke: line, "stroke-width": 1 }));
+      L.history.forEach(function (h, gi) {
+        var colX = L.padL + L.groupW * gi;
+        if (gi > 0) clone.appendChild(svgNode("line", { x1: colX, x2: colX, y1: tableTop, y2: totalH, stroke: line, "stroke-width": 1 }));
+        var contentX = colX + colPadX;
+        var mEl = svgNode("text", { x: contentX, y: tableTop + colPadTop + monthFS * 0.8, "font-size": monthFS, "font-weight": 700, fill: ink });
+        mEl.textContent = h.m;
+        clone.appendChild(mEl);
+        var rowsTop = tableTop + colPadTop + monthFS + monthGap;
+        var nameMaxW = L.groupW - colPadX * 2 - dotSize - dotGap - scoreGap - scoreReserve;
+        h.top.forEach(function (t, ri) {
+          var rowY = rowsTop + ri * (rowLineH + rowGap);
+          clone.appendChild(svgNode("rect", { x: contentX, y: rowY + (rowLineH - dotSize) / 2, width: dotSize, height: dotSize, rx: 1.5, fill: RANK_HEX[RANK_COLORS[ri]] }));
+          var nameEl = svgNode("text", { x: contentX + dotSize + dotGap, y: rowY + rowLineH * 0.75, "font-size": rowFS, fill: inkSoft });
+          nameEl.textContent = fitKoreanText(t[0], nameMaxW, rowFS);
+          clone.appendChild(nameEl);
+          var scoreEl = svgNode("text", { x: colX + L.groupW - colPadX, y: rowY + rowLineH * 0.75, "font-size": rowFS, "font-weight": 700, fill: ink, "text-anchor": "end", "font-family": "'IBM Plex Mono', monospace" });
+          scoreEl.textContent = t[1];
+          clone.appendChild(scoreEl);
+        });
+      });
+      clone.setAttribute("viewBox", "0 0 " + L.W + " " + totalH);
+
       var styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
       styleEl.textContent =
         "text{font-family:'IBM Plex Sans KR','IBM Plex Sans',sans-serif;}" +
@@ -1208,8 +1323,7 @@
         ".month-band{fill:" + surface + "}" +
         ".month-divider{stroke:" + line + ";stroke-width:1}";
       clone.insertBefore(styleEl, clone.firstChild);
-      var bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      bg.setAttribute("x", 0); bg.setAttribute("y", 0); bg.setAttribute("width", vw); bg.setAttribute("height", vh); bg.setAttribute("fill", paper);
+      var bg = svgNode("rect", { x: 0, y: 0, width: L.W, height: totalH, fill: paper });
       clone.insertBefore(bg, clone.firstChild);
 
       var svgStr = new XMLSerializer().serializeToString(clone);
@@ -1219,7 +1333,7 @@
       img.onload = function () {
         var scale = 3;
         var canvas = document.createElement("canvas");
-        canvas.width = vw * scale; canvas.height = vh * scale;
+        canvas.width = L.W * scale; canvas.height = totalH * scale;
         var ctx = canvas.getContext("2d");
         ctx.fillStyle = paper; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -1241,7 +1355,7 @@
     var filename = "월별_협력도_점수_현황_" + ymd + ".png";
     var blob;
     try {
-      blob = await buildHistChartBlob();
+      blob = await buildHistFullBlob();
     } catch (e) {
       window.alert("이미지 생성에 실패했습니다. 브라우저 설정(팝업/다운로드 차단)을 확인해주세요.");
       return;
