@@ -116,6 +116,8 @@
   .chart-svg .month-label { fill: var(--ink-soft); font-size: 11.5px; font-weight: 600; }
   .chart-svg .target-line { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
   .chart-svg .target-label { fill: var(--ink-faint); font-size: 10px; }
+  .chart-svg .month-band { fill: var(--surface); }
+  .chart-svg .month-divider { stroke: var(--line); stroke-width: 1; }
 
   .legend-row { display: flex; flex-wrap: wrap; gap: 16px; padding-bottom: 14px; }
   .legend-row .lg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); font-weight: 500; }
@@ -1085,6 +1087,18 @@
     var plotW = W - padL - padR, plotH = H - padT - padB;
     var minVal = 60, maxVal = 100, target = 80;
     function yOf(v) { return padT + plotH * (1 - (v - minVal) / (maxVal - minVal)); }
+    var groupW = plotW / history.length;
+
+    /* 월 구간을 한눈에 구분할 수 있도록 한 달씩 번갈아 옅은 배경 띠 + 경계선을 가장 먼저(맨 뒤에) 그린다 */
+    history.forEach(function (h, gi) {
+      if (gi % 2 === 1) {
+        histSvg.appendChild(el("rect", { x: padL + groupW * gi, y: padT, width: groupW, height: plotH }, "month-band"));
+      }
+    });
+    for (var gb = 1; gb < history.length; gb++) {
+      var bx = padL + groupW * gb;
+      histSvg.appendChild(el("line", { x1: bx, x2: bx, y1: padT, y2: padT + plotH }, "month-divider"));
+    }
 
     [60, 70, 80, 90, 100].forEach(function (v) {
       var y = yOf(v);
@@ -1096,7 +1110,6 @@
     /* 목표선 라벨은 선 높이가 아니라 차트 맨 위 여백에 고정 — 막대 값 숫자와 겹치지 않도록 */
     histSvg.appendChild(el("text", { x: W - padR, y: padT - 6, "text-anchor": "end" }, "target-label")).textContent = "목표 " + target + "점";
 
-    var groupW = plotW / history.length;
     var barW = 15, barGap = 3;
     history.forEach(function (h, gi) {
       var groupX = padL + groupW * gi;
