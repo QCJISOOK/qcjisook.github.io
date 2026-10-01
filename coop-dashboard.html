@@ -323,18 +323,18 @@
                 <tr><td>누적 정확히 3회</td><td class="num">2</td></tr>
                 <tr><td>누적 4회 이상</td><td class="num">0</td></tr>
 
-                <tr><td rowspan="12" class="st-cat">회신률<small>클레임 10 + 공통문의 10</small></td><td class="st-sub">클레임 회신속도 (이메일 기준)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td rowspan="12" class="st-cat">회신률<small>클레임 10 + 공통문의 10</small></td><td class="st-sub">클레임 회신속도 (이메일 기준, 평균 지연일)</td><td class="st-sub">배점 : 10점</td></tr>
                 <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
-                <tr><td>전 건 3일 이내 회신</td><td class="num">10</td></tr>
-                <tr><td>전 건 회신, 평균 4~7일</td><td class="num">6</td></tr>
-                <tr><td>전 건 회신, 평균 8일 이상</td><td class="num">3</td></tr>
-                <tr><td>회신률 100% 미만 (회신률%×10)</td><td class="num">0~9</td></tr>
-                <tr><td class="st-sub">공통문의 회신률 (이메일 기준)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td>평균 회신 7일 이내</td><td class="num">10</td></tr>
+                <tr><td>평균 회신 14일 이내</td><td class="num">5</td></tr>
+                <tr><td>평균 회신 14일 초과</td><td class="num">0</td></tr>
+                <tr><td class="st-sub">공통문의 회신률 (이메일 기준, 평균 지연일)</td><td class="st-sub">배점 : 10점</td></tr>
                 <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
-                <tr><td>전 건 3일 이내 회신</td><td class="num">10</td></tr>
-                <tr><td>전 건 회신, 평균 4~7일</td><td class="num">6</td></tr>
-                <tr><td>전 건 회신, 평균 8일 이상</td><td class="num">3</td></tr>
-                <tr><td>회신률 100% 미만 (회신률%×10)</td><td class="num">0~9</td></tr>
+                <tr><td>요청일자 이내(당일) 회신</td><td class="num">10</td></tr>
+                <tr><td>2일 이내 회신</td><td class="num">6</td></tr>
+                <tr><td>5일 이내 회신</td><td class="num">3</td></tr>
+                <tr><td>5일 초과</td><td class="num">0</td></tr>
+                <tr><td class="st-sub" style="font-weight:500;font-size:10.5px;color:var(--ink-faint);background:transparent;">※ 두 항목 모두 회신률 100% 미만(일부 무응답)은 회신률(%)×10을 반올림해 적용</td><td class="st-sub"></td></tr>
 
                 <tr class="st-total"><td colspan="2">총점</td><td>100점</td></tr>
               </tbody>
@@ -439,8 +439,8 @@
         <div><b>귀책 필터</b> — 클레임발생·재발건은 "제조사 귀책=참"으로 확인된 건만 셉니다. 접수는 됐지만 귀책이 아닌 건(예: 한국콜마 MC0744 용기불량, 9/15 접수·귀책=false)은 카운트하지 않습니다.</div>
         <div><b>클레임 발생건수(12점)</b> — 0건 12 / 1건 8 / 2건 4 / 3건 2 / 4건 이상 0</div>
         <div><b>클레임 재발건(8점)</b> — 재발없음 8 / 동일유형 2회(1회 재발) 5 / 정확히 3회 2 / 4회 이상 0</div>
-        <div><b>클레임 회신속도(10점)</b> — Gmail 이메일 이력 기준. 조회 구간에 해당 제조사와 오간 클레임 관련 메일이 없으면 만점(10). 있으면: 전 건 3일 이내 회신 10 / 전 건 회신했으나 평균 4~7일 6 / 전 건 회신했으나 평균 8일 이상 3 / 회신률 100% 미만은 회신률(%)×10을 반올림(무응답만 있으면 0).</div>
-        <div><b>공통문의 회신률(10점)</b> — 같은 방식으로 클레임 외 문의(PL보험증서·제품표준서·정보요청 등)를 채점. 조회 구간에 해당 메일이 없으면 만점(10).</div>
+        <div><b>클레임 회신속도(10점)</b> — Gmail 이메일 이력 기준. 조회 구간에 해당 제조사와 오간 클레임 관련 메일이 없으면 만점(10). 있으면: 평균 회신일 7일 이내 10 / 14일 이내 5 / 14일 초과 0 / 회신률 100% 미만은 회신률(%)×10을 반올림(무응답만 있으면 0).</div>
+        <div><b>공통문의 회신률(10점)</b> — 같은 방식으로 클레임 외 문의(PL보험증서·제품표준서·정보요청 등)를 채점. 조회 구간에 해당 메일이 없으면 만점(10). 있으면: 평균 회신일 요청일자 이내(당일) 10 / 2일 이내 6 / 5일 이내 3 / 5일 초과 0 / 회신률 100% 미만은 회신률(%)×10을 반올림.</div>
         <div><b>표본 안내</b> — 위 두 항목은 이메일 건수가 제조사별로 편차가 커(0건~두 자릿수) 표본이 적은 곳은 참고용 성격이 강합니다. 만점 처리된 곳 중 일부는 "실제로 문제가 없었다"가 아니라 "이 구간 이메일 왕래 자체가 없었다"는 의미일 수 있습니다.</div>
       </div>
     </div>
@@ -610,21 +610,39 @@
     return emailHistory.filter(function (m) { return !m._deleted && m.cat === "vendor" && aliases.indexOf(m.who) !== -1; });
   }
   function isClaimSubj(s) { return s.indexOf("클레임") !== -1; }
-  function mailScoreBand(days) {
+  /* 클레임 회신속도(10점) — 7일 이내 10 / 14일 이내 5 / 14일 초과 0 */
+  function claimMailScoreBand(days) {
     if (days === null || days === undefined) return 0;
-    if (days <= 3) return 10;
-    if (days <= 7) return 6;
-    return 3;
+    if (days <= 7) return 10;
+    if (days <= 14) return 5;
+    return 0;
   }
-  /* 회신속도 그룹 점수(10점 만점)·설명 — "산정 규칙"의 3일/7일 구간, 회신률<100%는 회신률×10 기준과 동일 */
-  function mailGroupScore(mails) {
+  /* 공통문의 회신률(10점) — 요청일자 이내(당일) 10 / 2일 이내 6 / 5일 이내 3 / 5일 초과 0 */
+  function commonMailScoreBand(days) {
+    if (days === null || days === undefined) return 0;
+    if (days <= 0) return 10;
+    if (days <= 2) return 6;
+    if (days <= 5) return 3;
+    return 0;
+  }
+  /* 클레임 회신속도 그룹 점수(10점 만점) — 평균 지연일에 위 배점표 적용, 회신률<100%는 회신률×10 */
+  function claimSpeedScore(mails) {
     if (!mails.length) return 10;
     var replied = mails.filter(function (m) { return !!m.replyDate; });
     if (replied.length === mails.length) {
       var avg = replied.reduce(function (s, m) { return s + m.delayDays; }, 0) / replied.length;
-      if (avg <= 3) return 10;
-      if (avg <= 7) return 6;
-      return 3;
+      return claimMailScoreBand(avg);
+    }
+    if (replied.length === 0) return 0;
+    return Math.round((replied.length / mails.length) * 10);
+  }
+  /* 공통문의 회신률 그룹 점수(10점 만점) — 평균 지연일에 위 배점표 적용, 회신률<100%는 회신률×10 */
+  function commonReplyScore(mails) {
+    if (!mails.length) return 10;
+    var replied = mails.filter(function (m) { return !!m.replyDate; });
+    if (replied.length === mails.length) {
+      var avg = replied.reduce(function (s, m) { return s + m.delayDays; }, 0) / replied.length;
+      return commonMailScoreBand(avg);
     }
     if (replied.length === 0) return 0;
     return Math.round((replied.length / mails.length) * 10);
@@ -799,8 +817,8 @@
     var mails = mailsFor(r);
     var claimMails = mails.filter(function (m) { return isClaimSubj(m.subj); });
     var commonMails = mails.filter(function (m) { return !isClaimSubj(m.subj); });
-    r.claimSpeed = mailGroupScore(claimMails);
-    r.commonReply = mailGroupScore(commonMails);
+    r.claimSpeed = claimSpeedScore(claimMails);
+    r.commonReply = commonReplyScore(commonMails);
     r.reply = r.claimSpeed + r.commonReply; // 회신률 20점 = 클레임회신속도10 + 공통문의회신률10
     r.subtotal = +(r.sj + r.gj + r.claim + r.recur + r.reply).toFixed(1); // 30+30+12+8+20 = 100점 만점, 전 항목 확정
   }
@@ -879,7 +897,7 @@
     if (!list.length) return '<div class="dt-scroll"><table class="dt">' + head + '<tbody></tbody></table></div><div class="dt-empty">조회 구간 해당 클레임 이메일 없음</div>';
     var rows = list.map(function (m) {
       var delayTxt = m.replyDate ? m.delayDays + "일" : "무응답";
-      var score = mailScoreBand(m.replyDate ? m.delayDays : null);
+      var score = claimMailScoreBand(m.replyDate ? m.delayDays : null);
       var cls = m.replyDate ? "dt-ok" : "dt-bad";
       return '<tr data-table="claim" data-mail-id="' + m._id + '">' +
         '<td class="dt-num">' + (m._id + 1) + '</td>' +
@@ -903,7 +921,7 @@
     if (!list.length) return '<div class="dt-scroll"><table class="dt">' + head + '<tbody></tbody></table></div><div class="dt-empty">조회 구간 해당 문의 이메일 없음</div>';
     var rows = list.map(function (m) {
       var delayTxt = m.replyDate ? m.delayDays + "일" : "무응답";
-      var score = mailScoreBand(m.replyDate ? m.delayDays : null);
+      var score = commonMailScoreBand(m.replyDate ? m.delayDays : null);
       var cls = m.replyDate ? "dt-ok" : "dt-bad";
       return '<tr data-table="reply" data-mail-id="' + m._id + '">' +
         '<td class="dt-num">' + (m._id + 1) + '</td>' +
