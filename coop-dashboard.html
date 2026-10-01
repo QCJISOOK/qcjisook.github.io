@@ -131,13 +131,13 @@
   .score-rule-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
   .score-rule-tables { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
   .score-table-wrap { flex: 1 1 540px; min-width: 300px; overflow-x: auto; }
-  table.score-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--paper); }
+  table.score-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; background: var(--paper); }
   table.score-table th { background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 7px 10px; border: 1px solid var(--accent); text-align: center; }
-  table.score-table td { padding: 6px 10px; border: 1px solid var(--line); color: var(--ink-soft); }
+  table.score-table td { padding: 6px 10px; border: 1px solid var(--line); color: var(--ink-soft); overflow-wrap: break-word; }
   table.score-table td.st-cat { text-align: center; font-weight: 700; color: var(--ink); background: var(--accent-soft); vertical-align: middle; }
   table.score-table td.st-cat small { display: block; font-size: 10px; font-weight: 500; color: var(--ink-faint); margin-top: 3px; }
   table.score-table td.st-sub { font-weight: 700; color: var(--ink); background: var(--surface); }
-  table.score-table td.num { text-align: center; font-weight: 700; color: var(--accent); font-family: "IBM Plex Mono", monospace; width: 56px; white-space: nowrap; }
+  table.score-table td:last-child { text-align: center; font-weight: 700; color: var(--accent); font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
   table.score-table tr.st-total td { font-weight: 700; color: var(--ink); background: var(--accent-soft); text-align: center; }
   .grade-table-wrap { flex: 0 0 210px; }
   table.grade-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--paper); }
@@ -295,40 +295,41 @@
         <div class="score-rule-tables">
           <div class="score-table-wrap">
             <table class="score-table">
+              <colgroup><col style="width:104px"><col><col style="width:82px"></colgroup>
               <thead><tr><th>항목</th><th>내용</th><th>배점</th></tr></thead>
               <tbody>
-                <tr><td rowspan="6" class="st-cat">성적서</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">배점 : 30점</td></tr>
+                <tr><td rowspan="6" class="st-cat">성적서</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">30점</td></tr>
                 <tr><td>입고 당일</td><td class="num">30</td></tr>
                 <tr><td>입고일로부터 3일 이내</td><td class="num">20</td></tr>
                 <tr><td>입고일로부터 5일 이내</td><td class="num">10</td></tr>
                 <tr><td>입고일로부터 7일 이내</td><td class="num">5</td></tr>
                 <tr><td>입고일로부터 7일 초과(미제출 포함)</td><td class="num">0</td></tr>
 
-                <tr><td rowspan="6" class="st-cat">관리품</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">배점 : 30점</td></tr>
+                <tr><td rowspan="6" class="st-cat">관리품</td><td class="st-sub">제품검사준수현황 (영업일 기준)</td><td class="st-sub">30점</td></tr>
                 <tr><td>입고 당일</td><td class="num">30</td></tr>
                 <tr><td>입고일로부터 2일 이내</td><td class="num">20</td></tr>
                 <tr><td>입고일로부터 4일 이내</td><td class="num">10</td></tr>
                 <tr><td>입고일로부터 6일 이내</td><td class="num">5</td></tr>
                 <tr><td>입고일로부터 6일 초과(미제출 포함)</td><td class="num">0</td></tr>
 
-                <tr><td rowspan="11" class="st-cat">클레임<small>발생 12 + 재발 8</small></td><td class="st-sub">클레임 발생건수 (제조사 귀책 건만)</td><td class="st-sub">배점 : 12점</td></tr>
+                <tr><td rowspan="11" class="st-cat">클레임<small>발생 12 + 재발 8</small></td><td class="st-sub">클레임 발생건수 (제조사 귀책 건만)</td><td class="st-sub">12점</td></tr>
                 <tr><td>0건</td><td class="num">12</td></tr>
                 <tr><td>1건</td><td class="num">8</td></tr>
                 <tr><td>2건</td><td class="num">4</td></tr>
                 <tr><td>3건</td><td class="num">2</td></tr>
                 <tr><td>4건 이상</td><td class="num">0</td></tr>
-                <tr><td class="st-sub">클레임 재발건수 (동일 귀책 유형)</td><td class="st-sub">배점 : 8점</td></tr>
+                <tr><td class="st-sub">클레임 재발건수 (동일 귀책 유형)</td><td class="st-sub">8점</td></tr>
                 <tr><td>재발 없음</td><td class="num">8</td></tr>
                 <tr><td>1회 재발(누적 2회)</td><td class="num">5</td></tr>
                 <tr><td>누적 정확히 3회</td><td class="num">2</td></tr>
                 <tr><td>누적 4회 이상</td><td class="num">0</td></tr>
 
-                <tr><td rowspan="12" class="st-cat">회신률<small>클레임 10 + 공통문의 10</small></td><td class="st-sub">클레임 회신속도 (이메일 기준, 평균 지연일)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td rowspan="12" class="st-cat">회신률<small>클레임 10 + 공통문의 10</small></td><td class="st-sub">클레임 회신속도 (이메일 기준, 평균 지연일)</td><td class="st-sub">10점</td></tr>
                 <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
                 <tr><td>평균 회신 7일 이내</td><td class="num">10</td></tr>
                 <tr><td>평균 회신 14일 이내</td><td class="num">5</td></tr>
                 <tr><td>평균 회신 14일 초과</td><td class="num">0</td></tr>
-                <tr><td class="st-sub">공통문의 회신률 (이메일 기준, 평균 지연일)</td><td class="st-sub">배점 : 10점</td></tr>
+                <tr><td class="st-sub">공통문의 회신률 (이메일 기준, 평균 지연일)</td><td class="st-sub">10점</td></tr>
                 <tr><td>조회 구간 해당 메일 없음</td><td class="num">10</td></tr>
                 <tr><td>요청일자 이내(당일) 회신</td><td class="num">10</td></tr>
                 <tr><td>2일 이내 회신</td><td class="num">6</td></tr>
