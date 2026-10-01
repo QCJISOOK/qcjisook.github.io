@@ -347,7 +347,7 @@
         <div><b>미제출 = 감점 (평가 제외 아님)</b> — 아직 전달되지 않은 성적서·관리품은 "평가 대상 아님"으로 빼지 않고, <b>오늘 날짜 기준 경과 영업일</b>을 그대로 위 배점표에 대입해 감점 점수로 반영합니다. 예: 입고일 9/30인데 관리품이 10/1까지 안 오면 경과 1영업일 → 20점으로 계산. 실제로 전달되면 그 날짜로 확정 점수가 바뀌고, 계속 안 오면 날이 갈수록 점수가 더 떨어집니다. 그래서 페이지를 다시 열 때마다(특히 다음날) 미제출 건의 점수가 자동으로 더 낮아질 수 있습니다.</div>
         <div><b>선입고 제외</b> — 성적서 판정일(완제품판정일자)이 입고일자보다 늦은 품목(선입고, 판정 전에 먼저 입고 처리된 건)은 성적서·관리품 제출속도 평균 계산에서 제외합니다. 상세 패널의 품목별 표에서 성적서·관리품이 이미 접수된 품목만 "정상입고/선입고"를 표시하고, 아직 접수되지 않은 품목은 아직 단정할 수 없어 "-"로 표시합니다(감점 계산 자체는 접수 여부와 무관하게 그대로 적용됩니다).</div>
         <div><b>표본 하한</b> — 당월 입고건수가 5건 이하인 제조사는 점수를 매기지 않고 "-"로 표시합니다.</div>
-        <div><b>수동 수정·삭제</b> — 성적서·관리품·클레임·회신율 4개 표는 각 행의 "✎ 수정"으로 값을 직접 고치거나 "🗑 삭제"로 관련 없는 행을 뺄 수 있습니다. 저장/삭제 즉시 점수가 재계산되어 표와 총점에 반영되지만, <b>이 수정·삭제 내용은 지금 보고 있는 이 컴퓨터의 브라우저에만 저장</b>되며 다른 PC·다른 사람·Artifact 링크로 보는 사람에게는 공유되지 않습니다. 수정 직후 상단 KPI·차트는 새로고침해야 최신값으로 반영됩니다.</div>
+        <div><b>수동 수정·삭제</b> — 성적서·관리품·클레임·회신율 4개 표는 각 행의 "✎ 수정"으로 값을 직접 고치거나 "🗑 삭제"로 관련 없는 행을 뺄 수 있습니다. 저장/삭제 즉시 제조사별 점수·총점·"전체 제조업체 협력도 점수" 표·"월별 협력도 점수 현황"의 9월 항목까지 바로 다시 계산되어 반영됩니다(이 중 "월별 협력도 점수 현황"은 "입고건수 1~5위" 차트와 같은 기준으로 매번 다시 뽑습니다). 다만 맨 위 KPI 카드와 "입고건수 1~5위" 차트는 페이지를 새로고침해야 최신값으로 반영됩니다. <b>이 수정·삭제 내용은 지금 보고 있는 이 컴퓨터의 브라우저에만 저장</b>되며 다른 PC·다른 사람·Artifact 링크로 보는 사람에게는 공유되지 않습니다.</div>
         <div><b>귀책 필터</b> — 클레임발생·재발건은 "제조사 귀책=참"으로 확인된 건만 셉니다. 접수는 됐지만 귀책이 아닌 건(예: 한국콜마 MC0744 용기불량, 9/15 접수·귀책=false)은 카운트하지 않습니다.</div>
         <div><b>클레임 발생건수(12점)</b> — 0건 12 / 1건 8 / 2건 4 / 3건 2 / 4건 이상 0</div>
         <div><b>클레임 재발건(8점)</b> — 재발없음 8 / 동일유형 2회(1회 재발) 5 / 정확히 3회 2 / 4회 이상 0</div>
@@ -862,7 +862,7 @@
         '<div class="dt-note">' + mailGroupNote(commonMails) + ' — "내용"은 메일 본문 요약을 별도로 수집하지 않아 기본값 "-"이며, 행의 ✎ 수정으로 직접 채울 수 있습니다.</div>' +
         replyTableHtml(commonMails) +
       '</div>' +
-      '<div class="detail-total">총점 <b>' + r.subtotal.toFixed(1) + ' / 100</b>점. 수정 후에도 상단 KPI·차트는 새로고침해야 반영됩니다.</div>';
+      '<div class="detail-total">총점 <b>' + r.subtotal.toFixed(1) + ' / 100</b>점. (맨 위 KPI 카드·"입고건수 1~5위" 차트만 새로고침해야 반영되고, 나머지 표·"월별 협력도 점수 현황"은 바로 반영됩니다.)</div>';
     return wrap;
   }
 
@@ -975,6 +975,7 @@
     ranked.forEach(recomputeCompany);
     renderMainRows();
     renderAllTable();
+    renderHistory();
   }
   function askRowDelete(tr) {
     var actionsTd = tr.querySelector(".dt-actions");
@@ -1002,6 +1003,7 @@
     renderMainRows();
     renderAllTable();
     renderMail(currentMailFilter);
+    renderHistory();
   }
   mainBody.addEventListener("click", function (ev) {
     var editBtn = ev.target.closest(".row-edit-btn");
@@ -1055,8 +1057,8 @@
   });
   renderMail("all");
 
-  /* 월별 협력도 점수 추이 (기존 방식, 1~8월) */
-  var history = [
+  /* 월별 협력도 점수 추이 — 1~8월은 기존 방식 고정 기록, 9월(이번 달)은 아래에서 매번 실측 데이터로 다시 계산 */
+  var HISTORY_PAST = [
     { m:"1월", top:[["나우코스",90],["코스메카코리아",85],["코스맥스",83],["이앤씨",82],["씨앤씨인터내셔널",73]] },
     { m:"2월", top:[["코스모코스",89],["이앤씨",87],["리봄화장품",85],["씨앤씨인터내셔널",82],["코스맥스",70]] },
     { m:"3월", top:[["리봄화장품",92],["이앤씨",92],["코스메카코리아",90],["씨앤씨인터내셔널",89],["코스맥스",83]] },
@@ -1064,13 +1066,21 @@
     { m:"5월", top:[["코디",89],["이앤씨",88],["코코",87],["코스맥스",80],["씨앤씨인터내셔널",80]] },
     { m:"6월", top:[["이앤씨",81],["코스맥스",77],["리봄화장품",76],["씨앤씨인터내셔널",75],["코스모코스",71]] },
     { m:"7월", top:[["이앤씨",89],["리봄화장품",80],["코스모코스",77],["씨앤씨인터내셔널",75],["코스맥스",70]] },
-    { m:"8월", top:[["이앤씨",93],["리봄화장품",88],["코스맥스",85],["코스모코스",85],["씨앤씨인터내셔널",84]] },
-    { m:"9월", top:[["리봄화장품",86],["이앤씨",77],["코스맥스",73],["뉴앤뉴",68],["에스엔제이코스메틱",40]] }
+    { m:"8월", top:[["이앤씨",93],["리봄화장품",88],["코스맥스",85],["코스모코스",85],["씨앤씨인터내셔널",84]] }
   ];
+  function shortName(name) {
+    var aliases = WHO_ALIASES[name];
+    return (aliases && aliases[0]) || name;
+  }
+  /* 이번 달(9월) 항목 — 위 "입고건수 1~5위" 차트와 동일한 기준(입고 1~5위 뽑아 점수 높은 순)으로 매번 실측 ranked에서 다시 계산 */
+  function currentMonthEntry() {
+    var t5 = ranked.slice(0, 5).slice().sort(function (a, b) { return b.subtotal - a.subtotal; });
+    return { m: "9월", top: t5.map(function (r) { return [shortName(r.name), Math.round(r.subtotal)]; }) };
+  }
   var RANK_COLORS = ["s1", "s2", "s3", "s4", "s5"];
   var RANK_HEX = { s1:"#2a78d6", s2:"#eb6834", s3:"#1baf7a", s4:"#eda100", s5:"#e87ba4" };
 
-  /* legend */
+  /* legend (고정, 한 번만) */
   var histLegend = document.getElementById("histLegend");
   [1, 2, 3, 4, 5].forEach(function (rank) {
     var item = document.createElement("span");
@@ -1079,9 +1089,13 @@
     histLegend.appendChild(item);
   });
 
-  /* grouped bar chart */
   var histSvg = document.getElementById("histChart");
-  (function () {
+  var histTableGrid = document.getElementById("histTableGrid");
+  function renderHistory() {
+    var history = HISTORY_PAST.concat([currentMonthEntry()]);
+    histSvg.innerHTML = "";
+
+    /* grouped bar chart */
     var W = 860, H = 300;
     var padL = 32, padR = 16, padT = 20, padB = 40;
     var plotW = W - padL - padR, plotH = H - padT - padB;
@@ -1129,20 +1143,21 @@
       monthEl.textContent = h.m;
       histSvg.appendChild(monthEl);
     });
-  })();
 
-  /* per-month detail table */
-  var histTableGrid = document.getElementById("histTableGrid");
-  history.forEach(function (h) {
-    var col = document.createElement("div");
-    col.className = "hist-table-col";
-    var rowsHtml = h.top.map(function (t, ri) {
-      return '<div class="htc-row"><span class="htc-dot" style="background:' + RANK_HEX[RANK_COLORS[ri]] + '"></span>' +
-        '<span class="htc-name">' + t[0] + '</span><span class="htc-score num">' + t[1] + '</span></div>';
-    }).join("");
-    col.innerHTML = '<span class="htc-month">' + h.m + '</span>' + rowsHtml;
-    histTableGrid.appendChild(col);
-  });
+    /* per-month detail table */
+    histTableGrid.innerHTML = "";
+    history.forEach(function (h) {
+      var col = document.createElement("div");
+      col.className = "hist-table-col";
+      var rowsHtml = h.top.map(function (t, ri) {
+        return '<div class="htc-row"><span class="htc-dot" style="background:' + RANK_HEX[RANK_COLORS[ri]] + '"></span>' +
+          '<span class="htc-name">' + t[0] + '</span><span class="htc-score num">' + t[1] + '</span></div>';
+      }).join("");
+      col.innerHTML = '<span class="htc-month">' + h.m + '</span>' + rowsHtml;
+      histTableGrid.appendChild(col);
+    });
+  }
+  renderHistory();
 
   /* pending items */
   var pending = [
