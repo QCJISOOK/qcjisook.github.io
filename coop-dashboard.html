@@ -1,0 +1,1142 @@
+<title>협력도 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111a24;
+    --ink-soft: #465262;
+    --ink-faint: #7c8794;
+    --paper: #ffffff;
+    --surface: #f7f8fa;
+    --line: #dfe3e9;
+    --accent: #1f3b63;
+    --accent-soft: #e7ecf2;
+    --accent-ink: #fdfdfe;
+    --good: #2f8f5b;
+    --good-soft: #e1f2e7;
+    --warn: #c1861f;
+    --warn-soft: #faeed7;
+    --crit: #c0453a;
+    --crit-soft: #f8e2df;
+    --neutralB: #5c7285;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e6e9ec; --ink-soft: #a7b1bc; --ink-faint: #78838d;
+      --paper: #10141a; --surface: #171c22; --line: #2a3038;
+      --accent: #7fa3d6; --accent-soft: #1e2733; --accent-ink: #0c1116;
+      --good: #5cbb85; --good-soft: #17301f; --warn: #d9a850; --warn-soft: #3a2f16;
+      --crit: #e0796d; --crit-soft: #3a231f; --neutralB: #93a7b8;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e6e9ec; --ink-soft: #a7b1bc; --ink-faint: #78838d;
+    --paper: #10141a; --surface: #171c22; --line: #2a3038;
+    --accent: #7fa3d6; --accent-soft: #1e2733; --accent-ink: #0c1116;
+    --good: #5cbb85; --good-soft: #17301f; --warn: #d9a850; --warn-soft: #3a2f16;
+    --crit: #e0796d; --crit-soft: #3a231f; --neutralB: #93a7b8;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans KR", "IBM Plex Sans", -apple-system, sans-serif;
+    padding-inline: 20px; padding-block: 30px 60px;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+  .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  header.page { display: flex; flex-direction: column; gap: 8px; }
+  .eyebrow { font-size: 11.5px; letter-spacing: .06em; color: var(--ink-faint); font-weight: 500; }
+  h1 { font-size: clamp(26px, 4vw, 34px); margin: 0; text-wrap: balance; letter-spacing: -.02em; font-weight: 700; }
+  .sub { color: var(--ink-soft); font-size: 13.5px; max-width: 78ch; line-height: 1.65; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500;
+    padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+  }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: currentColor; flex: none; }
+  .pill.real { color: var(--good); }
+  .pill.warn { color: var(--warn); }
+
+  .kpis { display: flex; flex-wrap: wrap; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding-block: 18px; }
+  .kpi { flex: 1 1 200px; display: flex; flex-direction: column; gap: 5px; padding: 0 22px; border-left: 1px solid var(--line); }
+  .kpi:first-child { border-left: none; padding-left: 0; }
+  @media (max-width: 700px) { .kpi { border-left: none; border-top: 1px solid var(--line); padding: 14px 0 0; flex-basis: 45%; } .kpi:first-child { border-top: none; } }
+  .kpi .label { font-size: 12px; color: var(--ink-faint); font-weight: 500; }
+  .kpi .value { font-size: 25px; font-weight: 700; letter-spacing: -.01em; }
+  .kpi .value small { font-size: 12px; font-weight: 500; color: var(--ink-faint); }
+
+  section.block { display: flex; flex-direction: column; gap: 14px; }
+  .block-head { display: flex; flex-direction: column; gap: 4px; }
+  .block-head h2 { font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; letter-spacing: -.01em; }
+  .block-head .desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; max-width: 84ch; }
+  .chip {
+    font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+  }
+  .chip.accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+
+  .surface-card { padding: 4px 0 2px; }
+
+  /* svg charts */
+  .chart-svg { width: 100%; height: auto; overflow: visible; font-family: "IBM Plex Sans KR", sans-serif; }
+  .chart-svg .grid-line { stroke: var(--line); stroke-width: 1; }
+  .chart-svg .axis-label { fill: var(--ink-faint); font-size: 11px; }
+  .chart-svg .s1 { fill: #2a78d6; }
+  .chart-svg .s2 { fill: #eb6834; }
+  .chart-svg .s3 { fill: #1baf7a; }
+  .chart-svg .s4 { fill: #eda100; }
+  .chart-svg .s5 { fill: #e87ba4; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .chart-svg .s1 { fill: #3987e5; }
+    :root:not([data-theme="light"]) .chart-svg .s2 { fill: #d95926; }
+    :root:not([data-theme="light"]) .chart-svg .s3 { fill: #199e70; }
+    :root:not([data-theme="light"]) .chart-svg .s4 { fill: #c98500; }
+    :root:not([data-theme="light"]) .chart-svg .s5 { fill: #d55181; }
+  }
+  :root[data-theme="dark"] .chart-svg .s1 { fill: #3987e5; }
+  :root[data-theme="dark"] .chart-svg .s2 { fill: #d95926; }
+  :root[data-theme="dark"] .chart-svg .s3 { fill: #199e70; }
+  :root[data-theme="dark"] .chart-svg .s4 { fill: #c98500; }
+  :root[data-theme="dark"] .chart-svg .s5 { fill: #d55181; }
+  .chart-svg .bar-value { fill: var(--ink); font-size: 13px; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+  .chart-svg .bar-name { fill: var(--ink); font-size: 11.5px; font-weight: 600; }
+  .chart-svg .bar-sub { fill: var(--ink-faint); font-size: 10px; }
+  .chart-svg .line-path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart-svg .line-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .chart-svg .line-value { fill: var(--ink); font-size: 11px; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+  .chart-svg .line-name { fill: var(--ink-faint); font-size: 9.5px; }
+  .chart-svg .month-label { fill: var(--ink-soft); font-size: 11.5px; font-weight: 600; }
+  .chart-svg .target-line { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart-svg .target-label { fill: var(--ink-faint); font-size: 10px; }
+
+  .legend-row { display: flex; flex-wrap: wrap; gap: 16px; padding-bottom: 14px; }
+  .legend-row .lg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .legend-row .lg-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+  .hist-table-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0; margin-top: 16px; border-top: 1px solid var(--line); }
+  @media (max-width: 900px) { .hist-table-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 480px) { .hist-table-grid { grid-template-columns: repeat(2, 1fr); } }
+  .hist-table-col { border-left: 1px solid var(--line); padding: 10px 10px; display: flex; flex-direction: column; gap: 5px; }
+  .hist-table-col:first-child, .hist-table-grid > .hist-table-col:nth-child(4n+1) { border-left: none; }
+  @media (max-width: 900px) { .hist-table-col:nth-child(4n+1) { border-left: 1px solid var(--line); } .hist-table-col:nth-child(4n+1) { border-left: none; } }
+  .hist-table-col .htc-month { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .hist-table-col .htc-row { display: grid; grid-template-columns: 12px 1fr auto; gap: 6px; align-items: center; font-size: 11px; }
+  .hist-table-col .htc-dot { width: 7px; height: 7px; border-radius: 2px; }
+  .hist-table-col .htc-name { color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist-table-col .htc-score { color: var(--ink); font-weight: 600; font-family: "IBM Plex Mono", monospace; text-align: right; }
+
+  /* tables */
+  .table-scroll { overflow-x: auto; margin: 0 -2px; padding: 0 2px; }
+  table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+  table.data th, table.data td { padding: 8px 10px; text-align: right; white-space: nowrap; }
+  table.data th:nth-child(1), table.data td:nth-child(1) { text-align: center; color: var(--ink-faint); width: 32px; }
+  table.data th:nth-child(2), table.data td:nth-child(2) { text-align: left; font-weight: 500; }
+  table.data thead th {
+    font-size: 12px; color: var(--ink); font-weight: 500; border-bottom: 1px solid var(--line);
+  }
+  table.data tbody tr { border-bottom: 1px solid var(--line); transition: background .1s ease; }
+  table.data tbody tr:last-child { border-bottom: none; }
+  table.data tbody tr.clickable { cursor: pointer; }
+  table.data tbody tr.clickable:hover { background: var(--accent-soft); }
+  table.data tr.clickable td.mk-name { display: flex; align-items: center; gap: 6px; }
+  table.data tr.clickable td.mk-name::before {
+    content: "▸"; font-size: 9px; color: var(--ink-faint); transition: transform .15s ease;
+  }
+  table.data tr.clickable.expanded td.mk-name::before { transform: rotate(90deg); color: var(--accent); }
+  table.data tr.clickable.expanded { background: var(--accent-soft); }
+  .subtotal-cell { font-weight: 700; color: var(--accent); }
+  .cell-na { color: var(--ink-faint); }
+  .foot-star { color: var(--ink-faint); font-size: 10px; margin-left: 1px; }
+
+  tr.detail-row td { background: var(--accent-soft); padding: 0; border-bottom: 1px solid var(--line); }
+  .detail-panel { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 22px; white-space: normal; }
+  .di-note-mark { color: var(--warn); font-weight: 700; }
+  .dt-section { display: flex; flex-direction: column; gap: 8px; }
+  .dt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .dt-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .dt-score { font-size: 13px; font-weight: 700; color: var(--accent); font-family: "IBM Plex Mono", monospace; white-space: nowrap; }
+  .dt-note { font-size: 11.5px; color: var(--ink-soft); line-height: 1.55; }
+  .dt-scroll { max-height: 340px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+  table.dt { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+  table.dt th, table.dt td { padding: 8px 12px; text-align: left; white-space: nowrap; }
+  table.dt thead th { position: sticky; top: 0; background: var(--surface); font-weight: 600; color: var(--ink-soft); border-bottom: 1px solid var(--line); font-size: 11px; z-index: 1; }
+  table.dt td.dt-num, table.dt th.dt-num { text-align: right; font-family: "IBM Plex Mono", monospace; }
+  table.dt td.dt-name, table.dt th.dt-name { white-space: normal; min-width: 240px; }
+  table.dt td.dt-content, table.dt th.dt-content { white-space: normal; min-width: 200px; color: var(--ink-soft); }
+  table.dt tbody tr { border-bottom: 1px solid var(--line); }
+  table.dt tbody tr:last-child { border-bottom: none; }
+  table.dt tbody tr:hover { background: var(--surface); }
+  table.dt .dt-ok { color: var(--good); font-weight: 600; }
+  table.dt .dt-bad { color: var(--crit); font-weight: 600; }
+  table.dt .dt-excluded { color: var(--ink-faint); font-style: italic; }
+  table.dt td.dt-actions, table.dt th.dt-actions { text-align: center; }
+  .dt-badge { display: inline-flex; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .dt-badge.normal { color: var(--good); background: var(--good-soft); }
+  .dt-badge.pre { color: var(--ink-faint); background: var(--surface); }
+  .dt-badge.none { color: var(--ink-faint); background: var(--surface); }
+  .dt-edit-input { width: 100%; min-width: 70px; font: inherit; padding: 3px 5px; border: 1px solid var(--accent); border-radius: 4px; background: var(--paper); color: var(--ink); box-sizing: border-box; }
+  .row-edit-btn, .row-save-btn, .row-cancel-btn, .row-del-btn, .row-delconfirm-btn {
+    font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+  }
+  .row-save-btn { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+  .row-cancel-btn:hover { background: var(--crit-soft); color: var(--crit); }
+  .row-edit-btn:hover { background: var(--accent-soft); color: var(--accent); }
+  .row-del-btn { color: var(--crit); }
+  .row-del-btn:hover { background: var(--crit-soft); border-color: var(--crit); }
+  .row-delconfirm-btn { color: var(--accent-ink); background: var(--crit); border-color: var(--crit); }
+  .dt-del-confirm { font-size: 11px; color: var(--crit); font-weight: 600; }
+  .dt-empty { padding: 16px; text-align: center; color: var(--ink-faint); font-size: 12px; }
+  .detail-total { font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 12px; }
+  .detail-total b { color: var(--accent); font-family: "IBM Plex Mono", monospace; }
+
+  tr.grand-total td { border-top: 1px solid var(--ink); padding-top: 11px; font-weight: 700; }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.65; }
+  .rule-list > div { padding-top: 10px; border-top: 1px solid var(--line); }
+  .rule-list > div:first-child { padding-top: 0; border-top: none; }
+  .rule-list b { color: var(--ink); }
+
+  .pending-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+  @media (max-width: 780px) { .pending-grid { grid-template-columns: 1fr; } }
+  .pending-item {
+    border-left: 1px solid var(--line); padding: 14px 16px; font-size: 12.5px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .pending-item:first-child { border-left: none; }
+  @media (max-width: 780px) { .pending-item { border-left: none; border-top: 1px solid var(--line); } .pending-item:first-child { border-top: none; } }
+  .pending-item .pi-label { font-weight: 700; color: var(--ink); }
+  .pending-item .pi-detail { color: var(--ink-soft); line-height: 1.5; }
+
+  footer.note { font-size: 11.5px; color: var(--ink-faint); line-height: 1.7; border-top: 1px solid var(--line); padding-top: 18px; }
+  footer.note b { color: var(--ink-soft); }
+
+  .mail-scroll { max-height: 560px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  table.mail thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; }
+  table.mail td.mm-subject { text-align: left; white-space: normal; line-height: 1.45; max-width: 360px; }
+  table.mail td.mm-cat { text-align: left; }
+  .cat-badge { display: inline-flex; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .cat-badge.vendor { color: var(--accent); background: var(--accent-soft); }
+  .cat-badge.gov { color: var(--warn); background: var(--warn-soft); }
+  .cat-badge.internal { color: var(--ink-faint); background: var(--surface); }
+  .status-badge { display: inline-flex; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .status-badge.replied { color: var(--good); background: var(--good-soft); }
+  .status-badge.noreply { color: var(--crit); background: var(--crit-soft); }
+  .mail-filter-row { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 4px; }
+  .mail-filter-btn {
+    font-size: 11.5px; font-weight: 500; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink-soft); cursor: pointer;
+  }
+  .mail-filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <span class="eyebrow">협력도 평가 · 개정안 v5 · 실측 데이터</span>
+    <h1>협력사 협력도 대시보드</h1>
+    <p class="sub">성적서30 · 관리품30 (<b>영업일 · 토·일·공휴일 제외</b>) · 클레임20 (발생12 + 재발8) · 회신률20 (클레임회신속도10 + 문의회신률10), 총 100점. 품질관리 포털(web-ruby)·클레임 접수 현황(qcjisook)·Gmail 이메일 이력에서 실제 조회한 2026-09-01~2026-10-01(최근 30일 롤링) 구간 데이터입니다.</p>
+    <div class="tag-row">
+      <span class="pill real">실측 데이터 — 입고+출하 전체 조회 (2026-09-01~2026-10-01, 2026-10-01 기준)</span>
+      <span class="pill warn">회신률은 이메일 표본이 적은 제조사가 있어 참고용 성격이 강함</span>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpiRow"></section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>입고건수 1~5위 업체 협력도 점수</h2>
+      <p class="desc">이번 조회 구간(9/1~10/1) 입고건수가 가장 많은 5개사의 확인소계(100점 환산)입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 따로 뽑았습니다.</p>
+    </div>
+    <div class="surface-card">
+      <svg class="chart-svg" id="top5Chart" viewBox="0 0 560 250" role="img" aria-label="입고건수 1~5위 업체 협력도 점수"></svg>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>제조사별 협력도 현황 <span class="chip accent">정상입고 6건 이상</span></h2>
+      <p class="desc">입고건수 많은 순. 채점 대상(입고 6건 이상) 제조사는 고정되어 있지 않고 매일 이 구간 기준으로 다시 정해집니다. 제조업체명을 누르면 배점 산출 근거가 펼쳐집니다. 성적서·관리품 제출속도는 영업일(토·일·공휴일 제외) 기준입니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 계산에서 제외했습니다. 클레임발생은 "제조사 귀책=참"으로 확인된 건만 집계합니다. 펼침 패널의 품목별 목록은 품질관리 포털의 "입고+출하" 원장에서 이번 조회 구간(9/1~10/1) 입고분을 그대로 가져온 것이라, LOT·판정 단위로 줄이 나뉘어 상단 평균 점수의 표본 수와 정확히 일치하지 않을 수 있습니다.</p>
+    </div>
+    <div class="surface-card">
+      <div class="table-scroll">
+        <table class="data" id="mainTable">
+          <thead>
+            <tr>
+              <th>순위</th><th>제조업체</th><th>입고건수</th><th>선입고</th><th>정상입고</th>
+              <th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임<br>(20)</th><th>회신률<br>(20)</th><th>총점<br>(100점)</th>
+            </tr>
+          </thead>
+          <tbody id="mainBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>전체 제조업체 협력도 점수</h2>
+      <p class="desc">입고건수 5건 이하 업체는 표본이 너무 적어 점수를 매기지 않고 "-"로 표시합니다. 입고건수 많은 순.</p>
+    </div>
+    <div class="surface-card">
+      <div class="table-scroll">
+        <table class="data" id="allTable">
+          <thead>
+            <tr><th>순위</th><th>제조업체</th><th>입고건수</th><th>총점<br>(100점)</th></tr>
+          </thead>
+          <tbody id="allBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>이메일 이력 (9/1~10/1) <span class="chip accent">회신률 원자료</span></h2>
+      <p class="desc">Gmail에서 자동 수집한 2026-09-01~2026-10-01 발신 메일(심상훈·이지숙·김태웅, 성적서·관리품 제외) 스레드 원본입니다. 제목에 제조사명이 없는 건은 본문 맥락으로 추정 표시했습니다(<span class="cat-badge vendor">제조사</span>). 사내 공지·정부기관·일정 초대는 배점에서 제외하고 참고용으로만 구분해뒀습니다. 아래 "제조사별 협력도 현황"의 회신률(20점)은 이 이력을 근거로 산정했습니다 — 근거는 각 제조업체명을 눌러 확인할 수 있습니다.</p>
+    </div>
+    <div class="surface-card">
+      <div class="mail-filter-row" id="mailFilterRow"></div>
+      <div class="mail-scroll">
+        <div class="table-scroll">
+          <table class="data mail" id="mailTable">
+            <thead>
+              <tr><th>요청일</th><th style="text-align:left">구분</th><th style="text-align:left">제목</th><th style="text-align:left">요청자</th><th style="text-align:left">상태</th></tr>
+            </thead>
+            <tbody id="mailBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>월별 협력도 점수 현황 (상위 5위) <span class="chip pending">기존 방식 · 참고용</span></h2>
+      <p class="desc">기존 배점 체계(성적서·관리품 접수율 중심)로 집계된 1~8월 데이터입니다. 매달 상위 5개사의 점수를 순위별로 나란히 비교합니다 — 지금 페이지의 이번 조회 구간 데이터와는 산정 방식이 달라 직접 비교하지 마세요.</p>
+    </div>
+    <div class="surface-card">
+      <div class="legend-row" id="histLegend"></div>
+      <svg class="chart-svg" id="histChart" viewBox="0 0 860 300" role="img" aria-label="월별 협력도 점수 상위 5위"></svg>
+      <div class="hist-table-grid" id="histTableGrid"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h2>참고 사항</h2></div>
+    <div class="pending-grid" id="pendingGrid"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><h2>산정 규칙</h2></div>
+    <div class="surface-card">
+      <div class="rule-list">
+        <div><b>영업일 기준</b> — 성적서·관리품 제출속도는 입고일부터 전달일까지 토·일요일과 공휴일을 뺀 영업일 수로 계산합니다. (반영된 공휴일: 광복절 대체공휴일 8/17, 추석 연휴 9/24~25)</div>
+        <div><b>배점표(품질관리 포털 기준)</b> — 성적서: 0일 30 / 1~3일 20 / 4~5일 10 / 6~7일 5 / 8일 이상 0. 관리품: 0일 30 / 1~2일 20 / 3~4일 10 / 5~6일 5 / 7일 이상 0.</div>
+        <div><b>미제출 = 감점 (평가 제외 아님)</b> — 아직 전달되지 않은 성적서·관리품은 "평가 대상 아님"으로 빼지 않고, <b>오늘 날짜 기준 경과 영업일</b>을 그대로 위 배점표에 대입해 감점 점수로 반영합니다. 예: 입고일 9/30인데 관리품이 10/1까지 안 오면 경과 1영업일 → 20점으로 계산. 실제로 전달되면 그 날짜로 확정 점수가 바뀌고, 계속 안 오면 날이 갈수록 점수가 더 떨어집니다. 그래서 페이지를 다시 열 때마다(특히 다음날) 미제출 건의 점수가 자동으로 더 낮아질 수 있습니다.</div>
+        <div><b>선입고 제외</b> — 성적서 판정일(완제품판정일자)이 입고일자보다 늦은 품목(선입고, 판정 전에 먼저 입고 처리된 건)은 성적서·관리품 제출속도 평균 계산에서 제외합니다. 상세 패널의 품목별 표에서 성적서·관리품이 이미 접수된 품목만 "정상입고/선입고"를 표시하고, 아직 접수되지 않은 품목은 아직 단정할 수 없어 "-"로 표시합니다(감점 계산 자체는 접수 여부와 무관하게 그대로 적용됩니다).</div>
+        <div><b>표본 하한</b> — 당월 입고건수가 5건 이하인 제조사는 점수를 매기지 않고 "-"로 표시합니다.</div>
+        <div><b>수동 수정·삭제</b> — 성적서·관리품·클레임·회신율 4개 표는 각 행의 "✎ 수정"으로 값을 직접 고치거나 "🗑 삭제"로 관련 없는 행을 뺄 수 있습니다. 저장/삭제 즉시 점수가 재계산되어 표와 총점에 반영되지만, <b>이 수정·삭제 내용은 지금 보고 있는 이 컴퓨터의 브라우저에만 저장</b>되며 다른 PC·다른 사람·Artifact 링크로 보는 사람에게는 공유되지 않습니다. 수정 직후 상단 KPI·차트는 새로고침해야 최신값으로 반영됩니다.</div>
+        <div><b>귀책 필터</b> — 클레임발생·재발건은 "제조사 귀책=참"으로 확인된 건만 셉니다. 접수는 됐지만 귀책이 아닌 건(예: 한국콜마 MC0744 용기불량, 9/15 접수·귀책=false)은 카운트하지 않습니다.</div>
+        <div><b>클레임 발생건수(12점)</b> — 0건 12 / 1건 8 / 2건 4 / 3건 2 / 4건 이상 0</div>
+        <div><b>클레임 재발건(8점)</b> — 재발없음 8 / 동일유형 2회(1회 재발) 5 / 정확히 3회 2 / 4회 이상 0</div>
+        <div><b>클레임 회신속도(10점)</b> — Gmail 이메일 이력 기준. 조회 구간에 해당 제조사와 오간 클레임 관련 메일이 없으면 만점(10). 있으면: 전 건 3일 이내 회신 10 / 전 건 회신했으나 평균 4~7일 6 / 전 건 회신했으나 평균 8일 이상 3 / 회신률 100% 미만은 회신률(%)×10을 반올림(무응답만 있으면 0).</div>
+        <div><b>공통문의 회신률(10점)</b> — 같은 방식으로 클레임 외 문의(PL보험증서·제품표준서·정보요청 등)를 채점. 조회 구간에 해당 메일이 없으면 만점(10).</div>
+        <div><b>표본 안내</b> — 위 두 항목은 이메일 건수가 제조사별로 편차가 커(0건~두 자릿수) 표본이 적은 곳은 참고용 성격이 강합니다. 만점 처리된 곳 중 일부는 "실제로 문제가 없었다"가 아니라 "이 구간 이메일 왕래 자체가 없었다"는 의미일 수 있습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">
+    <b>데이터 출처</b> · 성적서·관리품 전달일: 품질관리 포털(web-ruby) &gt; 품질팀 입/출고 기록 &gt; "입고+출하" 원장, 입고일 기준 2026-09-01~2026-10-01 구간 전체 조회(2026-10-01 기준). 클레임 발생건수·재발건: qcjisook.github.io 클레임 접수 현황, 기간 2026-09, 제조사귀책 컬럼 기준. 월별 추이(1~8월): 기존 협력도 점수 체계 집계본.<br>
+    성적서·관리품은 접수가 늦어지는 경우가 있어, 매일 "오늘 기준 최근 30일"을 통째로 다시 조회해 갱신합니다. 채점 대상(입고 6건 이상) 제조사 구성도 날마다 달라질 수 있습니다.
+  </footer>
+</div>
+
+<script>
+(function () {
+  // sj20/gj20: 원측정값 (영업일 기준 평균, /20 만점). 표시용 sj/gj는 30점 만점으로 환산.
+    var ranked = [
+    { name:"주식회사 이앤씨", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"코스맥스", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"리봄화장품", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"에스엔제이코스메틱", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"주식회사 뉴앤뉴", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"그린코스 주식회사", claim:12, recur:8, claimNote:"9월 접수 1건, 귀책=false (미집계)", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"한국콜마주식회사", claim:12, recur:8, claimNote:"9월 접수 1건(MC0744 용기불량), 귀책=false (미집계)", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"(주)코스모코스", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"서울화장품", claim:12, recur:8, claimNote:"클레임 데이터 미확인 — 별도 확인 필요", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"코코", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"(주)나우코스", claim:12, recur:8, claimNote:"클레임 데이터 미확인 — 별도 확인 필요", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"엔코스", claim:12, recur:8, claimNote:"클레임 데이터 미확인 — 별도 확인 필요", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"아우딘퓨쳐스", claim:12, recur:8, claimNote:"", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"화성코스메틱 주식회사", claim:12, recur:8, claimNote:"클레임 데이터 미확인 — 별도 확인 필요", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" },
+    { name:"주식회사 메가코스", claim:12, recur:8, claimNote:"클레임 데이터 미확인 — 별도 확인 필요", claimSpeed:0, claimSpeedNote:"", commonReply:0, commonReplyNote:"" }
+  ];
+    var excluded = [
+    { name:"(주)씨아이티", in:5 },
+    { name:"(주)뷰티화장품", in:4 },
+    { name:"(주)씨앤씨인터내셔널(C&C INT`L)", in:4 },
+    { name:"주식회사 레인보우", in:3 },
+    { name:"코디", in:3 },
+    { name:"(주)코바스", in:2 },
+    { name:"(주)엘에스화장품", in:2 },
+    { name:"주식회사 에스제이글로벌인더스트리", in:2 },
+    { name:"지엘스탠다드", in:1 },
+    { name:"주식회사 블리스팩", in:1 }
+  ];
+    var emailHistory = [
+    { req:"09-28", subj:"Re: Re: 클레임 접수 건 [이앤씨 - 마미케어 바다포도 스킨팩]", from:"김태웅", cat:"vendor", who:"이앤씨", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 레인보우)", from:"이지숙", cat:"vendor", who:"레인보우", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (화성코스메틱 주식회사)", from:"이지숙", cat:"vendor", who:"화성코스메틱", replyDate:"09-22", replyFrom:"설 다빈" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 ((주) 씨아이티)", from:"이지숙", cat:"vendor", who:"씨아이티", replyDate:"09-22", replyFrom:"citcosmetics" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (씨앤텍주식회사)", from:"이지숙", cat:"vendor", who:"씨앤텍주식회사", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 비앤비코리아)", from:"이지숙", cat:"vendor", who:"비앤비코리아", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (엔코스)", from:"이지숙", cat:"vendor", who:"엔코스", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (다비드화장품)", from:"이지숙", cat:"vendor", who:"다비드화장품", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 ((주)코스메카코리아)", from:"이지숙", cat:"vendor", who:"코스메카코리아", replyDate:"09-22", replyFrom:"김보일" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (서울화장품)", from:"이지숙", cat:"vendor", who:"서울화장품", replyDate:"09-22", replyFrom:"구예림" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 ((주)씨앤씨인터내셔널(C&C INT`L))", from:"이지숙", cat:"vendor", who:"씨앤씨인터내셔널", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 솔레오코스메틱)", from:"이지숙", cat:"vendor", who:"솔레오코스메틱", replyDate:"09-23", replyFrom:"솔레오영맨" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (코디)", from:"이지숙", cat:"vendor", who:"코디", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 ((주)노디너리)", from:"이지숙", cat:"vendor", who:"노디너리", replyDate:"09-22", replyFrom:"이연경" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 ((주)코바스)", from:"이지숙", cat:"vendor", who:"코바스", replyDate:"09-23", replyFrom:"이다예" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 메가코스)", from:"이지숙", cat:"vendor", who:"메가코스", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (코코)", from:"이지숙", cat:"vendor", who:"코코", replyDate:null, replyFrom:null },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 뉴앤뉴)", from:"이지숙", cat:"vendor", who:"뉴앤뉴", replyDate:"09-22", replyFrom:"한선영" },
+    { req:"09-22", subj:"[올리브인터내셔널][품질팀] PL보험증서 최신본 요청의 건 (주식회사 씨엔에프)", from:"이지숙", cat:"vendor", who:"씨엔에프", replyDate:"09-22", replyFrom:"연소희" },
+    { req:"09-22", subj:"[올리브인터내셔널] 제조사 서류 요청의 건", from:"이지숙", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-21", subj:"[올리브인터내셔널][품질팀] 제품표준서 요청의 건", from:"이지숙", cat:"vendor", who:"제조사 미상", replyDate:null, replyFrom:null },
+    { req:"09-21", subj:"Re: [올리브인터내셔널] 외주 생산이력 점검 자료 송부의 件", from:"이지숙", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-21", subj:"품질 문의 건 [휴온스엔]", from:"심상훈", cat:"vendor", who:"휴온스엔", replyDate:null, replyFrom:null },
+    { req:"09-21", subj:"수락함: 이앤씨 - 품질간담회 - 2026년 9월 28일 (월) 오후 2:30 - 오후 4:30 (GMT+9) (심상훈)", from:"김태웅", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-21", subj:"클레임 접수 건 [레인보우 - 블랙머드포어왁싱마스크100ml_R2]", from:"심상훈", cat:"vendor", who:"레인보우", replyDate:null, replyFrom:null },
+    { req:"09-18", subj:"[올리브인터내셔널][품질팀] AUDIT 후 확인 필요사항 피드백 요청의 건 - 아우딘퓨쳐스", from:"이지숙", cat:"vendor", who:"아우딘퓨쳐스", replyDate:null, replyFrom:null },
+    { req:"09-18", subj:"행정처분 판매정지 일정 공유의 건 - 마미케어들깨미백크림플러스", from:"심상훈", cat:"internal", who:"사내(자사 브랜드)", replyDate:null, replyFrom:null },
+    { req:"09-18", subj:"오딧 캡쳐", from:"이지숙", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-17", subj:"9월 간담회 요청의 건 [이앤씨]", from:"심상훈", cat:"vendor", who:"이앤씨", replyDate:null, replyFrom:null },
+    { req:"09-17", subj:"[품질팀] 행정처분 광고정지 일정 공유의 건 - ​성분에디터시어버터아기발스틱", from:"이지숙", cat:"internal", who:"사내(자사 브랜드)", replyDate:null, replyFrom:null },
+    { req:"09-17", subj:"[올리브인터내셔널][품질팀] PL보험 증서 최신본 요청의 건", from:"이지숙", cat:"vendor", who:"제조사 미상", replyDate:null, replyFrom:null },
+    { req:"09-16", subj:"공정기록서 요청의 건 [오쏘타민비타민씨앰플24 오버라벨링]", from:"심상훈", cat:"vendor", who:"한국콜마(추정)", replyDate:"09-28", replyFrom:"한재형(JAEHYOUNG HAN)" },
+    { req:"09-15", subj:"클레임 접수 건 [이앤씨 - 마미케어 바다포도 스킨팩]", from:"심상훈", cat:"vendor", who:"이앤씨", replyDate:null, replyFrom:null },
+    { req:"09-15", subj:"[올리브인터내셔널][품질팀] 멜라샷 홍콩향 ​2026년 5월 ~ 8월 반품 현황 전달의 건", from:"이지숙", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-14", subj:"Re: [올리브인터내셔널][품질팀] 레드어성초바하리노릴리프앰플40ml 불량 내용 확인 요청의 건", from:"이지숙", cat:"vendor", who:"제조사 미상", replyDate:null, replyFrom:null },
+    { req:"09-11", subj:"클레임 접수 건 [한국콜마 - 오쏘타민비타민C앰플15ml.A3]", from:"심상훈", cat:"vendor", who:"한국콜마", replyDate:"09-11", replyFrom:"한재형(JAEHYOUNG HAN)" },
+    { req:"09-11", subj:"클레임 접수 건 [ENC - 마미케어 팥효소클렌저]", from:"심상훈", cat:"vendor", who:"이앤씨", replyDate:"09-11", replyFrom:"한경민" },
+    { req:"09-09", subj:"[올리브인터내셔널][품질팀] 성분에디터 멜라샷 출하 리스트 요청의 건", from:"이지숙", cat:"internal", who:"사내", replyDate:"09-10", replyFrom:"신동주" },
+    { req:"09-09", subj:"공문 요청의 건 [한국콜마 - 마미케어오쏘타민비타민씨앰플24]", from:"심상훈", cat:"vendor", who:"한국콜마", replyDate:"09-10", replyFrom:"한재형(JAEHYOUNG HAN)" },
+    { req:"09-08", subj:"정보 기입 요청 건 [에스앤제이코스메틱]", from:"심상훈", cat:"vendor", who:"에스앤제이코스메틱", replyDate:null, replyFrom:null },
+    { req:"09-07", subj:"[올리브인터내셔널][품질팀] (APAC)딥콜라겐파워부스팅마스크37g*4ea곰돌이푸콜라보 접착 불량 관련 확인 요청의 건", from:"이지숙", cat:"vendor", who:"APAC", replyDate:null, replyFrom:null },
+    { req:"09-07", subj:"'2026 화장품 관리대장' 스프레드시트가 공유됨", from:"이지숙 (Google Sheets에서 공유)", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-07", subj:"[올리브인터내셔널][품질팀] 레드어성초 바하 리노 클리어 바디 미스트 펌프 불량확인 요청의 건", from:"이지숙", cat:"vendor", who:"제조사 미상", replyDate:null, replyFrom:null },
+    { req:"09-07", subj:"Re : [서울식약청]레드어성초 바하리노 바디라인 광고 관련 문의", from:"이지숙", cat:"gov", who:"서울식약청", replyDate:null, replyFrom:null },
+    { req:"09-04", subj:"원인분석 및 대책서 요청의 건 [코스모코스]", from:"심상훈", cat:"vendor", who:"코스모코스", replyDate:"09-09", replyFrom:"nam1211@cosmocos.com" },
+    { req:"09-04", subj:"원인분석 및 대책서 요청의 건 [우성플라스틱]", from:"심상훈", cat:"vendor", who:"우성플라스틱", replyDate:null, replyFrom:null },
+    { req:"09-04", subj:"[올리브인터내셔널][품질팀] 레드어성초바하리노릴리프앰플40ml 불량 내용 확인 요청의 건", from:"이지숙", cat:"vendor", who:"제조사 미상", replyDate:null, replyFrom:null },
+    { req:"09-03", subj:"[올리브인터내셔널][품질팀] 2026년 아우딘퓨쳐스 audit 진행 관련 내용 전달의 건", from:"이지숙", cat:"vendor", who:"아우딘퓨쳐스", replyDate:null, replyFrom:null },
+    { req:"09-02", subj:"초대장: 피드백 세션 - 2026년 9월 3일 (목) 오후 4시 - 오후 5:30 (GMT+9) (심상훈)", from:"김태웅", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"09-02", subj:"이물 문의 건 [지엘스탠다드]", from:"심상훈", cat:"vendor", who:"지엘스탠다드", replyDate:"09-23", replyFrom:"jinschoice" },
+    { req:"09-01", subj:"[올리브인터내셔널][품질팀] 제품표준서 요청의 건-코스맥스", from:"이지숙", cat:"vendor", who:"코스맥스", replyDate:"09-08", replyFrom:"김지연 QA (Jiyeon Kim) COSMAX" },
+    { req:"09-01", subj:"초대장: 2026년 3분기 SCM본부 정기회식(교대이층집 강남역점) - 2026년 9월 9일 (수) 오후 6:30 (GMT+9) (심상훈)", from:"김태웅", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"08-25", subj:"[올리브인터내셔널][품질팀]그린토마토딥포어클렌징울트라휘핑폼 제품표준서 요청의 건", from:"이지숙", cat:"vendor", who:"지엘스탠다드", replyDate:"09-10", replyFrom:"jinschoice" },
+    { req:"08-11", subj:"[올리브인터내셔널][품질팀] 2026년 ENC audit 진행 관련 내용 전달의 건", from:"심상훈", cat:"vendor", who:"이앤씨", replyDate:"09-14", replyFrom:"한경민" },
+    { req:"08-05", subj:"제품 안정성 자료 요청의 건 [휴온스엔]", from:"심상훈", cat:"vendor", who:"휴온스엔", replyDate:null, replyFrom:null },
+    { req:"07-20", subj:"[올리브인터내셔널] mm.yyyy 착인 시 요청사항 전달의 건", from:"이지숙", cat:"internal", who:"사내", replyDate:null, replyFrom:null },
+    { req:"01-09", subj:"밀크터치 틴트 용기 문의 건 [해인피앤씨]", from:"심상훈", cat:"vendor", who:"해인피앤씨", replyDate:null, replyFrom:null }
+  ];
+  emailHistory.sort(function (a, b) { return b.req.localeCompare(a.req); });
+  function parseMD(md) {
+    var p = md.split("-");
+    return new Date(2026, Number(p[0]) - 1, Number(p[1]));
+  }
+
+  /* 수동 수정 저장소 — 이 브라우저(이 PC)에만 저장되며 다른 컴퓨터·다른 사람과 공유되지 않습니다 */
+  var EDIT_KEY = "coopDashboardEdits_v1";
+  function loadEditStore() {
+    try {
+      var s = JSON.parse(localStorage.getItem(EDIT_KEY));
+      if (!s || !s.items || !s.mails) s = { items: {}, mails: {} };
+      if (!s.deletedItems) s.deletedItems = {};
+      if (!s.deletedMails) s.deletedMails = {};
+      return s;
+    } catch (e) { return { items: {}, mails: {}, deletedItems: {}, deletedMails: {} }; }
+  }
+  function saveEditStore(store) {
+    try { localStorage.setItem(EDIT_KEY, JSON.stringify(store)); } catch (e) {}
+  }
+  var editStore = loadEditStore();
+
+  emailHistory.forEach(function (m, i) {
+    m._id = i;
+    if (m.code === undefined) m.code = "-";
+    if (m.lot === undefined) m.lot = "-";
+    if (m.exp === undefined) m.exp = "-";
+    if (m.recur === undefined) m.recur = "-";
+    if (m.content === undefined) m.content = "-";
+  });
+  Object.keys(editStore.mails).forEach(function (id) {
+    var m = emailHistory[Number(id)];
+    if (!m) return;
+    var patch = editStore.mails[id];
+    Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
+  });
+  Object.keys(editStore.deletedMails).forEach(function (id) {
+    var m = emailHistory[Number(id)];
+    if (m) m._deleted = true;
+  });
+  emailHistory.forEach(function (m) {
+    m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
+  });
+
+  /* 제조사명 별칭 매핑 — 이메일/클레임 매칭에 사용 */
+    var WHO_ALIASES = {
+    "주식회사 이앤씨": ["이앤씨"],
+    "코스맥스": ["코스맥스"],
+    "리봄화장품": ["리봄화장품"],
+    "에스엔제이코스메틱": ["에스엔제이코스메틱"],
+    "주식회사 뉴앤뉴": ["뉴앤뉴"],
+    "그린코스 주식회사": ["그린코스"],
+    "한국콜마주식회사": ["한국콜마", "한국콜마(추정)"],
+    "(주)코스모코스": ["코스모코스"],
+    "서울화장품": ["서울화장품"],
+    "코코": ["코코"],
+    "(주)나우코스": ["나우코스"],
+    "엔코스": ["엔코스"],
+    "아우딘퓨쳐스": ["아우딘퓨쳐스"],
+    "화성코스메틱 주식회사": ["화성코스메틱"],
+    "주식회사 메가코스": ["메가코스"]
+  };
+  function mailsFor(r) {
+    var aliases = WHO_ALIASES[r.name] || [];
+    return emailHistory.filter(function (m) { return !m._deleted && m.cat === "vendor" && aliases.indexOf(m.who) !== -1; });
+  }
+  function isClaimSubj(s) { return s.indexOf("클레임") !== -1; }
+  function mailScoreBand(days) {
+    if (days === null || days === undefined) return 0;
+    if (days <= 3) return 10;
+    if (days <= 7) return 6;
+    return 3;
+  }
+  /* 회신속도 그룹 점수(10점 만점)·설명 — "산정 규칙"의 3일/7일 구간, 회신률<100%는 회신률×10 기준과 동일 */
+  function mailGroupScore(mails) {
+    if (!mails.length) return 10;
+    var replied = mails.filter(function (m) { return !!m.replyDate; });
+    if (replied.length === mails.length) {
+      var avg = replied.reduce(function (s, m) { return s + m.delayDays; }, 0) / replied.length;
+      if (avg <= 3) return 10;
+      if (avg <= 7) return 6;
+      return 3;
+    }
+    if (replied.length === 0) return 0;
+    return Math.round((replied.length / mails.length) * 10);
+  }
+  function mailGroupNote(mails) {
+    if (!mails.length) return "조회 구간 해당 이메일 없음 (만점)";
+    var replied = mails.filter(function (m) { return !!m.replyDate; });
+    if (replied.length === mails.length) {
+      var avg = (replied.reduce(function (s, m) { return s + m.delayDays; }, 0) / replied.length).toFixed(1);
+      return "전체 " + mails.length + "건 모두 회신 완료, 평균 " + avg + "일";
+    }
+    return "전체 " + mails.length + "건 중 " + replied.length + "건 회신 (회신률 " + Math.round(replied.length / mails.length * 100) + "%)";
+  }
+
+  /* 품목별 성적서·관리품 제출 내역 (품질관리 포털 "입고+출하" 원장) */
+  /* [입고일, 코드(품번), 상품명, LOT, 사용기한, 성적서 판정일, 성적서전달일, 성적서점수, 관리품전달일, 관리품점수] — "-"는 미제출/데이터없음 */
+    var itemData = {
+    "주식회사 이앤씨": [["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F220I","2029-09-18","2026-09-23","2026-09-30","30","2026-09-23","30"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F232I","2029-09-20","2026-09-29","2026-09-30","30","-","-"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F232I","2029-09-20","2026-09-29","2026-09-30","30","-","-"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F220I","2029-09-18","2026-09-23","2026-09-30","30","2026-09-23","30"],["2026-09-30","SB1254","레드어성초바하리노트러블릴리프수딩크림50ml(북미/타겟)","2F129H","2029-09-21","-","-","-","-","-"],["2026-09-30","SB1525","실크펩타이드EGF인텐시브앰플10ml(글로벌).E","2F175I","2029-09-17","2026-09-18","2026-09-30","30","2026-09-23","30"],["2026-09-30","SB1525","실크펩타이드EGF인텐시브앰플10ml(글로벌).E","2F175I","2029-09-17","2026-09-18","2026-09-30","30","2026-09-23","30"],["2026-09-30","SB1478","실크펩타이드EGF인텐시브앰플10ml(북미/미니빈)","2F175I","2029-09-17","-","-","-","-","-"],["2026-09-30","SB1643","실크펩타이드EGF인텐시브앰플35ml(북미유럽/타겟).E","2F0991","2029-09-20","-","-","-","2026-09-29","30"],["2026-09-30","SB1643","실크펩타이드EGF인텐시브앰플35ml(북미유럽/타겟).E","2F032H","2029-09-20","-","-","-","2026-09-23","30"],["2026-09-30","SB1643","실크펩타이드EGF인텐시브앰플35ml(북미유럽/타겟).E","2F0991","2029-09-20","-","-","-","2026-09-29","30"],["2026-09-30","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","30"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","30","2026-09-23","30"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F232I","2029-09-20","2026-09-29","2026-09-30","30","-","-"],["2026-09-30","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F220I","2029-09-18","2026-09-23","2026-09-30","30","2026-09-23","30"],["2026-09-30","SB1441","딥콜라겐배리어세럼미스트30ml(북미유럽).E","2F158H","2029-09-17","2026-09-18","2026-09-23","30","2026-09-22","30"],["2026-09-30","SB1333","딥콜라겐배리어세럼미스트100ml(타겟/북미).A","2F177I","2029-09-27","-","-","-","-","-"],["2026-09-29","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F232I","2029-09-20","2026-09-29","2026-09-30","20","-","-"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-29","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F220I","2029-09-18","2026-09-23","2026-09-30","20","2026-09-23","30"],["2026-09-29","SB1254","레드어성초바하리노트러블릴리프수딩크림50ml(북미/타겟)","2F129H","2029-09-21","-","-","-","-","-"],["2026-09-28","SB0622","그린토마토엔앰엔포어필링패드170ml","2F037I","2029-09-02","2026-09-28","2026-09-28","30","2026-09-23","30"],["2026-09-28","SB0622","그린토마토엔앰엔포어필링패드170ml","2F037I","2029-09-02","2026-09-28","2026-09-28","30","2026-09-23","30"],["2026-09-28","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-28","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-28","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","30"],["2026-09-23","SB1332","딥콜라겐파워부스팅크림인세럼30ml(타겟/북미유럽).A","2F168I","2029-09-21","2026-09-22","2026-09-30","20","2026-09-23","30"],["2026-09-23","SB1525","실크펩타이드EGF인텐시브앰플10ml(글로벌).E","2F175I","2029-09-17","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2026-09-13","-","-","-","-","-"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","30","2026-09-22","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","30","2026-09-22","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F216I","2029-09-18","2026-09-28","2026-09-30","20","2026-09-23","30"],["2026-09-23","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","20","2026-09-23","30"],["2026-09-22","SB0622","그린토마토엔앰엔포어필링패드170ml","2F037I","2029-09-02","2026-09-28","2026-09-28","20","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","30","2026-09-22","30"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","30","2026-09-17","30"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","30","2026-09-22","30"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","30"],["2026-09-22","SB1808","레드어성초바하리노릴리프앰플75ml","2F147I","2029-09-11","2026-09-22","2026-09-23","20","2026-09-23","20"],["2026-09-22","SB1808","레드어성초바하리노릴리프앰플75ml","2F158I","2029-09-13","2026-09-22","2026-09-23","20","2026-09-23","20"],["2026-09-22","SB1530","실크펩타이드EGF인텐시브앰플35ml(북미/유럽).E","2F099I","2029-09-10","2026-09-11","2026-09-23","20","2026-09-17","30"],["2026-09-22","SB1441","딥콜라겐배리어세럼미스트30ml(북미유럽).E","2F158H","2029-09-17","2026-09-18","2026-09-23","20","2026-09-22","30"],["2026-09-22","SB1598","딥콜라겐파워부스팅크림인세럼10ml(북미유럽).E","2F168I","2029-09-17","2026-09-18","2026-09-23","20","2026-09-23","20"],["2026-09-22","SB1482","딥콜라겐파워부스팅크림인세럼10ml(북미타겟/미니빈).A","2F168I","2029-09-17","2026-09-18","2026-09-23","20","2026-09-22","30"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F154I","2029-09-13","2026-09-18","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","10","2026-09-23","20"],["2026-09-22","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","30","2026-09-22","30"],["2026-09-22","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","30","2026-09-17","30"],["2026-09-22","SB0622","그린토마토엔앰엔포어필링패드170ml","2F037I","2029-09-02","2026-09-28","2026-09-28","20","2026-09-23","20"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","10","2026-09-23","20"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","20","2026-09-22","20"],["2026-09-21","SB0954","레드어성초바하리노릴리프앰플40ml","2F147I","2029-09-11","2026-09-18","2026-09-23","-","2026-09-18","-"],["2026-09-21","SB1476","레드어성초바하리노릴리프앰플40ml(북미).E","2F147I","2029-09-16","2026-09-17","2026-09-23","20","2026-09-19","30"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","30","2026-09-17","30"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","20","2026-09-22","20"],["2026-09-21","SB1683","딥콜라겐파워부스팅크림인세럼35ml(북미/유럽).E","2F168I","2029-09-15","2026-09-21","2026-09-22","20","2026-09-22","20"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F213I","2029-09-17","2026-09-21","2026-09-30","10","2026-09-23","20"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-21","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","20","2026-09-22","20"],["2026-09-19","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F102I","2029-09-08","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-19","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","30","2026-09-17","30"],["2026-09-19","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F102I","2029-09-08","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","20","2026-09-17","30"],["2026-09-18","SB1621","실크펩타이드EGF인텐시브앰플40ml(글로벌/CPNP등록문안).E","2F219H","2029-09-14","2026-09-15","2026-09-23","20","2026-09-17","30"],["2026-09-18","SB1621","실크펩타이드EGF인텐시브앰플40ml(글로벌/CPNP등록문안).E","2F007I","2029-09-16","2026-09-17","2026-09-23","20","2026-09-18","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F102I","2029-09-08","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","20","2026-09-17","30"],["2026-09-18","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","20","2026-09-17","30"],["2026-09-18","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","-"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F187I","2029-09-16","2026-09-23","2026-09-22","20","2026-09-22","20"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-18","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","20","2026-09-17","30"],["2026-09-17","SB0954","레드어성초바하리노릴리프앰플40ml","2F147I","2029-09-11","2026-09-18","2026-09-23","10","2026-09-18","20"],["2026-09-17","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","30","2026-09-11","-"],["2026-09-17","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F117I","2029-09-09","2026-09-16","2026-09-21","20","2026-09-17","30"],["2026-09-17","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F102I","2029-09-08","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-17","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-17","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F102I","2029-09-08","2026-09-14","2026-09-22","20","2026-09-17","30"],["2026-09-17","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","20","2026-09-17","30"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","30","2026-09-15","-"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","30","2026-09-08","30"],["2026-09-16","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","20","2026-09-17","20"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","30","2026-09-15","-"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","30","2026-09-08","30"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F070I","2029-09-04","2026-09-14","2026-09-22","10","2026-09-17","20"],["2026-09-16","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","30","2026-09-15","-"],["2026-09-16","SB1621","실크펩타이드EGF인텐시브앰플40ml(글로벌/CPNP등록문안).E","2F219H","2029-09-14","2026-09-15","2026-09-23","10","2026-09-17","20"],["2026-09-16","SB1530","실크펩타이드EGF인텐시브앰플35ml(북미/유럽).E","2F099I","2029-09-10","2026-09-11","2026-09-23","10","2026-09-17","20"],["2026-09-15","SB0657","실크펩타이드인텐시브리프팅앰플60ml(리브랜딩).A(CH)","2F036I","2029-09-02","2026-09-08","2026-09-14","30","2026-09-10","30"],["2026-09-15","SB1681","데드씨솔트LHA블랙헤드멜팅패드30매(리브랜딩)(북미/유럽)","2F096I","2029-09-11","2026-09-09","2026-09-16","20","2026-09-11","30"],["2026-09-15","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","20","2026-09-15","-"],["2026-09-15","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","30","2026-09-08","30"],["2026-09-15","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","20","2026-09-11","-"],["2026-09-15","MC0860","바다포도포어리파이닝세럼마스크23g(다이소)","2F030I","2029-09-02","2026-09-21","2026-09-21","10","2026-09-17","20"],["2026-09-15","SB1036","데드씨솔트LHA블랙헤드멜팅아웃패드30매(일본오프라인)","2F096I","2029-09-11","2026-09-12","2026-09-16","20","2026-09-15","-"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","30","2026-09-11","30"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","20","2026-09-15","-"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","30","2026-09-11","30"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","20","2026-09-08","30"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F059I","2029-09-03","2026-09-10","2026-09-16","20","2026-09-15","-"],["2026-09-14","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","20","2026-09-08","30"],["2026-09-14","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","20","2026-09-11","-"],["2026-09-14","SB1683","딥콜라겐파워부스팅크림인세럼35ml(북미/유럽).E","2F098H","2029-09-07","2026-09-11","2026-09-14","30","2026-09-10","30"],["2026-09-14","SB1683","딥콜라겐파워부스팅크림인세럼35ml(북미/유럽).E","2F105G","2029-09-07","2026-09-11","2026-09-21","10","2026-09-10","30"],["2026-09-11","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-05","2026-09-09","2026-09-14","20","2026-09-11","-"],["2026-09-11","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","20","2026-09-11","30"],["2026-09-11","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","10","2026-09-11","-"],["2026-09-11","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","20","2026-09-11","30"],["2026-09-11","SB0657","실크펩타이드인텐시브리프팅앰플60ml(리브랜딩).A(CH)","2F036I","2029-09-02","2026-09-08","2026-09-14","20","2026-09-10","30"],["2026-09-11","SB1766","(APAC)그린토마토엔앰엔포어필링패드170ml곰돌이푸콜라보","2F037I","2029-09-06","2026-09-07","2026-09-10","30","2026-09-10","30"],["2026-09-11","MC0834","바다포도포어리파이닝세럼30ml(다이소).A1","2F068I","2029-09-04","2026-09-14","2026-09-17","10","2026-09-11","-"],["2026-09-10","SB1766","(APAC)그린토마토엔앰엔포어필링패드170ml곰돌이푸콜라보","2F037I","2029-09-06","2026-09-07","2026-09-10","30","2026-09-10","30"],["2026-09-10","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","20","2026-09-11","20"],["2026-09-10","SB0657","실크펩타이드인텐시브리프팅앰플60ml(리브랜딩).A(CH)","2F036I","2029-09-02","2026-09-08","2026-09-14","20","2026-09-10","30"],["2026-09-10","SB0657","실크펩타이드인텐시브리프팅앰플60ml(리브랜딩).A(CH)","2F035H","2029-08-07","2026-09-07","2026-09-14","20","2026-09-10","30"],["2026-09-10","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","20","2026-09-11","20"],["2026-09-09","SB1783","실크펩타이드이지에프인텐시브앰플7ml(북미 미품)","2F007I","2029-09-03","2026-09-04","2026-09-14","20","2026-09-10","20"],["2026-09-09","SB1494","실크펩타이드이지에프인텐시브앰플40ml(토이스토리)(글로벌)","2F229G","2029-09-06","2026-09-07","2026-09-14","20","2026-09-10","20"],["2026-09-09","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","30","2026-09-08","30"],["2026-09-09","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","30","2026-09-08","30"],["2026-09-09","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F016I","2029-08-31","2026-09-14","2026-09-14","20","2026-09-11","20"],["2026-09-08","SB0918","딥콜라겐트라이얼4종키트(북미).A","25J005","2028-09-23","2026-09-03","2026-09-10","20","2025-11-03","30"],["2026-09-08","SB1369","그린토마토엔앰엔포어앰플마스크7매입(일본오프라인용/캄포대체)","2F185H","2029-09-02","-","2026-09-07","30","2026-09-08","30"],["2026-09-08","SB1441","딥콜라겐배리어세럼미스트30ml(북미유럽).E","2F127H","2029-08-30","2026-08-31","2026-09-14","10","2026-09-08","30"],["2026-09-07","SB0815","딥콜라겐배리어세럼미스트30ml(북미).A","2F074G","2029-08-25","2026-08-31","2026-09-01","30","2026-09-01","30"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F217H","2029-08-27","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F217H","2029-08-27","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F217H","2029-08-27","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F031I","2029-09-02","2026-09-10","2026-09-15","5","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F217H","2029-08-27","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-07","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","20","2026-09-08","20"],["2026-09-07","SB1766","(APAC)그린토마토엔앰엔포어필링패드170ml곰돌이푸콜라보","2F037I","2029-09-06","2026-09-07","2026-09-10","20","2026-09-10","10"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F214H","2029-08-27","2026-09-02","2026-09-07","20","2026-09-04","30"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F180H","2029-08-24","2026-08-28","2026-09-02","30","2026-09-01","30"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F214H","2029-08-27","2026-09-02","2026-09-07","20","2026-09-04","30"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F214H","2029-08-27","2026-09-02","2026-09-07","20","2026-09-04","30"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F217H","2029-08-27","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F214H","2029-08-27","2026-09-02","2026-09-07","20","2026-09-04","30"],["2026-09-04","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F012I","2029-08-31","2026-09-08","2026-09-08","20","2026-09-08","20"],["2026-09-04","MC0783","바다포도포어리파이닝쿨링스킨팩260g(120매).A","2F243H","2029-08-30","2026-09-01","2026-09-07","20","2026-09-08","20"],["2026-09-04","SB1369","그린토마토엔앰엔포어앰플마스크7매입(일본오프라인용/캄포대체)","2F185H","2029-09-02","-","2026-09-07","20","2026-09-08","20"],["2026-09-04","SB1369","그린토마토엔앰엔포어앰플마스크7매입(일본오프라인용/캄포대체)","2F185H","2029-09-02","-","2026-09-07","20","2026-09-08","20"],["2026-09-03","MC0783","바다포도포어리파이닝쿨링스킨팩260g(120매).A","2F243H","2029-08-30","2026-09-01","2026-09-07","20","2026-09-08","10"],["2026-09-03","SB1115","딥콜라겐파워부스팅크림인세럼30ml(북미/유럽)","2F098H","2029-08-30","2026-08-31","2026-09-07","20","2026-09-08","10"],["2026-09-03","SB1712","애플필매끈결수딩세럼플레인(다이소용).A","2F189H","2029-08-24","2026-08-31","2026-09-07","20","2026-09-04","20"],["2026-09-02","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F169H","2029-08-23","2026-08-26","2026-08-31","30","2026-09-01","30"],["2026-09-02","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F169H","2029-08-23","2026-08-26","2026-08-31","30","2026-09-01","30"],["2026-09-02","MC0548","바다포도포어리파이닝스킨팩80매(다이소)","2F180H","2029-08-24","2026-08-28","2026-09-02","30","2026-09-01","30"],["2026-09-02","MC0783","바다포도포어리파이닝쿨링스킨팩260g(120매).A","2F193G","2029-07-22","2026-09-07","2026-09-07","20","2026-09-08","10"],["2026-09-02","MC0783","바다포도포어리파이닝쿨링스킨팩260g(120매).A","2F243H","2029-08-30","2026-09-01","2026-09-07","20","2026-09-08","10"],["2026-09-02","SB0918","딥콜라겐트라이얼4종키트(북미).A","2F074G","2029-08-25","2026-09-03","2026-09-10","-","2026-09-08","10"],["2026-09-01","MC0779","포도콜라겐슬리핑팩25ml(다이소)","2F168H","2029-08-23","2026-08-31","2026-09-02","20","2026-09-01","30"],["2026-09-01","MC0780","수박PDRN슬리핑팩25ml(다이소)","2F175H","2029-08-23","2026-08-26","2026-09-03","20","2026-09-01","30"],["2026-09-01","MC0781","파인애플PHA슬리핑팩25ml(다이소)","2F178H","2029-08-23","2026-08-26","2026-09-03","20","2026-09-01","30"]],
+    "코스맥스": [["2026-09-30","SB1425","딥콜라겐레드진생리바이탈라이징마스크4매(국내/해외)","JJB","2029-09-27","-","-","-","-","-"],["2026-09-30","SB1425","딥콜라겐레드진생리바이탈라이징마스크4매(국내/해외)","KJB","2029-09-27","-","-","-","-","-"],["2026-09-30","SB1425","딥콜라겐레드진생리바이탈라이징마스크4매(국내/해외)","LJB","2029-09-27","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","JJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","GJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","HJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","DJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","CJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","FJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","EJB","2029-09-20","-","-","-","-","-"],["2026-09-30","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","SJB","2029-09-21","-","-","-","-","-"],["2026-09-30","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","PJB","2029-09-21","-","-","-","-","-"],["2026-09-30","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","QJB","2029-09-21","-","-","-","-","-"],["2026-09-30","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","OJB","2029-09-21","-","-","-","-","-"],["2026-09-30","SB0901","딥콜라겐시카티트리수딩마스크1매(target).A","XJB","2029-09-27","-","-","-","-","-"],["2026-09-30","MT2119","듀이핏글로우세럼블러쉬#05온로즈.A(일본용)","AHB","2029-09-27","-","-","-","2026-09-29","30"],["2026-09-30","MT2120","듀이핏글로우세럼블러쉬#06로즈코코아.A(일본용)","AHB","2029-09-28","-","-","-","2026-09-29","30"],["2026-09-29","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","UJB","2029-09-21","-","-","-","-","-"],["2026-09-29","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","EJB","2029-09-22","-","-","-","-","-"],["2026-09-28","MT2117","듀이핏글로우세럼블러쉬#03글로우피치.A(일본용)","AHB","2029-09-21","-","-","-","2026-09-22","30"],["2026-09-28","MT2118","듀이핏글로우세럼블러쉬#04누드페탈.A(일본용)","AHB","2029-09-22","-","-","-","2026-09-29","20"],["2026-09-23","MT1909","아이코닉필름마스카라#블랙8g(타겟/글로벌)","OGB","2029-07-19","2026-07-23","2026-07-27","30","2026-08-08","30"],["2026-09-23","MT1909","아이코닉필름마스카라#블랙8g(타겟/글로벌)","PGB","2029-07-19","2026-07-23","2026-07-27","30","2026-08-08","30"],["2026-09-23","MT2115","듀이핏글로우세럼블러쉬#01클라우드핑크.A(일본용)","AHB","2029-09-21","2026-09-28","2026-09-29","20","2026-09-22","30"],["2026-09-23","MT2116","듀이핏글로우세럼블러쉬#02퓨어라벤더.A(일본용)","AHB","2029-09-21","2026-09-28","2026-09-29","20","2026-09-22","30"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","BJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","VJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","YJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","WJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","CJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","AJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","XJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1356","딥콜라겐나드바쿠치올리파이닝마스크1매(target)","ZJB","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","KJB","2029-09-20","-","-","-","-","-"],["2026-09-23","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","NJB","2029-09-21","2026-09-28","2026-09-29","20","-","-"],["2026-09-23","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","MJB","2029-09-21","2026-09-28","2026-09-29","20","-","-"],["2026-09-23","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","LJB","2029-09-20","2026-09-28","2026-09-29","20","-","-"],["2026-09-23","SB1726","코직산나이아신아마이드브라이트닝마스크4매(북미).E","NJB","2029-09-21","2026-09-28","2026-09-29","20","-","-"],["2026-09-22","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","OJB","2029-09-03","2026-09-07","2026-09-28","20","2026-09-19","30"],["2026-09-22","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","NJB","2029-09-03","2026-09-07","2026-09-15","30","2026-09-18","30"],["2026-09-22","MT1909","아이코닉필름마스카라#블랙8g(타겟/글로벌)","QHB","2029-09-16","2026-09-21","2026-09-28","20","-","-"],["2026-09-22","MT1909","아이코닉필름마스카라#블랙8g(타겟/글로벌)","RHB","2029-09-16","2026-09-21","2026-09-28","20","-","-"],["2026-09-17","SB0680","딥콜라겐나이아신비타C브라이트닝마스크4매(북미).A","HHB","2029-08-23","2026-08-27","2026-09-17","30","-","-"],["2026-09-17","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","OJB","2029-09-03","2026-09-07","2026-09-28","10","2026-09-19","20"],["2026-09-16","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","OJB","2029-09-03","2026-09-07","2026-09-28","5","2026-09-19","20"],["2026-09-09","SB1285","딥콜라겐시카티트리수딩마스크1매입(북미/유럽).E","UJB","2029-09-02","2026-09-07","2026-09-15","10","2026-09-10","20"],["2026-09-09","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","MJB","2029-09-03","2026-09-07","2026-09-28","0","2026-09-19","0"],["2026-09-09","SB1329","딥콜라겐히알루B5하이드레이팅마스크3매(타겟/북미).A","NJB","2029-09-03","2026-09-07","2026-09-15","10","2026-09-18","0"],["2026-09-09","SB1033","실크펩타이드이지에프인텐시브골드마스크1매(target).A","ZJB","2029-09-03","2026-09-14","2026-09-15","10","2026-09-18","0"],["2026-09-09","SB1033","실크펩타이드이지에프인텐시브골드마스크1매(target).A","CJB","2029-09-03","2026-09-07","2026-09-15","10","2026-09-18","0"],["2026-09-09","SB1033","실크펩타이드이지에프인텐시브골드마스크1매(target).A","AJB","2029-09-03","2026-09-14","2026-09-15","10","2026-09-18","0"],["2026-09-09","SB1033","실크펩타이드이지에프인텐시브골드마스크1매(target).A","YJB","2029-09-03","2026-09-14","2026-09-15","10","2026-09-18","0"],["2026-09-09","SB1033","실크펩타이드이지에프인텐시브골드마스크1매(target).A","BJB","2029-09-03","2026-09-07","2026-09-15","10","2026-09-18","0"],["2026-09-08","SB1289","딥콜라겐나이아신비타C브라이트닝마스크4매(북미/유럽)","JHB","2029-08-23","-","2026-09-11","20","2026-08-29","30"],["2026-09-08","SB1289","딥콜라겐나이아신비타C브라이트닝마스크4매(북미/유럽)","HHB","2029-08-23","-","2026-09-11","20","2026-08-29","30"],["2026-09-08","SB0901","딥콜라겐시카티트리수딩마스크1매(target).A","WJB","2029-09-02","-","2026-09-14","10","2026-09-19","0"],["2026-09-08","SB0901","딥콜라겐시카티트리수딩마스크1매(target).A","UJB","2029-09-02","-","2026-09-14","10","2026-09-19","0"],["2026-09-08","SB0901","딥콜라겐시카티트리수딩마스크1매(target).A","VJB","2029-09-02","-","2026-09-14","10","2026-09-19","0"],["2026-09-08","SB0902","딥콜라겐히알루B5하이드레이팅마스크1매(target).A","JJB","2029-09-02","2026-09-07","2026-09-15","10","2026-09-10","20"],["2026-09-08","SB0902","딥콜라겐히알루B5하이드레이팅마스크1매(target).A","KJB","2029-09-02","2026-09-07","2026-09-15","10","2026-09-10","20"],["2026-09-08","SB0902","딥콜라겐히알루B5하이드레이팅마스크1매(target).A","LJB","2029-09-03","2026-09-07","2026-09-15","10","2026-09-10","20"],["2026-09-08","SB0902","딥콜라겐히알루B5하이드레이팅마스크1매(target).A","MJB","2029-09-03","2026-09-07","2026-09-15","10","2026-09-10","20"],["2026-09-08","MC0672","오쏘타민쿠션13g _21호","EHB","2029-09-02","-","2026-09-11","20","2026-09-23","0"],["2026-09-08","MC0674","오쏘타민쿠션13g _21호(리필)","EHB","2029-09-02","-","2026-09-11","20","2026-09-23","0"],["2026-09-07","SB1789","코직산나이아신아마이드브라이트닝마스크1매(국내/해외)","AJB","2029-09-01","-","2026-09-11","10","2026-09-04","30"],["2026-09-07","SB1790","코직산나이아신아마이드브라이트닝마스크4매(국내/영문)","BJB","2029-09-01","-","2026-09-11","10","2026-09-04","30"],["2026-09-04","SB1095","실크펩타이드인텐시브리프팅앰플쿠션15g_23호","GFB","2029-06-29","2026-07-03","2026-07-10","30","2026-07-02","30"],["2026-09-04","SB1099","실크펩타이드인텐시브리프팅앰플쿠션15g_23호(리필)","GFB","2029-06-29","2026-07-03","2026-07-10","30","2026-07-02","30"],["2026-09-01","SB1788","실크펩타이드EGF인텐시브스무딩토너300ml(코스맥스/북미,국내).E","AHB","2029-08-27","-","2026-09-11","0","2026-09-03","20"],["2026-09-01","SB1788","실크펩타이드EGF인텐시브스무딩토너300ml(코스맥스/북미,국내).E","AHB","2029-08-27","-","2026-09-11","0","2026-09-03","20"]],
+    "리봄화장품": [["2026-09-30","MC0784","바다포도포어리파이닝레틴에이앰플50ml.A","26J105","2029-09-27","-","-","-","-","-"],["2026-09-30","MC0784","바다포도포어리파이닝레틴에이앰플50ml.A","26J157","2029-09-28","-","-","-","-","-"],["2026-09-30","MC0800","(샤쉐)바다포도포어리파이닝레틴에이앰플2ml*5매.A","26J105","2029-09-19","-","-","-","-","-"],["2026-09-29","MC0784","바다포도포어리파이닝레틴에이앰플50ml.A","26J105","2029-09-27","-","-","-","-","-"],["2026-09-23","MC0496","들깨미백크림플러스특대80g.A","26J140","2029-09-21","2026-09-28","2026-09-29","20","-","-"],["2026-09-23","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J091","2029-09-16","2026-09-22","2026-09-22","30","-","-"],["2026-09-23","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J096","2029-09-16","2026-09-22","2026-09-28","20","-","-"],["2026-09-23","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J106","2029-09-17","2026-09-23","2026-09-28","20","-","-"],["2026-09-22","SB1557","액티브마린아스타잔틴캡슐세럼40ml(리브랜딩/일본)","26J148","2029-09-19","2026-09-25","2026-09-29","20","2026-09-29","10"],["2026-09-22","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J040","2029-09-16","2026-09-22","2026-09-22","30","2026-09-16","30"],["2026-09-22","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J091","2029-09-16","2026-09-22","2026-09-22","30","-","-"],["2026-09-22","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J091","2029-09-16","2026-09-22","2026-09-22","30","-","-"],["2026-09-16","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J034","2029-09-10","2026-09-16","2026-09-16","30","2026-09-15","-"],["2026-09-16","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J040","2029-09-10","2026-09-16","2026-09-16","30","2026-09-16","-"],["2026-09-16","MC0542","바다포도포어리파이닝앰플80ml.A","26H178","2029-09-14","2026-09-21","2026-09-22","10","2026-09-17","-"],["2026-09-16","MC0542","바다포도포어리파이닝앰플80ml.A","26H178","2029-09-14","2026-09-21","2026-09-22","10","2026-09-17","-"],["2026-09-15","SB1597","얼티메이트부스팅앰플트리플세트7ml(스페인)","26H053","2029-09-04","2026-09-11","2026-09-16","20","2026-09-16","20"],["2026-09-15","SB1740","얼티메이트부스팅앰플트리플세트7ml(독일)","26H053","2029-09-04","2026-09-11","2026-09-16","20","2026-09-16","20"],["2026-09-15","SB1740","얼티메이트부스팅앰플트리플세트7ml(독일)","26J039","2029-09-04","2026-09-11","2026-09-16","20","2026-09-16","20"],["2026-09-14","MC0651","들깨미백크림TX액티브50g (2%)","26J058","2029-09-09","2026-09-15","2026-09-16","20","2026-09-11","30"],["2026-09-14","MC0856","오쏘타민비타민c바디크림300ml.C","26H181","2029-09-08","2026-09-14","2026-09-15","20","2026-09-11","30"],["2026-09-14","SB1392","그린토마토나드포어하이드로수딩토너350ml(중국)","26J063","2029-09-07","2026-09-14","2026-09-15","20","2026-09-11","30"],["2026-09-14","SB1392","그린토마토나드포어하이드로수딩토너350ml(중국)","26J063","2029-09-07","2026-09-14","2026-09-15","20","2026-09-11","30"],["2026-09-14","SB1297","피디알엔핑크비타민글로우부스팅앰플40ml(국내)","26J054","2029-09-08","2026-09-14","2026-09-15","20","2026-09-15","20"],["2026-09-14","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26H109","2029-09-10","2026-09-16","2026-09-16","20","2026-09-15","-"],["2026-09-14","MC0737","바다포도포어리파이닝젤리미스트100ml(다이소).A","26J034","2029-09-10","2026-09-16","2026-09-16","20","2026-09-15","-"],["2026-09-11","MC0651","들깨미백크림TX액티브50g (2%)","26J058","2029-09-09","2026-09-15","2026-09-16","-","2026-09-11","-"],["2026-09-11","SB1609","피디알엔핑크비타민글로우부스팅앰플35ml(북미/유럽).E","26G293","2029-09-05","2026-09-11","2026-09-13","30","2026-08-25","30"],["2026-09-11","SB1609","피디알엔핑크비타민글로우부스팅앰플35ml(북미/유럽).E","26J054","2029-09-05","2026-09-11","2026-09-13","30","2026-09-11","30"],["2026-09-11","SB1495","피디알엔핑크비타민글로우부스팅앰플40ml(토이스토리)(글로벌)","26J054","2029-09-06","2026-09-12","2026-09-15","20","2026-09-11","30"],["2026-09-11","SB1610","코직산나이아신아마이드브라이트닝앰플35ml(북미/유럽).E","26J039","2029-09-04","2026-09-10","2026-09-13","30","2026-09-11","30"],["2026-09-11","MC0856","오쏘타민비타민c바디크림300ml.C","26H172","2029-09-07","2026-09-14","2026-09-15","20","2026-09-11","30"],["2026-09-11","MC0856","오쏘타민비타민c바디크림300ml.C","26H181","2029-09-08","2026-09-14","2026-09-15","20","2026-09-11","30"],["2026-09-11","MC0651","들깨미백크림TX액티브50g (2%)","26J058","2029-09-09","2026-09-15","2026-09-16","20","2026-09-11","30"],["2026-09-10","MC0856","오쏘타민비타민c바디크림300ml.C","26H171","2029-09-07","2026-09-14","2026-09-15","20","2026-09-11","20"],["2026-09-10","MC0690","(샤쉐)들깨미백크림TX플러스 2ml*5매 (5%)","26H123","2029-09-07","2026-09-14","2026-09-22","0","2026-09-11","20"],["2026-09-09","MC0639","들깨미백크림TX플러스특대더블기획세트100g(2개입) (5%)","26H123","2029-09-05","2026-09-11","2026-09-22","0","2026-09-09","-"],["2026-09-04","MC0638","들깨미백크림TX플러스더블기획세트55g(2개입) (5%)","26H116","2029-09-02","2026-09-08","2026-09-09","20","2026-09-04","30"],["2026-09-04","MC0638","들깨미백크림TX플러스더블기획세트55g(2개입) (5%)","26H123","2029-09-02","2026-09-08","2026-09-09","20","2026-09-09","10"],["2026-09-04","MC0636","들깨미백크림TX플러스55g (5%)","26H123","2029-09-02","2026-09-08","2026-09-09","20","2026-09-09","10"],["2026-09-02","MC0856","오쏘타민비타민c바디크림300ml.C","26G280","2029-08-31","2026-09-07","2026-09-08","10","2026-09-04","-"],["2026-09-02","MC0856","오쏘타민비타민c바디크림300ml.C","26H164","2029-08-31","2026-09-07","2026-09-08","10","2026-09-04","-"],["2026-09-02","MC0856","오쏘타민비타민c바디크림300ml.C","26H171","2029-08-31","2026-09-07","2026-09-08","10","2026-09-04","-"]],
+    "에스엔제이코스메틱": [["2026-09-16","MT2216","실버베일티슈오프립타투#01스위티베리4.7g(일본용).A1","FJB","-","-","-","-","-","-"],["2026-09-16","MT2216","실버베일티슈오프립타투#01스위티베리4.7g(일본용).A1","EJB","-","-","-","-","-","-"],["2026-09-16","MT2217","실버베일티슈오프립타투#02탠저린버블4.7g(일본용).A1","FJB","-","-","-","-","-","-"],["2026-09-16","MT2217","실버베일티슈오프립타투#02탠저린버블4.7g(일본용).A1","EJB","-","-","-","-","-","-"],["2026-09-16","MT2219","실버베일티슈오프립타투#04츄잉그레이프4.7g(일본용).A1","FJB","-","-","-","-","-","-"],["2026-09-16","MT2219","실버베일티슈오프립타투#04츄잉그레이프4.7g(일본용).A1","EJB","-","-","-","-","-","-"],["2026-09-15","MT2150","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g+쉬어크리스탈아이글리터#스타릿핑크3.1g(일본용)","FH001 / DH002","-","-","-","-","-","-"],["2026-09-15","MT2150","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g+쉬어크리스탈아이글리터#스타릿핑크3.1g(일본용)","FH002 / DH002","-","-","-","-","-","-"],["2026-09-15","MT2150","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g+쉬어크리스탈아이글리터#스타릿핑크3.1g(일본용)","FH001 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2148","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g(일본용)","FH002 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2148","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g(일본용)","FH002 / DH002","-","-","-","-","-","-"],["2026-09-15","MT2148","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g(일본용)","FH001 / DH002","-","-","-","-","-","-"],["2026-09-15","MT2149","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g+쉬어크리스탈아이글리터#스타릿핑크3.1g","FH002 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2149","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g+쉬어크리스탈아이글리터#스타릿핑크3.1g","FH003 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2147","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g","FH002 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2147","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g","FH002 / DH001","-","-","-","-","-","-"],["2026-09-15","MT2147","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g+쉬어크리스탈아이글리터#샴페인글로우3.1g","FH003 / DH001","-","-","-","-","-","-"],["2026-09-14","MT2218","실버베일티슈오프립타투#03라즈베리베일4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-14","MT2220","실버베일티슈오프립타투#05트로피칼믹스4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-14","MT2221","실버베일티슈오프립타투#06체리펀치4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-14","MT2218","실버베일티슈오프립타투#03라즈베리베일4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-14","MT2220","실버베일티슈오프립타투#05트로피칼믹스4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2218","실버베일티슈오프립타투#03라즈베리베일4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2218","실버베일티슈오프립타투#03라즈베리베일4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2220","실버베일티슈오프립타투#05트로피칼믹스4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2220","실버베일티슈오프립타투#05트로피칼믹스4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2221","실버베일티슈오프립타투#06체리펀치4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-07","MT2221","실버베일티슈오프립타투#06체리펀치4.7g(일본용).A1","-","-","-","-","-","-","-"],["2026-09-02","MT2204","실버베일티슈오프립타투#01스위티베리4.7g.A1","-","-","-","-","-","-","-"],["2026-09-02","MT2205","실버베일티슈오프립타투#02탠저린버블4.7g.A1","-","-","-","-","-","-","-"]],
+    "주식회사 뉴앤뉴": [["2026-09-30","MT2190","블랙필오프립타투#01블랙체리4.5g(일본용)","SJ065","2029-09-08","-","-","-","-","-"],["2026-09-30","MT2191","블랙필오프립타투#02블랙플럼4.5g(일본용)","SJ066","2029-09-08","-","-","-","-","-"],["2026-09-30","MT2192","블랙필오프립타투#03블랙애플4.5g(일본용)","SJ067","2029-09-09","-","-","-","-","-"],["2026-09-30","MT2193","블랙필오프립타투#04블랙애프리콧4.5g(일본용)","SJ068","2029-09-08","-","-","-","-","-"],["2026-09-30","MT2194","블랙필오프립타투#05블랙피그4.5g(일본용)","SJ069","2029-09-09","-","-","-","-","-"],["2026-09-30","MT2195","블랙필오프립타투#06블랙리치4.5g(일본용)","SJ070","2029-09-09","-","-","-","-","-"],["2026-09-30","MT2196","블랙필오프립타투#07블랙구아바4.5g(일본용)","SJ071","2029-09-09","-","-","-","-","-"],["2026-09-23","MT2190","블랙필오프립타투#01블랙체리4.5g(일본용)","SJ065","2029-09-08","-","-","-","-","-"],["2026-09-23","MT2191","블랙필오프립타투#02블랙플럼4.5g(일본용)","SJ066","2029-09-08","-","-","-","-","-"],["2026-09-23","MT2192","블랙필오프립타투#03블랙애플4.5g(일본용)","SJ067","2029-09-09","-","-","-","-","-"],["2026-09-23","MT2193","블랙필오프립타투#04블랙애프리콧4.5g(일본용)","SJ068","2029-09-08","-","-","-","-","-"],["2026-09-23","MT1005","블랙필오프립타투#05블랙피그4.5g","SJ036","2029-09-01","-","-","-","-","-"],["2026-09-23","MT1005","블랙필오프립타투#05블랙피그4.5g","SJ036","2029-09-01","-","-","-","-","-"],["2026-09-23","MT2194","블랙필오프립타투#05블랙피그4.5g(일본용)","SJ069","2029-09-09","-","-","-","-","-"],["2026-09-23","MT2195","블랙필오프립타투#06블랙리치4.5g(일본용)","SJ070","2029-09-09","-","-","-","-","-"],["2026-09-23","MT2196","블랙필오프립타투#07블랙구아바4.5g(일본용)","SJ071","2029-09-09","-","-","-","-","-"],["2026-09-21","MT1902","블랙필오프립타투#02블랙플럼4.5g(타겟/글로벌)","SJ034","2029-09-01","2026-09-16","2026-09-22","20","-","-"],["2026-09-21","MT1003","블랙필오프립타투#03블랙애플4.5g","SJ035","2029-09-01","2026-09-15","2026-09-22","20","-","-"],["2026-09-21","MT1903","블랙필오프립타투#03블랙애플4.5g(타겟/글로벌)","SJ035","2029-09-01","2026-09-15","2026-09-22","20","-","-"],["2026-09-21","MT1904","블랙필오프립타투#04블랙애프리콧4.5g(타겟/글로벌)","SC010","2029-03-11","2026-09-16","2026-09-22","20","-","-"],["2026-09-21","MT1905","블랙필오프립타투#05블랙피그4.5g(타겟/글로벌)","SC036","2029-09-01","2026-09-17","2026-09-22","20","-","-"]],
+    "그린코스 주식회사": [["2026-09-30","SB1825","실크펩타이드이지에프인텐시브볼륨샴푸6ml","RJ876","2029-09-21","-","-","-","-","-"],["2026-09-23","SB1678","실크펩타이드이지에프콜라겐본드리페어트리트먼트250ml(국내)","RJ865","2029-03-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-23","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ891","2029-09-20","2026-09-21","2026-09-28","20","2026-09-22","30"],["2026-09-23","SB1677","실크펩타이드이지에프콜라겐인텐시브볼륨샴푸400ml(국내)","RJ879","2029-09-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-22","SB1677","실크펩타이드이지에프콜라겐인텐시브볼륨샴푸400ml(국내)","RJ878","2029-09-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-21","SB1677","실크펩타이드이지에프콜라겐인텐시브볼륨샴푸400ml(국내)","RJ878","2029-09-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-21","SB1677","실크펩타이드이지에프콜라겐인텐시브볼륨샴푸400ml(국내)","RJ876","2029-09-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-21","SB1677","실크펩타이드이지에프콜라겐인텐시브볼륨샴푸400ml(국내)","RJ877","2029-09-20","2026-09-21","2026-09-28","20","-","-"],["2026-09-16","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ148","2029-09-08","2026-09-10","2026-09-17","20","2026-09-15","30"],["2026-09-16","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ149","2029-09-10","2026-09-11","2026-09-17","20","2026-09-15","30"],["2026-09-16","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ101","2029-09-08","2026-09-09","2026-09-17","-","2026-09-15","30"],["2026-09-15","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ101","2029-09-08","2026-09-09","2026-09-17","-","2026-09-15","30"],["2026-09-15","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ148","2029-09-08","2026-09-10","2026-09-17","20","2026-09-15","30"],["2026-09-15","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ149","2029-09-10","2026-09-11","2026-09-17","20","2026-09-15","30"],["2026-09-14","SB1744","실크펩타이드이지에프인텐시브괄사크림80ml(북미)","RJ101","2029-09-09","2026-09-09","2026-09-17","20","2026-09-15","20"],["2026-09-03","MC0919","바다포도포어리파이닝올인원로션150ml.A","RH392","2029-02-20","2026-09-07","2026-09-09","10","2026-09-01","30"],["2026-09-03","MC0918","오쏘타민비타민C올인원로션150ml","RH394","2029-02-20","2026-09-07","2026-09-09","10","2026-09-04","20"],["2026-09-03","MC0918","오쏘타민비타민C올인원로션150ml","RH394","2029-02-20","2026-09-07","2026-09-09","10","2026-09-04","20"]],
+    "한국콜마주식회사": [["2026-09-30","MT2177","올데이포어커버컬러코렉팅UV쿠션베이스#라일락포그15g (일본용)","FH001","2029-08-23","-","-","-","-","-"],["2026-09-30","MT2178","올데이포어커버컬러코렉팅UV쿠션베이스#바닐라레몬15g (일본용)","FH001","2029-08-23","-","-","-","-","-"],["2026-09-29","MC0898","쥬베핏펩타이드앰플35ml.A2","-","-","-","-","-","-","-"],["2026-09-23","MC0898","쥬베핏펩타이드앰플35ml.A2","FI002","2029-09-03","-","-","-","-","-"],["2026-09-18","MC0716","오쏘타민비타민C앰플24%","FI002","2029-03-10","-","-","-","2026-09-18","30"],["2026-09-18","MC0881","오쏘타민비타민씨앰플마스크*7ea.A(C파우치)","FG016","2029-01-22","-","-","-","2026-08-25","30"],["2026-09-14","MC0881","오쏘타민비타민씨앰플마스크*7ea.A(C파우치)","FG016","2029-01-22","-","-","-","2026-08-25","30"],["2026-09-14","MT2145","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g(미품)","FH002","2029-08-26","-","-","-","-","-"],["2026-09-14","MT2145","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g(미품)","FH003","2029-08-26","-","-","-","-","-"],["2026-09-14","MT2146","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g(일본용)(미품)","FH001","2029-08-27","-","-","-","-","-"],["2026-09-14","MT2146","아이코닉롱마스카라홀리데이기획세트#미드나잇블루8g(일본용)(미품)","FH002","2029-08-26","-","-","-","-","-"],["2026-09-14","MT2143","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g(미품)","FH003","2029-08-26","-","-","-","-","-"],["2026-09-14","MT2143","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g(미품)","FH002","2029-08-27","-","-","-","-","-"],["2026-09-14","MT2144","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g(일본용)(미품)","FH002","2029-08-27","-","-","-","-","-"],["2026-09-14","MT2144","아이코닉롱마스카라홀리데이기획세트#크리스탈헤이즐8g(일본용)(미품)","FH001","2029-08-27","-","-","-","-","-"],["2026-09-11","MC0881","오쏘타민비타민씨앰플마스크*7ea.A(C파우치)","FG015","2029-01-22","-","-","-","2026-08-27","30"]],
+    "(주)코스모코스": [["2026-09-30","MC0939","애사비마데카나바디워시400ml(자사몰용)","BFI01","2029-09-28","-","-","-","-","-"],["2026-09-22","SB1305","그린토마토엔앰엔포어미니마이징앰플40ml(타겟)(북미,유럽)","BFH08","2029-09-21","2026-08-08","2026-09-29","20","2026-09-28","20"],["2026-09-22","SB1305","그린토마토엔앰엔포어미니마이징앰플40ml(타겟)(북미,유럽)","BFI09","2029-09-21","2026-09-17","2026-09-29","20","2026-09-28","20"],["2026-09-22","SB0613","그린토마토엔앰엔포어리프팅앰플40ml","BFI21","2029-09-15","2026-09-14","2026-09-22","30","2026-09-28","20"],["2026-09-17","SB0613","그린토마토엔앰엔포어리프팅앰플40ml","BF121","2029-09-15","2026-09-14","2026-09-22","20","2026-09-19","-"],["2026-09-14","MC0710","수박쿨링선스틱9g(다이소)","BFI05","2029-03-01","2026-09-12","2026-09-16","20","-","-"],["2026-09-11","SB1045","그린토마토엔앰엔포어리프팅앰플40ml (일본 오프라인용/NAD제거)","BFI03","2029-09-07","2026-09-07","2026-09-16","20","2026-09-11","30"],["2026-09-10","SB1045","그린토마토엔앰엔포어리프팅앰플40ml (일본 오프라인용/NAD제거)","BFI03","2029-09-07","2026-09-07","2026-09-16","10","2026-09-11","20"],["2026-09-10","MC0710","수박쿨링선스틱9g(다이소)","BFI05","2029-03-01","2026-09-12","2026-09-16","10","-","-"],["2026-09-10","MC0710","수박쿨링선스틱9g(다이소)","BFG04","2029-01-21","2026-08-24","2026-09-03","30","2026-08-26","30"],["2026-09-09","SB1045","그린토마토엔앰엔포어리프팅앰플40ml (일본 오프라인용/NAD제거)","BFI03","2029-09-07","2026-09-07","2026-09-16","10","2026-09-11","20"],["2026-09-02","SB0613","그린토마토엔앰엔포어리프팅앰플40ml","BFH20","2029-08-27","2026-08-21","2026-09-03","20","2026-09-01","30"],["2026-09-02","SB0789","그린토마토엔앰엔포어리프팅앰플2ml","BFH19","2029-08-27","2026-08-31","2026-09-03","20","2026-09-07","10"]],
+    "서울화장품": [["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3911B","2029-09-22","2026-09-28","2026-09-30","30","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3911B","2029-09-22","2026-09-28","2026-09-30","30","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3921B","2029-09-22","2026-09-29","2026-09-30","30","-","-"],["2026-09-30","SB1640","그린토마토딥포어클렌징울트라휘핑폼120g(북미유럽/타겟).E","3931B","2029-09-30","-","-","-","-","-"],["2026-09-30","SB1889","그린토마토딥포어클렌징울트라휘핑폼120g(리브랜딩)(북미/유럽).E1","3931B","2029-09-30","-","-","-","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3931B","2029-09-28","2026-09-28","2026-09-30","30","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3921B","2029-09-27","2026-09-29","2026-09-30","30","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3931B","2029-09-28","2026-09-28","2026-09-30","30","-","-"],["2026-09-30","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3921B","2029-09-27","2026-09-29","2026-09-30","30","-","-"],["2026-09-23","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3861B","2029-09-21","2026-09-28","2026-09-30","20","-","-"],["2026-09-22","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","3851B","2029-09-20","2026-09-28","2026-09-30","10","2026-09-29","10"],["2026-09-22","SB0987","그린토마토딥포어클렌징울트라휘핑폼120gX2ea(군납용)","2861B","2029-09-20","2026-09-28","2026-09-30","10","2026-09-29","10"]],
+    "코코": [["2026-09-23","MT1894","젤리핏틴티드글로우틴트#05애플폼4g(타겟/글로벌)","PTTJ63","2029-09-15","-","-","-","-","-"],["2026-09-23","MT1895","젤리핏틴티드글로우틴트#06체리셔스4g(타겟/글로벌)","PTTJ79","2029-09-15","-","-","-","-","-"],["2026-09-23","MT1896","젤리핏틴티드글로우틴트#08로지브리즈4g(타겟/글로벌)","PTTJ80","2029-09-16","-","-","-","-","-"],["2026-09-23","MT1897","젤리핏틴티드글로우틴트#09파인모브4g(타겟/글로벌)","PTTJ64","2029-09-16","-","-","-","-","-"],["2026-09-23","MT1898","젤리핏틴티드글로우틴트#10폴른코코4g(타겟/글로벌)","PTTJ81","2029-09-16","-","-","-","-","-"],["2026-09-23","MT1899","젤리핏틴티드글로우틴트#12헤이즐로쉐4g(타겟/글로벌)","PTTJ76","2029-09-17","-","-","-","-","-"],["2026-09-23","MT1900","젤리핏틴티드글로우틴트#13애프터눈로즈4g(타겟/글로벌)","PTTJ65","2029-09-17","-","-","-","-","-"],["2026-09-07","MT2027","디어씽블러리이펙트스무드터치팟#01소프트베이비5g(다이소용).A","PLSG98","2029-09-01","2026-09-07","2026-09-17","0","2026-09-09","20"],["2026-09-07","MT1348","디어씽블러리이펙트스무드터치팟#02뮤트메모리5g(다이소용).A","PLSG99","2029-08-28","2026-09-03","2026-09-17","0","2026-09-04","30"],["2026-09-07","MT2028","디어씽블러리이펙트스무드터치팟#03스프링피버5g(다이소용).A","PLSG88","2029-08-30","2026-09-07","2026-09-17","0","-","-"],["2026-09-07","MT2029","디어씽블러리이펙트스무드터치팟#04베리크러쉬5g(다이소용).A","PLSG00","2029-08-31","2026-09-07","2026-09-17","0","2026-09-09","20"],["2026-09-07","MT2030","디어씽블러리이펙트스무드터치팟#05윈터모카5g(다이소용).A","PLSG90","2029-09-02","2026-09-08","2026-09-17","0","2026-09-09","20"]],
+    "(주)나우코스": [["2026-09-30","SB1477","머루포도비타씨브라이트닝앰플10ML북미(타겟)","QJ002","2029-09-30","2026-09-21","2026-09-23","30","2026-09-29","30"],["2026-09-21","SB1477","머루포도비타씨브라이트닝앰플10ML북미(타겟)","QJ001","2029-09-15","2026-09-21","2026-09-23","20","2026-09-29","10"],["2026-09-21","SB1656","실크펩타이드EGF인텐시브스무딩토너300ml(북미,유럽,캄포대체/타겟).E","QJ001","2029-09-14","2026-09-18","2026-09-23","20","2026-09-17","-"],["2026-09-21","SB0621","머루포도비타C다크스팟앰플더블기획40ml*2ea","QJ001","2029-09-17","2026-09-21","2026-09-23","20","2026-09-29","10"],["2026-09-16","SB0689","실크펩타이드더블리프팅앰플2ml(5매입)","QG001","2029-09-13","2026-09-17","2026-09-21","20","2026-09-16","30"],["2026-09-15","SB0689","실크펩타이드더블리프팅앰플2ml(5매입)","QG001","2029-09-13","2026-09-17","2026-09-21","10","2026-09-16","20"],["2026-09-04","SB0538","실크펩타이드인텐시브리프팅앰플2ml","QH001","2029-08-31","2026-09-04","2026-09-14","5","2026-09-03","30"],["2026-09-04","SB0538","실크펩타이드인텐시브리프팅앰플2ml","QH001","2029-08-30","2026-09-03","2026-09-14","5","2026-09-02","30"],["2026-09-01","SB0538","실크펩타이드인텐시브리프팅앰플2ml","QH001","2029-08-27","2026-08-31","2026-09-03","20","2026-09-02","20"]],
+    "엔코스": [["2026-09-29","SB1791","피디알엔핑크비타민글로우부스팅마스크4매(국내/해외)","6I004","2029-09-15","-","-","-","-","-"],["2026-09-29","SB1791","피디알엔핑크비타민글로우부스팅마스크4매(국내/해외)","6I005","2029-09-18","2026-09-28","2026-09-30","20","-","-"],["2026-09-23","SB1728","피디알엔핑크비타민글로우부스팅마스크4매(북미).E","6I003","2029-09-15","2026-09-21","2026-09-30","20","2026-09-29","20"],["2026-09-23","SB1728","피디알엔핑크비타민글로우부스팅마스크4매(북미).E","6I004","2029-09-15","2026-09-22","2026-09-30","20","2026-09-29","20"],["2026-09-23","SB1728","피디알엔핑크비타민글로우부스팅마스크4매(북미).E","6I002","2029-09-15","2017-06-19","2026-09-30","20","2026-09-29","20"],["2026-09-04","SB1792","피디알엔핑크비타민글로우부스팅마스크1매(국내/해외)","6I001","2029-08-31","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-04","SB1791","피디알엔핑크비타민글로우부스팅마스크4매(국내/해외)","6I001","2029-08-31","2026-09-07","2026-09-08","20","2026-09-08","20"],["2026-09-03","SB1792","피디알엔핑크비타민글로우부스팅마스크1매(국내/해외)","6I001","2029-08-31","2026-09-07","2026-09-08","20","2026-09-08","10"],["2026-09-03","SB1791","피디알엔핑크비타민글로우부스팅마스크4매(국내/해외)","6I001","2029-08-31","2026-09-07","2026-09-08","20","2026-09-08","10"]],
+    "아우딘퓨쳐스": [["2026-09-28","SB1498","피디알엔핑크비타민글로우부스팅캡슐크림50ml(토이스토리)(북미)","SJ07","2029-08-31","2026-09-28","2026-09-29","20","2026-09-28","30"],["2026-09-28","SB1323","피디알엔핑크비타민글로우부스팅캡슐크림55g(타겟/북미).A","SJ07","2029-08-31","2026-09-28","2026-09-29","20","2026-09-28","30"],["2026-09-23","SB1498","피디알엔핑크비타민글로우부스팅캡슐크림50ml(토이스토리)(북미)","SJ07","2029-08-31","2026-09-28","2026-09-29","20","2026-09-28","20"],["2026-09-23","SB1323","피디알엔핑크비타민글로우부스팅캡슐크림55g(타겟/북미).A","SJ07","2029-08-31","2026-09-28","2026-09-29","20","2026-09-28","20"],["2026-09-16","SB1320","코직산나이아신아마이드브라이트닝캡슐크림55g(타겟/북미).A","SJ06","2029-08-31","2026-09-17","2026-09-21","20","2026-09-17","20"],["2026-09-16","SB1322","코직산나이아신아마이드브라이트닝크림50ml(국내).A","SJ06","2029-09-07","2026-09-17","2026-09-21","20","2026-09-17","20"],["2026-09-15","SB1714","실크펩타이드이지에프인텐시브아이세럼10ml(북미,해외)","SH01/SH01","2029-07-30","2026-09-10","2026-09-21","10","2026-09-10","30"],["2026-09-09","SB1716","코직산나이아신아마이드브라이트닝아이세럼10ml(북미,해외)","SH01","2029-09-03","2026-09-07","2026-09-15","10","2026-09-08","30"]],
+    "화성코스메틱 주식회사": [["2026-09-09","MT2140","소프트엣지듀얼아이브로우#02애쉬브라운0.2g+1.2g(일본용)","BHF","2029-09-06","2026-09-07","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2139","소프트엣지듀얼아이브로우#01애쉬그레이0.2g+1.2g(일본용)","BHF","2029-09-06","2026-09-07","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2140","소프트엣지듀얼아이브로우#02애쉬브라운0.2g+1.2g(일본용)","BHF","2029-09-06","2026-09-07","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2140","소프트엣지듀얼아이브로우#02애쉬브라운0.2g+1.2g(일본용)","AFF","2029-09-06","2026-09-07","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2141","소프트엣지듀얼아이브로우#03애쉬블론드0.2g+1.2g(일본용)","BHF","2029-09-07","2026-09-08","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2141","소프트엣지듀얼아이브로우#03애쉬블론드0.2g+1.2g(일본용)","AFF","2029-09-07","2026-09-08","2026-09-14","20","2026-09-09","30"],["2026-09-09","MT2142","소프트엣지듀얼아이브로우#04애쉬피오니0.2g+1.2g(일본용)","BHF","2029-09-08","2026-09-08","2026-09-14","20","-","-"]],
+    "주식회사 메가코스": [["2026-09-29","SB1770","코직산나이아신래디언스수딩젤클렌저120g(캄포대체/단상자/TJX).E","MJI007","2029-09-27","-","-","-","-","-"],["2026-09-29","SB1771","코직산나이아신래디언스수딩젤클렌저120g(캄포대체/컬러변경/북미).E","MJI007","2029-09-28","-","-","-","-","-"],["2026-09-23","SB1809","코직산나이아신래디언스수딩젤클렌저120g(타겟/북미유럽).E","MJH006","2029-09-21","2026-09-22","2026-09-28","20","2026-09-28","20"],["2026-09-23","SB1504","코직산나이아신래디언스수딩젤클렌저120g(북미/유럽).E","MJH006","2029-09-21","2026-09-22","2026-09-28","20","2026-09-28","20"],["2026-09-23","SB1504","코직산나이아신래디언스수딩젤클렌저120g(북미/유럽).E","MJI007","2029-09-21","2026-09-22","2026-09-28","-","2026-09-28","20"],["2026-09-10","SB0693","딥콜라겐레티놀파워부스팅스칼프세럼15ml(북미)","MJH001","2029-09-07","2026-09-14","2026-09-28","0","2026-09-28","0"]]
+  };
+  Object.keys(itemData).forEach(function (company) {
+    itemData[company].forEach(function (it, i) { it.__idx = i; }); // 원본 순서 고정 — 삭제해도 다른 행 번호가 밀리지 않도록
+  });
+  Object.keys(editStore.items).forEach(function (company) {
+    var arr = itemData[company];
+    if (!arr) return;
+    Object.keys(editStore.items[company]).forEach(function (ri) {
+      var idx = Number(ri);
+      if (!arr[idx]) return;
+      var patch = editStore.items[company][ri];
+      Object.keys(patch).forEach(function (fi) { arr[idx][Number(fi)] = patch[fi]; });
+    });
+  });
+  Object.keys(editStore.deletedItems).forEach(function (company) {
+    var arr = itemData[company];
+    if (!arr) return;
+    Object.keys(editStore.deletedItems[company]).forEach(function (ri) {
+      var idx = Number(ri);
+      if (arr[idx]) arr[idx]._deleted = true;
+    });
+  });
+  function visibleItems(company) {
+    return (itemData[company] || []).filter(function (it) { return !it._deleted; });
+  }
+  function daysBetween(a, b) {
+    if (!a || !b || a === "-" || b === "-") return null;
+    return Math.round((new Date(b) - new Date(a)) / 86400000);
+  }
+  /* 영업일(주말·공휴일 제외) 계산 — 미제출 건의 "오늘 기준 경과일" 산정용. 공휴일 목록은 필요 시 갱신 */
+  var HOLIDAYS = ["2026-08-17", "2026-09-24", "2026-09-25", "2026-10-03", "2026-10-09"];
+  function isBizDay(d) {
+    var day = d.getDay();
+    if (day === 0 || day === 6) return false;
+    var iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    return HOLIDAYS.indexOf(iso) === -1;
+  }
+  function bizDaysElapsed(startStr, endDate) {
+    var p = startStr.split("-");
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    var count = 0;
+    while (d < endDate) {
+      d.setDate(d.getDate() + 1);
+      if (isBizDay(d)) count++;
+    }
+    return count;
+  }
+  /* 포털 배점 기준 그대로: 성적서 0일=30/1~3=20/4~5=10/6~7=5/8+=0, 관리품 0일=30/1~2=20/3~4=10/5~6=5/7+=0 */
+  function bandScore(kind, days) {
+    if (kind === "sj") { if (days <= 0) return 30; if (days <= 3) return 20; if (days <= 5) return 10; if (days <= 7) return 5; return 0; }
+    if (days <= 0) return 30; if (days <= 2) return 20; if (days <= 4) return 10; if (days <= 6) return 5; return 0;
+  }
+  function parseISO(s) {
+    var p = s.split("-");
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  function todayMidnight() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d; // 시각을 자정으로 고정 — 입고 당일 보는 시각에 따라 경과일이 잘못 1일로 계산되는 걸 방지 (입고 당일=0일=감점 없음, 다음날부터 1일)
+  }
+  /* it = [입고일, 코드(품번), 상품명, LOT, 사용기한, 성적서 판정일, 성적서전달일, 성적서점수, 관리품전달일, 관리품점수] */
+  /* 선입고: 성적서 판정일(완제품판정일자)이 입고일보다 늦은 건 — 사용자 지시대로 성적서·관리품 점수 평균 계산에서 제외 */
+  function isPreArrival(it) {
+    var judge = it[5];
+    if (!judge || judge === "-") return false;
+    var d = daysBetween(it[0], judge);
+    return d !== null && d > 0;
+  }
+  function itemScore(it, kind) {
+    var inDate = it[0], deliv = kind === "sj" ? it[6] : it[8], score = kind === "sj" ? it[7] : it[9];
+    if (deliv !== "-" && score !== "-" && score !== "") return Number(score);
+    if (deliv !== "-") return bandScore(kind, bizDaysElapsed(inDate, parseISO(deliv))); // 전달은 됐는데 포털 점수가 비어있는 경우, 전달일 기준으로 직접 계산
+    return bandScore(kind, bizDaysElapsed(inDate, todayMidnight())); // 아직 미제출 — 오늘 기준 경과일로 감점 (입고 당일은 0일)
+  }
+  function itemListHtml(list, kind, company) {
+    var deliverLabel = kind === "sj" ? "성적서접수일자" : "관리품접수일자";
+    var judgeTh = kind === "sj" ? '<th>판정일자</th>' : '';
+    var head = '<thead><tr><th class="dt-num">No.</th><th class="dt-name">제품명</th><th>품번</th><th>로트번호</th><th>사용기한</th><th>입고일자</th>' + judgeTh + '<th>' + deliverLabel + '</th><th>정상입고/선입고</th><th>지연일자</th><th class="dt-num">점수</th><th class="dt-actions">관리</th></tr></thead>';
+    if (!list || !list.length) return '<div class="dt-scroll"><table class="dt">' + head + '<tbody></tbody></table></table><div class="dt-empty">데이터 없음</div></div>';
+    var dIdx = kind === "sj" ? 6 : 8, pIdx = kind === "sj" ? 7 : 9;
+    var today = todayMidnight();
+    var rowsHtml = list.map(function (it, i) {
+      var inDate = it[0], code = it[1], name = it[2], lot = it[3], exp = it[4], judge = it[5], deliv = it[dIdx], score = it[pIdx];
+      var pre = isPreArrival(it);
+      var delayTxt, scoreShown, cls;
+      if (pre) {
+        delayTxt = "-"; scoreShown = "선입고(제외)"; cls = "dt-excluded";
+      } else if (deliv !== "-") {
+        var d = daysBetween(inDate, deliv);
+        delayTxt = d >= 0 ? d + "일" : "이전 LOT 재사용";
+        scoreShown = score !== "-" && score !== "" ? score : itemScore(it, kind);
+        cls = "dt-ok";
+      } else {
+        var elapsed = bizDaysElapsed(inDate, today);
+        delayTxt = elapsed + "일 경과(미제출)";
+        scoreShown = bandScore(kind, elapsed);
+        cls = "dt-bad";
+      }
+      var judgeTd = kind === "sj" ? '<td class="dt-editable" data-field="5">' + judge + '</td>' : '';
+      /* 아직 접수(전달)되지 않은 건은 정상입고/선입고를 단정할 수 없으므로 "-"로 표시 (점수·지연일자 감점 로직은 그대로 유지) */
+      var statusBadge = deliv === "-" ? '<span class="dt-badge none">-</span>' : (pre ? '<span class="dt-badge pre">선입고</span>' : '<span class="dt-badge normal">정상입고</span>');
+      return '<tr data-table="' + kind + '" data-company="' + company + '" data-idx="' + it.__idx + '">' +
+        '<td class="dt-num">' + (i + 1) + '</td>' +
+        '<td class="dt-editable dt-name" data-field="2">' + name + '</td>' +
+        '<td class="dt-editable" data-field="1">' + code + '</td>' +
+        '<td class="dt-editable" data-field="3">' + lot + '</td>' +
+        '<td class="dt-editable" data-field="4">' + exp + '</td>' +
+        '<td class="dt-editable" data-field="0">' + inDate + '</td>' +
+        judgeTd +
+        '<td class="dt-editable" data-field="' + dIdx + '">' + (deliv !== "-" ? deliv : "-") + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td class="' + cls + '">' + delayTxt + '</td>' +
+        '<td class="dt-num">' + scoreShown + '</td>' +
+        '<td class="dt-actions"><button type="button" class="row-edit-btn">✎ 수정</button> <button type="button" class="row-del-btn">🗑 삭제</button></td>' +
+      '</tr>';
+    }).join("");
+    return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rowsHtml + '</tbody></table></div><div class="dt-note">총 ' + list.length + '건 (품질관리 포털 "입고+출하" 원장). 선입고(판정일이 입고일보다 늦은 건)는 점수 평균에서 제외됩니다. 미제출 건은 오늘 날짜 기준 경과 영업일로 추정 감점 반영 — 매일 다시 열어보면 지연될수록 점수가 더 낮게 보임. 행의 "✎ 수정"으로 값을 직접 고칠 수 있습니다(이 컴퓨터에만 저장).</div>';
+  }
+
+  function recomputeCompany(r) {
+    var items = visibleItems(r.name);
+    if (items.length) {
+      r.in = items.length; // 품목 표(LOT 단위)가 실측 원장이므로 입고건수도 여기서 다시 계산 — 입고건수 = 정상입고 + 선입고가 항상 성립
+      var normal = items.filter(function (it) { return !isPreArrival(it); });
+      r.dev = items.length - normal.length;
+      r.scoreN = normal.length;
+      if (normal.length) {
+        var sjScores = normal.map(function (it) { return itemScore(it, "sj"); });
+        var gjScores = normal.map(function (it) { return itemScore(it, "gj"); });
+        r.sj = +(sjScores.reduce(function (a, b) { return a + b; }, 0) / sjScores.length).toFixed(1);
+        r.gj = +(gjScores.reduce(function (a, b) { return a + b; }, 0) / gjScores.length).toFixed(1);
+      } else {
+        r.sj = 0; r.gj = 0;
+      }
+    } else {
+      r.sj = +(r.sj20 * 1.5).toFixed(1); // 품목 데이터 없을 때만 구 방식(/20 측정값 → /30 환산)으로 대체
+      r.gj = +(r.gj20 * 1.5).toFixed(1);
+    }
+    var mails = mailsFor(r);
+    var claimMails = mails.filter(function (m) { return isClaimSubj(m.subj); });
+    var commonMails = mails.filter(function (m) { return !isClaimSubj(m.subj); });
+    r.claimSpeed = mailGroupScore(claimMails);
+    r.commonReply = mailGroupScore(commonMails);
+    r.reply = r.claimSpeed + r.commonReply; // 회신률 20점 = 클레임회신속도10 + 공통문의회신률10
+    r.subtotal = +(r.sj + r.gj + r.claim + r.recur + r.reply).toFixed(1); // 30+30+12+8+20 = 100점 만점, 전 항목 확정
+  }
+  ranked.forEach(recomputeCompany);
+  ranked.sort(function (a, b) { return b.in - a.in; }); // 실측 품목 표 기준으로 입고건수가 갱신되므로 순위도 다시 정렬
+
+  var gradeOf = function (s) { return s >= 90 ? "S" : s >= 80 ? "A" : s >= 70 ? "B" : s >= 60 ? "C" : "D"; };
+
+  /* KPI row */
+  var kpiRow = document.getElementById("kpiRow");
+  function kpiCard(label, valueHtml) {
+    var d = document.createElement("div");
+    d.className = "kpi";
+    d.innerHTML = '<div class="label">' + label + '</div><div class="value num">' + valueHtml + "</div>";
+    return d;
+  }
+  var avgSJ = (ranked.reduce(function (s, r) { return s + r.sj; }, 0) / ranked.length).toFixed(1);
+  var avgGJ = (ranked.reduce(function (s, r) { return s + r.gj; }, 0) / ranked.length).toFixed(1);
+  var avgReply = (ranked.reduce(function (s, r) { return s + r.reply; }, 0) / ranked.length).toFixed(1);
+  kpiRow.appendChild(kpiCard("채점 가능 제조사", ranked.length + " <small>/ 전체 " + (ranked.length + excluded.length) + "개사</small>"));
+  kpiRow.appendChild(kpiCard("성적서 평균 (정상입고)", avgSJ + " <small>/ 30</small>"));
+  kpiRow.appendChild(kpiCard("관리품 평균 (정상입고)", avgGJ + " <small>/ 30</small>"));
+  kpiRow.appendChild(kpiCard("회신률 평균", avgReply + " <small>/ 20</small>"));
+  kpiRow.appendChild(kpiCard("귀책 클레임(9월)", "1 <small>건 · 우성플라스틱(순위 외)</small>"));
+
+  /* ---------- shared svg helper ---------- */
+  var svgNS = "http://www.w3.org/2000/svg";
+  function el(name, attrs, cls) {
+    var e = document.createElementNS(svgNS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (cls) e.setAttribute("class", cls);
+    return e;
+  }
+
+  /* ---------- top5 chart (입고건수 1~5위), SVG bar chart ---------- */
+  var top5Svg = document.getElementById("top5Chart");
+  (function () {
+    var W = 560, H = 250;
+    var padL = 30, padR = 10, padT = 26, padB = 56;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var top5 = ranked.slice(0, 5);
+    var maxVal = 100; // fixed 0-100 scale, honest against the point scale
+
+    // gridlines at 0/25/50/75/100 with tick labels
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      var y = padT + plotH * (1 - v / maxVal);
+      top5Svg.appendChild(el("line", { x1: padL, x2: W - padR, y1: y, y2: y }, "grid-line"));
+      top5Svg.appendChild(el("text", { x: padL - 8, y: y + 3, "text-anchor": "end" }, "axis-label")).textContent = v;
+    });
+
+    var bandW = plotW / top5.length;
+    var barW = Math.min(40, bandW * 0.5);
+    top5.forEach(function (r, i) {
+      var cx = padL + bandW * i + bandW / 2;
+      var barH = plotH * (r.subtotal / maxVal);
+      var y = padT + plotH - barH;
+      var cls = "s" + (i + 1);
+      top5Svg.appendChild(el("rect", { x: cx - barW / 2, y: y, width: barW, height: Math.max(barH, 2), rx: 4 }, cls));
+      var valEl = el("text", { x: cx, y: y - 10, "text-anchor": "middle" }, "bar-value");
+      valEl.textContent = r.subtotal.toFixed(1);
+      top5Svg.appendChild(valEl);
+      var nameEl = el("text", { x: cx, y: padT + plotH + 20, "text-anchor": "middle" }, "bar-name");
+      nameEl.textContent = r.name.length > 8 ? r.name.slice(0, 8) + "…" : r.name;
+      top5Svg.appendChild(nameEl);
+      var subEl = el("text", { x: cx, y: padT + plotH + 36, "text-anchor": "middle" }, "bar-sub");
+      subEl.textContent = "입고 " + r.in + "건";
+      top5Svg.appendChild(subEl);
+    });
+  })();
+
+  /* main table + click-to-expand detail */
+  var mainBody = document.getElementById("mainBody");
+  /* 클레임 메일은 품번·로트·사용기한·재발여부가 제목만으로는 연결되지 않아 기본값 "-" (행의 ✎ 수정으로 직접 채울 수 있음) */
+  function claimTableHtml(list) {
+    var head = '<thead><tr><th class="dt-num">No.</th><th class="dt-name">제품명</th><th>품번</th><th>로트번호</th><th>사용기한</th><th>제조사 클레임 접수일자</th><th>제조사 회신일자</th><th>지연일자</th><th class="dt-num">점수</th><th>재발 여부</th><th class="dt-actions">관리</th></tr></thead>';
+    if (!list.length) return '<div class="dt-scroll"><table class="dt">' + head + '<tbody></tbody></table></div><div class="dt-empty">조회 구간 해당 클레임 이메일 없음</div>';
+    var rows = list.map(function (m) {
+      var delayTxt = m.replyDate ? m.delayDays + "일" : "무응답";
+      var score = mailScoreBand(m.replyDate ? m.delayDays : null);
+      var cls = m.replyDate ? "dt-ok" : "dt-bad";
+      return '<tr data-table="claim" data-mail-id="' + m._id + '">' +
+        '<td class="dt-num">' + (m._id + 1) + '</td>' +
+        '<td class="dt-editable dt-name" data-field="subj">' + m.subj + '</td>' +
+        '<td class="dt-editable" data-field="code">' + m.code + '</td>' +
+        '<td class="dt-editable" data-field="lot">' + m.lot + '</td>' +
+        '<td class="dt-editable" data-field="exp">' + m.exp + '</td>' +
+        '<td class="dt-editable" data-field="req">' + m.req + '</td>' +
+        '<td class="dt-editable" data-field="replyDate">' + (m.replyDate || "-") + '</td>' +
+        '<td class="' + cls + '">' + delayTxt + '</td>' +
+        '<td class="dt-num">' + score + '</td>' +
+        '<td class="dt-editable" data-field="recur">' + m.recur + '</td>' +
+        '<td class="dt-actions"><button type="button" class="row-edit-btn">✎ 수정</button> <button type="button" class="row-del-btn">🗑 삭제</button></td>' +
+      '</tr>';
+    }).join("");
+    return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rows + '</tbody></table></div>';
+  }
+  /* 문의 메일은 본문 요약을 별도 수집하지 않아 "내용" 기본값 "-" (행의 ✎ 수정으로 직접 채울 수 있음) */
+  function replyTableHtml(list) {
+    var head = '<thead><tr><th class="dt-num">No.</th><th class="dt-name">메일제목</th><th class="dt-content">내용</th><th>요청일자</th><th>회신일자</th><th>지연일자</th><th class="dt-num">점수</th><th class="dt-actions">관리</th></tr></thead>';
+    if (!list.length) return '<div class="dt-scroll"><table class="dt">' + head + '<tbody></tbody></table></div><div class="dt-empty">조회 구간 해당 문의 이메일 없음</div>';
+    var rows = list.map(function (m) {
+      var delayTxt = m.replyDate ? m.delayDays + "일" : "무응답";
+      var score = mailScoreBand(m.replyDate ? m.delayDays : null);
+      var cls = m.replyDate ? "dt-ok" : "dt-bad";
+      return '<tr data-table="reply" data-mail-id="' + m._id + '">' +
+        '<td class="dt-num">' + (m._id + 1) + '</td>' +
+        '<td class="dt-editable dt-name" data-field="subj">' + m.subj + '</td>' +
+        '<td class="dt-editable dt-content" data-field="content">' + m.content + '</td>' +
+        '<td class="dt-editable" data-field="req">' + m.req + '</td>' +
+        '<td class="dt-editable" data-field="replyDate">' + (m.replyDate || "-") + '</td>' +
+        '<td class="' + cls + '">' + delayTxt + '</td>' +
+        '<td class="dt-num">' + score + '</td>' +
+        '<td class="dt-actions"><button type="button" class="row-edit-btn">✎ 수정</button> <button type="button" class="row-del-btn">🗑 삭제</button></td>' +
+      '</tr>';
+    }).join("");
+    return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function buildDetailPanel(r) {
+    var claimDetail = r.claimNote
+      ? r.claimNote
+      : "9월 귀책 클레임 0건 (발생건수 12/12, 재발건 8/8)";
+    var mails = mailsFor(r);
+    var claimMails = mails.filter(function (m) { return isClaimSubj(m.subj); });
+    var commonMails = mails.filter(function (m) { return !isClaimSubj(m.subj); });
+    var items = visibleItems(r.name);
+    var wrap = document.createElement("div");
+    wrap.className = "detail-panel";
+    wrap.innerHTML =
+      '<div class="dt-section">' +
+        '<div class="dt-head"><span class="dt-title">1. 성적서 제출속도</span><span class="dt-score">' + r.sj.toFixed(1) + ' / 30</span></div>' +
+        '<div class="dt-note">영업일(토·일·공휴일 제외) 기준 평균 · 정상입고 ' + r.scoreN + '건 (선입고 ' + r.dev + '건 제외 — 성적서 판정일이 입고일보다 늦은 건). 미제출 건은 오늘 날짜 기준 경과 영업일로 추정 감점.</div>' +
+        itemListHtml(items, "sj", r.name) +
+      '</div>' +
+      '<div class="dt-section">' +
+        '<div class="dt-head"><span class="dt-title">2. 관리품 제출속도</span><span class="dt-score">' + r.gj.toFixed(1) + ' / 30</span></div>' +
+        '<div class="dt-note">영업일(토·일·공휴일 제외) 기준 평균 · 정상입고 ' + r.scoreN + '건 (선입고 ' + r.dev + '건 제외 — 성적서 판정일이 입고일보다 늦은 건). 미제출 건은 오늘 날짜 기준 경과 영업일로 추정 감점.</div>' +
+        itemListHtml(items, "gj", r.name) +
+      '</div>' +
+      '<div class="dt-section">' +
+        '<div class="dt-head"><span class="dt-title">3. 클레임</span><span class="dt-score">' + (r.claim + r.recur) + ' / 20 <span class="di-note-mark">†</span></span></div>' +
+        '<div class="dt-note">' + claimDetail + ' · 클레임 회신속도 ' + r.claimSpeed + '/10 (' + mailGroupNote(claimMails) + ', 점수는 회신률 항목에 반영) — 품번·로트·사용기한·재발여부는 이메일 제목만으로는 연결되지 않아 기본값 "-"이며, 행의 ✎ 수정으로 직접 채울 수 있습니다.</div>' +
+        claimTableHtml(claimMails) +
+      '</div>' +
+      '<div class="dt-section">' +
+        '<div class="dt-head"><span class="dt-title">4. 회신율</span><span class="dt-score">' + r.commonReply + ' / 10</span></div>' +
+        '<div class="dt-note">' + mailGroupNote(commonMails) + ' — "내용"은 메일 본문 요약을 별도로 수집하지 않아 기본값 "-"이며, 행의 ✎ 수정으로 직접 채울 수 있습니다.</div>' +
+        replyTableHtml(commonMails) +
+      '</div>' +
+      '<div class="detail-total">총점 <b>' + r.subtotal.toFixed(1) + ' / 100</b>점. 수정 후에도 상단 KPI·차트는 새로고침해야 반영됩니다.</div>';
+    return wrap;
+  }
+
+  var allBody = document.getElementById("allBody");
+  var expandedCompany = null;
+
+  function renderMainRows() {
+    mainBody.innerHTML = "";
+    ranked.forEach(function (r, idx) {
+      var tr = document.createElement("tr");
+      tr.className = "clickable";
+      tr.innerHTML =
+        '<td>' + (idx + 1) + '</td>' +
+        '<td class="mk-name">' + r.name + '</td>' +
+        '<td class="num">' + r.in + '</td>' +
+        '<td class="num">' + r.dev + '</td>' +
+        '<td class="num">' + r.scoreN + '</td>' +
+        '<td class="num">' + r.sj.toFixed(1) + '</td>' +
+        '<td class="num">' + r.gj.toFixed(1) + '</td>' +
+        '<td class="num">' + (r.claim + r.recur) + (r.claimNote ? '<span class="foot-star">*</span>' : '') + '</td>' +
+        '<td class="num">' + r.reply + '</td>' +
+        '<td class="num subtotal-cell">' + r.subtotal.toFixed(1) + '</td>';
+
+      var detailTr = document.createElement("tr");
+      detailTr.className = "detail-row";
+      var td = document.createElement("td");
+      td.colSpan = 10;
+      td.appendChild(buildDetailPanel(r));
+      detailTr.appendChild(td);
+
+      var isOpen = r.name === expandedCompany;
+      detailTr.hidden = !isOpen;
+      tr.classList.toggle("expanded", isOpen);
+
+      tr.addEventListener("click", function () {
+        var willOpen = detailTr.hidden;
+        detailTr.hidden = !willOpen;
+        tr.classList.toggle("expanded", willOpen);
+        expandedCompany = willOpen ? r.name : null;
+      });
+
+      mainBody.appendChild(tr);
+      mainBody.appendChild(detailTr);
+    });
+  }
+
+  /* 전체 제조업체 협력도 점수 */
+  function renderAllTable() {
+    allBody.innerHTML = "";
+    var allMakers = ranked.concat(excluded).sort(function (a, b) { return b.in - a.in; });
+    allMakers.forEach(function (r, idx) {
+      var tr = document.createElement("tr");
+      var scored = r.subtotal !== undefined;
+      tr.innerHTML =
+        '<td>' + (idx + 1) + '</td>' +
+        '<td class="mk-name">' + r.name + '</td>' +
+        '<td class="num">' + r.in + '</td>' +
+        '<td class="num' + (scored ? ' subtotal-cell' : '') + '">' + (scored ? r.subtotal.toFixed(1) : '<span class="cell-na">-</span>') + '</td>';
+      allBody.appendChild(tr);
+    });
+    var scoredMakers = allMakers.filter(function (r) { return r.subtotal !== undefined; });
+    var avgAll = (scoredMakers.reduce(function (s, r) { return s + r.subtotal; }, 0) / scoredMakers.length).toFixed(1);
+    var avgRow = document.createElement("tr");
+    avgRow.className = "grand-total";
+    avgRow.innerHTML = '<td></td><td class="mk-name">평균 (입고 6건 이상 ' + scoredMakers.length + '개사)</td><td></td><td class="num subtotal-cell">' + avgAll + '</td>';
+    allBody.appendChild(avgRow);
+  }
+
+  /* 수정 버튼 처리 — 행 단위로 편집, 저장 시 이 브라우저의 localStorage에 저장하고 표를 전부 다시 그린다 */
+  function enterRowEdit(tr) {
+    tr.querySelectorAll(".dt-editable").forEach(function (td) {
+      var val = td.textContent;
+      td.innerHTML = '<input type="text" class="dt-edit-input" value="' + val.replace(/&/g, "&amp;").replace(/"/g, "&quot;") + '">';
+    });
+    var actionsTd = tr.querySelector(".dt-actions");
+    actionsTd.innerHTML = '<button type="button" class="row-save-btn">저장</button> <button type="button" class="row-cancel-btn">취소</button>';
+  }
+  function commitRowEdit(tr) {
+    var table = tr.getAttribute("data-table");
+    var edits = {};
+    tr.querySelectorAll(".dt-editable").forEach(function (td) {
+      var input = td.querySelector("input");
+      edits[td.getAttribute("data-field")] = input ? input.value.trim() : td.textContent;
+    });
+    if (table === "sj" || table === "gj") {
+      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
+      var arr = itemData[company];
+      if (!arr || !arr[idx]) return;
+      var store1 = loadEditStore();
+      store1.items[company] = store1.items[company] || {};
+      store1.items[company][idx] = store1.items[company][idx] || {};
+      Object.keys(edits).forEach(function (fi) {
+        arr[idx][Number(fi)] = edits[fi];
+        store1.items[company][idx][fi] = edits[fi];
+      });
+      saveEditStore(store1);
+    } else {
+      var mailId = Number(tr.getAttribute("data-mail-id"));
+      var m = emailHistory[mailId];
+      if (!m) return;
+      Object.keys(edits).forEach(function (k) {
+        m[k] = (k === "replyDate" && (edits[k] === "" || edits[k] === "-")) ? null : edits[k];
+      });
+      m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
+      var store2 = loadEditStore();
+      store2.mails[mailId] = store2.mails[mailId] || {};
+      Object.keys(edits).forEach(function (k) { store2.mails[mailId][k] = m[k]; });
+      saveEditStore(store2);
+    }
+    ranked.forEach(recomputeCompany);
+    renderMainRows();
+    renderAllTable();
+  }
+  function askRowDelete(tr) {
+    var actionsTd = tr.querySelector(".dt-actions");
+    actionsTd.innerHTML = '<span class="dt-del-confirm">정말 삭제?</span> <button type="button" class="row-delconfirm-btn">예, 삭제</button> <button type="button" class="row-cancel-btn">아니오</button>';
+  }
+  function commitRowDelete(tr) {
+    var table = tr.getAttribute("data-table");
+    if (table === "sj" || table === "gj") {
+      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
+      var arr = itemData[company];
+      if (arr && arr[idx]) arr[idx]._deleted = true;
+      var store1 = loadEditStore();
+      store1.deletedItems[company] = store1.deletedItems[company] || {};
+      store1.deletedItems[company][idx] = true;
+      saveEditStore(store1);
+    } else {
+      var mailId = Number(tr.getAttribute("data-mail-id"));
+      var m = emailHistory[mailId];
+      if (m) m._deleted = true;
+      var store2 = loadEditStore();
+      store2.deletedMails[mailId] = true;
+      saveEditStore(store2);
+    }
+    ranked.forEach(recomputeCompany);
+    renderMainRows();
+    renderAllTable();
+    renderMail(currentMailFilter);
+  }
+  mainBody.addEventListener("click", function (ev) {
+    var editBtn = ev.target.closest(".row-edit-btn");
+    var saveBtn = ev.target.closest(".row-save-btn");
+    var cancelBtn = ev.target.closest(".row-cancel-btn");
+    var delBtn = ev.target.closest(".row-del-btn");
+    var delConfirmBtn = ev.target.closest(".row-delconfirm-btn");
+    if (!editBtn && !saveBtn && !cancelBtn && !delBtn && !delConfirmBtn) return;
+    ev.stopPropagation();
+    var tr = ev.target.closest("tr");
+    if (editBtn) { enterRowEdit(tr); return; }
+    if (delBtn) { askRowDelete(tr); return; }
+    if (delConfirmBtn) { commitRowDelete(tr); return; }
+    if (cancelBtn) { renderMainRows(); return; }
+    if (saveBtn) { commitRowEdit(tr); }
+  });
+
+  renderMainRows();
+  renderAllTable();
+
+  var CAT_LABEL = { vendor:"제조사", gov:"정부기관", internal:"사내" };
+  var mailBody = document.getElementById("mailBody");
+  var currentMailFilter = "all";
+  function renderMail(filterCat) {
+    currentMailFilter = filterCat;
+    mailBody.innerHTML = "";
+    emailHistory.forEach(function (m) {
+      if (m._deleted) return;
+      if (filterCat !== "all" && m.cat !== filterCat) return;
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="num">' + m.req + '</td>' +
+        '<td class="mm-cat"><span class="cat-badge ' + m.cat + '">' + CAT_LABEL[m.cat] + (m.cat === "vendor" ? " · " + m.who : "") + '</span></td>' +
+        '<td class="mm-subject">' + m.subj + '</td>' +
+        '<td>' + m.from + '</td>' +
+        '<td>' + (m.replyDate ? '<span class="status-badge replied">회신 ' + m.replyDate + '(' + m.replyFrom + ', ' + m.delayDays + '일)</span>' : '<span class="status-badge noreply">무응답</span>') + '</td>';
+      mailBody.appendChild(tr);
+    });
+  }
+  var mailFilterRow = document.getElementById("mailFilterRow");
+  [["all", "전체 " + emailHistory.filter(function (m) { return !m._deleted; }).length], ["vendor", "제조사"], ["gov", "정부기관"], ["internal", "사내"]].forEach(function (f, i) {
+    var b = document.createElement("button");
+    b.className = "mail-filter-btn" + (i === 0 ? " active" : "");
+    b.textContent = f[1];
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(mailFilterRow.children, function (c) { c.classList.remove("active"); });
+      b.classList.add("active");
+      renderMail(f[0]);
+    });
+    mailFilterRow.appendChild(b);
+  });
+  renderMail("all");
+
+  /* 월별 협력도 점수 추이 (기존 방식, 1~8월) */
+  var history = [
+    { m:"1월", top:[["나우코스",90],["코스메카코리아",85],["코스맥스",83],["이앤씨",82],["씨앤씨인터내셔널",73]] },
+    { m:"2월", top:[["코스모코스",89],["이앤씨",87],["리봄화장품",85],["씨앤씨인터내셔널",82],["코스맥스",70]] },
+    { m:"3월", top:[["리봄화장품",92],["이앤씨",92],["코스메카코리아",90],["씨앤씨인터내셔널",89],["코스맥스",83]] },
+    { m:"4월", top:[["이앤씨",81],["리봄화장품",80],["씨앤씨인터내셔널",77],["코스맥스",75],["코디",74]] },
+    { m:"5월", top:[["코디",89],["이앤씨",88],["코코",87],["코스맥스",80],["씨앤씨인터내셔널",80]] },
+    { m:"6월", top:[["이앤씨",81],["코스맥스",77],["리봄화장품",76],["씨앤씨인터내셔널",75],["코스모코스",71]] },
+    { m:"7월", top:[["이앤씨",89],["리봄화장품",80],["코스모코스",77],["씨앤씨인터내셔널",75],["코스맥스",70]] },
+    { m:"8월", top:[["이앤씨",93],["리봄화장품",88],["코스맥스",85],["코스모코스",85],["씨앤씨인터내셔널",84]] }
+  ];
+  var RANK_COLORS = ["s1", "s2", "s3", "s4", "s5"];
+  var RANK_HEX = { s1:"#2a78d6", s2:"#eb6834", s3:"#1baf7a", s4:"#eda100", s5:"#e87ba4" };
+
+  /* legend */
+  var histLegend = document.getElementById("histLegend");
+  [1, 2, 3, 4, 5].forEach(function (rank) {
+    var item = document.createElement("span");
+    item.className = "lg-item";
+    item.innerHTML = '<span class="lg-swatch" style="background:' + RANK_HEX["s" + rank] + '"></span>점수 ' + rank + '위';
+    histLegend.appendChild(item);
+  });
+
+  /* grouped bar chart */
+  var histSvg = document.getElementById("histChart");
+  (function () {
+    var W = 860, H = 300;
+    var padL = 32, padR = 16, padT = 20, padB = 40;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var minVal = 60, maxVal = 100, target = 80;
+    function yOf(v) { return padT + plotH * (1 - (v - minVal) / (maxVal - minVal)); }
+
+    [60, 70, 80, 90, 100].forEach(function (v) {
+      var y = yOf(v);
+      histSvg.appendChild(el("line", { x1: padL, x2: W - padR, y1: y, y2: y }, "grid-line"));
+      histSvg.appendChild(el("text", { x: padL - 8, y: y + 3, "text-anchor": "end" }, "axis-label")).textContent = v;
+    });
+    var ty = yOf(target);
+    histSvg.appendChild(el("line", { x1: padL, x2: W - padR, y1: ty, y2: ty }, "target-line"));
+    histSvg.appendChild(el("text", { x: W - padR, y: ty - 4, "text-anchor": "end" }, "target-label")).textContent = "목표 " + target + "점";
+
+    var groupW = plotW / history.length;
+    var barW = 15, barGap = 3;
+    history.forEach(function (h, gi) {
+      var groupX = padL + groupW * gi;
+      var setW = h.top.length * barW + (h.top.length - 1) * barGap;
+      var startX = groupX + (groupW - setW) / 2;
+      h.top.forEach(function (t, ri) {
+        var x = startX + ri * (barW + barGap);
+        var y = yOf(t[1]);
+        var barH = padT + plotH - y;
+        histSvg.appendChild(el("rect", { x: x, y: y, width: barW, height: Math.max(barH, 2), rx: 2 }, RANK_COLORS[ri]));
+        var valEl = el("text", { x: x + barW / 2, y: y - 6, "text-anchor": "middle" }, "bar-value");
+        valEl.setAttribute("style", "font-size:10px");
+        valEl.textContent = t[1];
+        histSvg.appendChild(valEl);
+      });
+      var monthEl = el("text", { x: groupX + groupW / 2, y: padT + plotH + 22, "text-anchor": "middle" }, "month-label");
+      monthEl.textContent = h.m;
+      histSvg.appendChild(monthEl);
+    });
+  })();
+
+  /* per-month detail table */
+  var histTableGrid = document.getElementById("histTableGrid");
+  history.forEach(function (h) {
+    var col = document.createElement("div");
+    col.className = "hist-table-col";
+    var rowsHtml = h.top.map(function (t, ri) {
+      return '<div class="htc-row"><span class="htc-dot" style="background:' + RANK_HEX[RANK_COLORS[ri]] + '"></span>' +
+        '<span class="htc-name">' + t[0] + '</span><span class="htc-score num">' + t[1] + '</span></div>';
+    }).join("");
+    col.innerHTML = '<span class="htc-month">' + h.m + '</span>' + rowsHtml;
+    histTableGrid.appendChild(col);
+  });
+
+  /* pending items */
+  var pending = [
+    { label: "조회 구간이 매일 밀림", detail: "성적서·관리품 데이터는 매일 \"오늘 기준 최근 30일\"을 다시 조회해 갱신합니다. 접수가 늦어지는 입고 건은 다음날 이후 반영되며, 채점 대상(입고 6건 이상) 제조사 구성도 날마다 달라질 수 있습니다." },
+    { label: "회신률 표본 편차", detail: "이메일 왕래 건수가 제조사별로 편차가 큽니다(0건~두 자릿수). 표본이 적은 곳의 회신률 점수는 참고 자료로 보고 누적 데이터로 다시 확인하는 것을 권장합니다." }
+  ];
+  var pendingGrid = document.getElementById("pendingGrid");
+  pending.forEach(function (p) {
+    var d = document.createElement("div");
+    d.className = "pending-item";
+    d.innerHTML = '<span class="pi-label">' + p.label + '</span><span class="pi-detail">' + p.detail + '</span>';
+    pendingGrid.appendChild(d);
+  });
+})();
+</script>
