@@ -1,5 +1,6 @@
 
 
+
 <title>협력도 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -358,6 +359,8 @@
       </div>
     </div>
     <div class="surface-card">
+      <div class="mail-filter-row" id="monthFilterRow"></div>
+      <p class="desc" id="monthFilterNote" style="display:none;">과거 월은 품목별 세부 데이터가 보존되지 않아 "총점"만 집계된 자료입니다 — 입고건수·성적서·관리품·클레임·회신률 세부 점수는 제공되지 않습니다.</p>
       <div class="table-scroll">
         <table class="data" id="mainTable">
           <thead>
@@ -976,7 +979,12 @@
   var allBody = document.getElementById("allBody");
   var expandedCompany = null;
 
+  var currentMonthFilter = "current";
   function renderMainRows() {
+    if (currentMonthFilter !== "current") { renderMainRowsForMonth(currentMonthFilter); return; }
+    renderMainRowsLive();
+  }
+  function renderMainRowsLive() {
     mainBody.innerHTML = "";
     ranked.forEach(function (r, idx) {
       var tr = document.createElement("tr");
@@ -1013,6 +1021,46 @@
 
       mainBody.appendChild(tr);
       mainBody.appendChild(detailTr);
+    });
+  }
+
+  /* 과거 월 필터 — 품목 단위 세부 데이터가 없는 달은 "총점"만 보여준다 (사용자가 직접 전달한 MONTHLY_TOTALS 기준) */
+  function renderMainRowsForMonth(monthKey) {
+    mainBody.innerHTML = "";
+    var rows;
+    if (monthKey === "avg") {
+      rows = MONTHLY_COMPANIES.map(function (name) {
+        var vals = [];
+        for (var mk in MONTHLY_TOTALS) { if (MONTHLY_TOTALS[mk][name] !== undefined) vals.push(MONTHLY_TOTALS[mk][name]); }
+        if (!vals.length) return null;
+        var sum = vals.reduce(function (a, b) { return a + b; }, 0);
+        return { name: name, score: Math.round(sum / vals.length) };
+      }).filter(function (r) { return r; });
+    } else {
+      var monthData = MONTHLY_TOTALS[monthKey] || {};
+      rows = Object.keys(monthData).map(function (name) { return { name: name, score: monthData[name] }; });
+    }
+    rows.sort(function (a, b) { return b.score - a.score; });
+    if (!rows.length) {
+      var emptyTr = document.createElement("tr");
+      emptyTr.innerHTML = '<td colspan="10" class="dt-empty">이 달의 데이터가 없습니다.</td>';
+      mainBody.appendChild(emptyTr);
+      return;
+    }
+    rows.forEach(function (r, idx) {
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>' + (idx + 1) + '</td>' +
+        '<td class="mk-name">' + r.name + '</td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num"><span class="cell-na">-</span></td>' +
+        '<td class="num subtotal-cell">' + r.score + '</td>';
+      mainBody.appendChild(tr);
     });
   }
 
@@ -1128,6 +1176,23 @@
     if (saveBtn) { commitRowEdit(tr); }
   });
 
+  var monthFilterRow = document.getElementById("monthFilterRow");
+  var monthFilterNote = document.getElementById("monthFilterNote");
+  [["current", "9월(현재·실시간)"], ["avg", "1~6월 평균"], ["1월", "1월"], ["2월", "2월"], ["3월", "3월"], ["4월", "4월"], ["5월", "5월"], ["6월", "6월"]].forEach(function (f, i) {
+    var b = document.createElement("button");
+    b.className = "mail-filter-btn" + (i === 0 ? " active" : "");
+    b.textContent = f[1];
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(monthFilterRow.children, function (c) { c.classList.remove("active"); });
+      b.classList.add("active");
+      currentMonthFilter = f[0];
+      monthFilterNote.style.display = f[0] === "current" ? "none" : "block";
+      expandedCompany = null;
+      renderMainRows();
+    });
+    monthFilterRow.appendChild(b);
+  });
+
   renderMainRows();
   renderAllTable();
 
@@ -1175,6 +1240,24 @@
     { m:"7월", top:[["이앤씨",89],["리봄화장품",80],["코스모코스",77],["씨앤씨인터내셔널",75],["코스맥스",70]] },
     { m:"8월", top:[["이앤씨",93],["리봄화장품",88],["코스맥스",85],["코스모코스",85],["씨앤씨인터내셔널",84]] }
   ];
+
+  /* "제조사별 협력도 현황" 월별 필터용 — 사용자가 직접 전달한 2026년 1~6월 총점표(전체 제조사, 총점만).
+     위 HISTORY_PAST(상위5사, 구 점수체계)와는 출처·점수 체계가 달라 서로 값이 다를 수 있음 — 별개 자료로 취급. */
+  var MONTHLY_COMPANIES = [
+    "주식회사 에스엘씨","부강코스메틱","주식회사 엠앤코스","(주)노디너리","씨앤텍주식회사","서울화장품",
+    "주식회사 씨엔에프","(주)일진코스메틱","다비드화장품","엔코스","주식회사 이앤씨","(주)이미인",
+    "(주) 씨아이티","리봄화장품","(주)나우코스","(주)코바스","주식회사 비앤비코리아","주식회사 뉴앤뉴",
+    "코스맥스","(주)씨앤씨인터내셔널(C&C INT`L)","(주)코스메카코리아","(주)코스모코스(COSMOCOS Co.,Ltd)",
+    "코코","한국콜마주식회사","지엘스탠다드","코디","화성코스메틱 주식회사","콜마스크","해피엘앤비","주식회사 메가코스"
+  ];
+  var MONTHLY_TOTALS = {
+    "1월": { "(주)노디너리":87, "서울화장품":95, "주식회사 이앤씨":91, "(주) 씨아이티":100, "리봄화장품":87, "(주)나우코스":87, "주식회사 뉴앤뉴":96, "코스맥스":76, "(주)씨앤씨인터내셔널(C&C INT`L)":70, "(주)코스메카코리아":79, "(주)코스모코스(COSMOCOS Co.,Ltd)":81, "코코":87, "한국콜마주식회사":94, "지엘스탠다드":92, "코디":81, "화성코스메틱 주식회사":100, "콜마스크":60 },
+    "2월": { "주식회사 이앤씨":87, "리봄화장품":85, "(주)나우코스":83, "주식회사 뉴앤뉴":86, "코스맥스":70, "(주)씨앤씨인터내셔널(C&C INT`L)":82, "(주)코스메카코리아":81, "(주)코스모코스(COSMOCOS Co.,Ltd)":89, "코코":85, "한국콜마주식회사":96, "지엘스탠다드":83, "코디":77, "콜마스크":80 },
+    "3월": { "주식회사 이앤씨":92, "리봄화장품":92, "(주)나우코스":88, "주식회사 뉴앤뉴":100, "코스맥스":83, "(주)씨앤씨인터내셔널(C&C INT`L)":86, "(주)코스메카코리아":90, "(주)코스모코스(COSMOCOS Co.,Ltd)":76, "코코":83, "한국콜마주식회사":90, "화성코스메틱 주식회사":69 },
+    "4월": { "(주)노디너리":81, "서울화장품":85, "주식회사 이앤씨":81, "(주) 씨아이티":98, "리봄화장품":80, "(주)나우코스":93, "(주)코바스":64, "코스맥스":75, "(주)씨앤씨인터내셔널(C&C INT`L)":77, "(주)코스메카코리아":83, "(주)코스모코스(COSMOCOS Co.,Ltd)":76, "코코":76, "한국콜마주식회사":68, "지엘스탠다드":78, "코디":74, "화성코스메틱 주식회사":70 },
+    "5월": { "(주)노디너리":78, "주식회사 씨엔에프":94, "주식회사 이앤씨":88, "(주) 씨아이티":75, "리봄화장품":80, "(주)나우코스":94, "(주)코바스":73, "코스맥스":80, "(주)씨앤씨인터내셔널(C&C INT`L)":80, "(주)코스메카코리아":93, "(주)코스모코스(COSMOCOS Co.,Ltd)":75, "코코":87, "한국콜마주식회사":78, "코디":89, "화성코스메틱 주식회사":74 },
+    "6월": { "서울화장품":87, "주식회사 이앤씨":81, "리봄화장품":76, "(주)나우코스":85, "(주)코바스":75, "코스맥스":77, "(주)씨앤씨인터내셔널(C&C INT`L)":75, "(주)코스메카코리아":75, "(주)코스모코스(COSMOCOS Co.,Ltd)":71, "코코":73, "한국콜마주식회사":90, "주식회사 메가코스":78 }
+  };
   function shortName(name) {
     var aliases = WHO_ALIASES[name];
     return (aliases && aliases[0]) || name;
@@ -1549,5 +1632,6 @@
   });
 })();
 </script>
+
 
 
