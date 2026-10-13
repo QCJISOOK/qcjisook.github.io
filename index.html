@@ -1540,6 +1540,29 @@
     margin-top:10px; font-size:13px; font-weight:750; color:var(--accent-strong); text-align:center;
   }
   .af-say:empty{ display:none; }
+  /* 뺀 파일 — 되살리기 */
+  .af-gone{ margin-top:12px; border:1px dashed var(--border); border-radius:9px; background:var(--surface-2); }
+  .af-gone-t{
+    display:flex; align-items:center; gap:7px; width:100%; text-align:left; cursor:pointer;
+    font-family:inherit; font-size:12.5px; font-weight:750; color:var(--muted);
+    padding:8px 12px; border:0; background:transparent;
+  }
+  .af-gone-t:hover{ color:var(--ink-2); }
+  .af-gone-t .car{ transition:transform .15s; }
+  .af-gone-t[aria-expanded="true"] .car{ transform:rotate(90deg); }
+  .af-gone-t b{ font-family:var(--font-mono); }
+  .af-gone-l{ padding:2px 12px 10px; display:flex; flex-direction:column; gap:6px; }
+  .af-g{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface);
+  }
+  .af-g-nm{
+    flex:1 1 180px; min-width:0; font-size:12.5px; color:var(--muted); text-decoration:line-through;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .af-g-at{ font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .af-g .af-b:hover{ border-color:var(--good); color:var(--good); }
+  .af-g-tip{ font-size:11.5px; color:var(--muted); }
   /* 지적사항 일람표 */
   .cs-hd{
     display:flex; align-items:center; gap:12px; flex-wrap:wrap;
@@ -2938,7 +2961,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 품질 이슈 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-07 10:16</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-13 16:23</span></div>
 </div>
 
 
@@ -4428,6 +4451,37 @@ async function aPicDel(key, id){
   aPicMem[key] = aPicOf(key).filter(function(r){ return r.id !== id; });
 }
 
+/* 빼기 되돌리기 — 지우는 대신 「뺌」 표시만 남기고, 되살리기로 되돌린다 */
+async function aPicFlagSave(r){
+  if(!r || !r.blob) return;                      /* 서버에서 온 것은 이 브라우저에 몸이 없다 */
+  const c = {};
+  Object.keys(r).forEach(function(k){ if(k !== "url" && k !== "from") c[k] = r[k]; });
+  try {
+    const db = await aPicOpen();
+    await new Promise(function(ok, no){
+      const tx = db.transaction("pic", "readwrite");
+      tx.objectStore("pic").put(c);
+      tx.oncomplete = ok; tx.onerror = function(){ no(tx.error); };
+    });
+  } catch(e){}
+}
+async function aPicOff(key, id){
+  const r = (aPicOf(key) || []).filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  r.gone = 1;
+  await aPicFlagSave(r);
+  try { asvFileQ(r, 1); } catch(e){}
+}
+async function aPicBack(key, id){
+  const r = (aPicOf(key) || []).filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  delete r.gone;
+  await aPicFlagSave(r);
+  try { asvFileQ(r, 2); } catch(e){}             /* 2 = 되살리기 */
+}
+function aPicLive(key){ return aPicOf(key).filter(function(r){ return !r.gone; }); }
+function aPicGone(key){ return aPicOf(key).filter(function(r){ return r.gone; }); }
+
 
 
 
@@ -4468,7 +4522,10 @@ async function aPdfjs(){
 const APG_W = 2200;
 function aPgBag(key){ return key + "::file::crpg"; }
 function aPgOf(key){
-  return aPicOf(aPgBag(key)).slice().sort(function(a, b){ return (a.pg || 0) - (b.pg || 0); });
+  return aPicLive(aPgBag(key)).slice().sort(function(a, b){ return (a.pg || 0) - (b.pg || 0); });
+}
+function aPgGone(key){
+  return aPicGone(aPgBag(key)).slice().sort(function(a, b){ return (a.pg || 0) - (b.pg || 0); });
 }
 
 function aPgSay(key, msg){
@@ -4515,11 +4572,31 @@ async function aPdfSpread(key, file){
 }
 
 /* 펼쳐 놓은 쪽 그림 */
+/* 뺀 파일 되살리기 줄 — 빼도 지워지지 않고 여기 남는다 */
+function aGoneHTML(ks, offs){
+  if(!offs.length) return "";
+  return '<div class="af-gone">'
+    + '<button type="button" class="af-gone-t" data-afgtog="1" aria-expanded="false">'
+    +   '<span class="car">\u25b8</span> 뺀 파일 <b>' + offs.length + '</b>개 — 펼쳐서 되살릴 수 있습니다'
+    + '</button>'
+    + '<div class="af-gone-l" hidden>'
+    +   offs.map(function(r){
+          return '<div class="af-g">'
+            + '<span class="af-g-nm" title="' + esc(r.name || "") + '">' + esc(r.name || "파일") + '</span>'
+            + (r.at ? '<span class="af-g-at">' + esc(r.at) + '</span>' : "")
+            + '<button type="button" class="af-b" data-afback="' + ks + '::' + r.id + '">되살리기</button>'
+            + '</div>';
+        }).join("")
+    +   '<div class="af-g-tip">되살리면 함께 보는 모두에게 다시 보입니다. 뺀 지 30일이 지나면 서버 보관함에서 지워져 사진이 안 살아날 수 있습니다.</div>'
+    + '</div></div>';
+}
+
 function aPgHTML(key){
   const pgs = aPgOf(key);
-  if(!pgs.length) return "";
+  const offs = aPgGone(key);
+  if(!pgs.length && !offs.length) return "";
   return '<div class="cpg">'
-    + '<div class="cpg-cap">올린 개선결과서 <b>' + pgs.length + '</b>쪽 — 누르면 원본 크기로 열립니다</div>'
+    + (pgs.length ? '<div class="cpg-cap">올린 개선결과서 <b>' + pgs.length + '</b>쪽 — 누르면 원본 크기로 열립니다</div>' : "")
     + pgs.map(function(p, i){
         return '<figure class="cpg-p">'
           + '<a href="' + (p.url || "#") + '" target="_blank" rel="noopener">'
@@ -4528,6 +4605,7 @@ function aPgHTML(key){
           +   '<button type="button" class="ai-e" data-afdel="' + esc(key) + '::crpg::' + p.id + '">빼기</button>'
           + '</figcaption></figure>';
       }).join("")
+    + aGoneHTML(esc(key) + '::crpg', offs)
     + '</div>';
 }
 
@@ -4537,7 +4615,7 @@ const AFILE = {
   cr: { title:"개선결과서 — 받은 파일", tip:"업체가 보내온 개선결과서를 그대로 올려 둡니다 — PDF · 사진 · 문서" }
 };
 function aFileBag(key, sec){ return key + "::file::" + sec; }
-function aFileOf(key, sec){ return aPicOf(aFileBag(key, sec)); }
+function aFileOf(key, sec){ return aPicLive(aFileBag(key, sec)); }
 function aIsImg(r){ return /^image\//.test(r.type || ""); }
 function aSize(n){
   n = +n || 0;
@@ -4567,6 +4645,7 @@ async function aFileAdd(bag, file, pg){
 function aFileHTML(key, sec){
   const D = AFILE[sec];
   const list = aFileOf(key, sec);
+  const offs = aPicGone(aFileBag(key, sec));
   const imgs = list.filter(aIsImg), docs = list.filter(function(r){ return !aIsImg(r); });
   return '<div class="afile" data-afkey="' + esc(key) + '" data-afsec="' + sec + '">'
     + '<button type="button" class="aev-tog" data-aftog="1" aria-expanded="false">'
@@ -4598,6 +4677,7 @@ function aFileHTML(key, sec){
             + '<span class="af-cap">' + esc(r.name) + '</span></div>';
         }).join("") + '</div>' : "")
     +   (list.length ? "" : '<div class="af-none">아직 올려 둔 파일이 없습니다.</div>')
+    +   aGoneHTML(esc(key) + '::' + sec, offs)
     +   '<div class="af-say" data-afsay></div>'
     + '</div></div>';
 }
@@ -4653,13 +4733,32 @@ document.addEventListener("click", function(e){
     tg.setAttribute("aria-expanded", String(!body.hidden));
     return;
   }
+  const gt = t.closest("[data-afgtog]");
+  if(gt){
+    e.preventDefault(); e.stopPropagation();
+    const l = gt.parentElement.querySelector(".af-gone-l");
+    if(!l) return;
+    l.hidden = !l.hidden;
+    gt.setAttribute("aria-expanded", String(!l.hidden));
+    return;
+  }
+  const bk = t.closest("[data-afback]");
+  if(bk){
+    e.preventDefault(); e.stopPropagation();
+    const p = bk.dataset.afback.split("::");
+    const bag = (p[1] === "crpg") ? aPgBag(p[0]) : aFileBag(p[0], p[1]);
+    aPicBack(bag, p[2]).then(function(){
+      if(p[1] === "crpg") aCapaRedraw(p[0]); else aFileRedraw(p[0], p[1]);
+    });
+    return;
+  }
   const dl = t.closest("[data-afdel]");
   if(dl){
     e.preventDefault(); e.stopPropagation();
     const p = dl.dataset.afdel.split("::");
-    if(!confirm("이 파일을 뺄까요?")) return;
+    if(!confirm("이 파일을 뺄까요?\n(바로 지워지지 않습니다 — 아래 「뺀 파일」 목록에서 언제든 되살릴 수 있습니다)")) return;
     const bag = (p[1] === "crpg") ? aPgBag(p[0]) : aFileBag(p[0], p[1]);
-    aPicDel(bag, p[2]).then(function(){
+    aPicOff(bag, p[2]).then(function(){
       if(p[1] === "crpg") aCapaRedraw(p[0]); else aFileRedraw(p[0], p[1]);
     });
     return;
@@ -5909,7 +6008,7 @@ function asvDriveDl(drive){
 
 function asvFileQ(rec, gone){
   if(!asvOn() || !rec) return;
-  asvQF.push({ rec: rec, gone: !!gone });
+  asvQF.push({ rec: rec, gone: gone === 1 || gone === true, undel: gone === 2 });
   asvPushFiles();
 }
 async function asvB64(blob){
@@ -5930,6 +6029,10 @@ async function asvPushFiles(){
       const row = { id: r.id, bag: r.key, name: r.name || "", type: r.type || "",
                     size: r.size || 0, pg: r.pg || "", drive: r.drive || "" };
       if(job.gone) row.gone = 1;
+      else if(job.undel){
+        row.undel = 1;
+        if(r.blob){ try { row.b64 = await asvB64(r.blob); } catch(e){} }  /* 보관함에서 지워졌으면 몸을 다시 올린다 */
+      }
       else if(r.blob && !r.drive){
         asvSay("사진·서류 올리는 중 — " + (r.name || "") + " (" + asvQF.length + "개 남음)");
         try { row.b64 = await asvB64(r.blob); } catch(e){ asvQF.shift(); continue; }
@@ -5961,13 +6064,26 @@ function asvTakeFiles(rows){
     const bag = r.bag;
     const list = aPicMem[bag] = aPicMem[bag] || [];
     const at = list.findIndex(function(x){ return x.id === r.id; });
-    if(r.gone){
-      if(at >= 0){ list.splice(at, 1); n++; }
+    if(r.gone){                                   /* 뺀 파일 — 지우지 않고 「뺌」 표시로 남긴다 */
+      if(/::file::/.test(String(bag))){
+        if(at >= 0){
+          if(!list[at].gone){ list[at].gone = 1; try { aPicFlagSave(list[at]); } catch(e){} n++; }
+        } else {
+          list.push({ id: r.id, key: bag, name: r.name, type: r.type, size: +r.size || 0,
+                      pg: r.pg ? +r.pg : 0, drive: r.drive,
+                      url: asvDriveUrl(r.drive, r.type), from: "서버", gone: 1 });
+          n++;
+        }
+      } else if(at >= 0){ list.splice(at, 1); n++; }
       asvSeen[r.id] = 1;
       return;
     }
     if(at >= 0){                                  /* 내가 올린 것 — 드라이브 주소만 받아 둔다 */
-      if(!list[at].drive && r.drive) list[at].drive = r.drive;
+      if(list[at].gone){ delete list[at].gone; try { aPicFlagSave(list[at]); } catch(e){} n++; }   /* 남이 되살림 */
+      if(r.drive && list[at].drive !== r.drive){
+        list[at].drive = r.drive;
+        if(!list[at].blob) list[at].url = asvDriveUrl(r.drive, r.type);
+      }
       asvSeen[r.id] = 1;
       return;
     }
@@ -6104,7 +6220,7 @@ function asvStart(){
   setTimeout(function(){
     Object.keys(aPicMem).forEach(function(bag){
       (aPicMem[bag] || []).forEach(function(r){
-        if(!asvSeen[r.id] && r.blob && !r.drive) asvFileQ(r);
+        if(!asvSeen[r.id] && r.blob && !r.drive && !r.gone) asvFileQ(r);
       });
     });
   }, 3000);
