@@ -127,6 +127,36 @@
     overflow-x:hidden;
   }
   ::selection{ background:var(--accent-tint); color:var(--ink); }
+  /* ── 말풀이 ─────────────────────────────────────────────── */
+  .gloss-go{
+    margin-left:auto; flex-shrink:0; cursor:pointer;
+    border:1px solid var(--border); border-radius:20px; background:var(--surface);
+    padding:5px 14px; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--muted);
+    transition:border-color .13s, color .13s, background-color .13s;
+  }
+  .gloss-go::before{ content:"? "; font-weight:800; }
+  .gloss-go:hover{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-tint); }
+  .gloss-go:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .gloss-go.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-tint); }
+  .gloss{
+    margin:10px 0 2px; padding:14px 18px; border-radius:11px;
+    background:var(--surface-2); border:1px solid var(--border);
+    font-size:14.5px; line-height:1.65; color:var(--ink-2);
+  }
+  .gloss div + div{ margin-top:6px; }
+  .gloss b{ color:var(--ink); font-weight:700; }
+
+  /* ── 읽히게 (2026-10-14) ─────────────────────────────────────
+     줄 간격이 normal(≈1.2) 이라 한글 글줄이 서로 붙어 있었다.
+     숫자·딱지처럼 붙어야 할 것만 다시 조여 둔다.                  */
+  body{ line-height:1.55; }
+  .kpi-value, .kpi-value sup, .big-num, .t3-v, .t3-v b, .t3-v i,
+  .sp-lab span, .sp-ax span, .seg-b, .gf-chip, .chip, .badge, .pill,
+  .mono, .arrow, .swatch, .ixt-n, .ixt-x{ line-height:1.2; }
+  .rank-row, .t3-row, .co-row, .type-row{ line-height:1.3; }
+
+  /* 제목·보조 글자는 아래 원래 규칙에서 바로 고쳤다 */
+
 
   .mono{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
   .eyebrow{
@@ -258,7 +288,7 @@
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
   .kpi-icon svg{ width:16px; height:16px; stroke:var(--accent); fill:none; }
-  .kpi-label{ font-size:15px; color:var(--ink-2); font-weight:500; }
+  .kpi-label{ font-size:16px; color:var(--ink-2); font-weight:600; }
   /* 타일 높이를 서로 맞춘다 — 값 영역 고정 + 각주를 바닥에 고정 */
   .kpi-value{
     font-family:var(--font-mono); font-size:32px; font-weight:700; letter-spacing:-.01em;
@@ -266,7 +296,7 @@
   }
   .kpi-value sup{ font-family:var(--font-kr); font-size:17px; font-weight:600; color:var(--muted); margin-left:2px; }
   .kpi-foot{ margin-top:auto; }
-  .kpi-foot{ font-size:14.5px; color:var(--muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .kpi-foot{ font-size:15px; line-height:1.5; color:var(--ink-2); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 
   /* AUDIT 페이지 요약 지표 — 3칸 */
   .kpi-row.kpi-3{ grid-template-columns:repeat(3,1fr); margin-bottom:18px; }
@@ -314,8 +344,8 @@
   /* 격자 안에서는 gap 이 사이를 벌린다 — 마진까지 먹으면 오른쪽만 내려간다 */
   .chart-grid > .panel + .panel{ margin-top:0; }
   .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap; }
-  .panel-title{ font-size:17px; font-weight:700; letter-spacing:-.01em; }
-  .panel-sub{ font-size:14.5px; color:var(--muted); }
+  .panel-title{ font-size:20px; font-weight:800; letter-spacing:-.02em; line-height:1.35; }
+  .panel-sub{ font-size:15px; line-height:1.5; color:var(--ink-2); }
 
   .chart-grid{ display:grid; grid-template-columns:1.15fr 1fr; gap:12px; margin-bottom:12px; align-items:stretch; }
   /* 12칼럼 — 카드 폭을 자유롭게 */
@@ -832,7 +862,7 @@
   }
   thead th:hover{ color:var(--ink); }
   thead th .arrow{ font-family:var(--font-mono); font-size:12px; color:var(--accent); margin-left:3px; }
-  tbody td{ padding:7px 9px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tbody td{ padding:9px 9px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; color:var(--ink-2); }
   tbody tr:last-child td{ border-bottom:none; }
   tbody tr:hover{ background:var(--surface-2); }
   tbody tr:nth-child(even){ background:color-mix(in srgb, var(--surface-2) 40%, transparent); }
@@ -2459,10 +2489,10 @@
     </div>
     <div class="brand-text">
       <div class="l2">클레임 접수 현황</div>
-      <div class="sub">협력업체 감사 이력 · 제조업체 품질 이슈 | 기준 2023.01 – 2026.07</div>
+      <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-07 10:16</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-14 12:37</span></div>
 </div>
 
 
@@ -2488,14 +2518,23 @@
       <label class="gf-sel"><span>제조사</span><select id="if-company"><option value="all">전체</option></select></label>
       <label class="gf-search">
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
-        <input type="search" id="if-q" placeholder="전체 검색 — 업체 · 이슈제목 · 유형 · 비고 · 대책 내용" autocomplete="off">
+        <input type="search" id="if-q" placeholder="전체 검색 — 제조사 · 클레임 제목 · 유형 · 비고 · 대책 내용" autocomplete="off">
       </label>
       <span class="gf-count" id="if-count"></span>
     </div>
     <div class="gf-row2">
       <button class="gf-reset" id="if-reset">필터 초기화</button>
       <span class="gf-chips" id="if-chips"></span>
+      <button class="gloss-go" type="button" aria-expanded="false">말풀이</button>
     </div>
+  <div class="gloss" hidden>
+      <div><b>클레임</b> — 만들어 판 제품에 문제가 생겨 들어온 건. 이 화면의 숫자는 모두 이것을 셉니다.</div>
+      <div><b>제조사 귀책</b> — 따져 보니 우리 잘못이 아니라 <b>만든 쪽 잘못</b>으로 가려진 건.</div>
+      <div><b>대책서</b> — 제조사가 보내는 「원인은 이거였고, 다시 안 그러게 이렇게 하겠다」는 답변서.</div>
+      <div><b>사전 / 사후</b> — <b>사후</b>는 이미 팔린 뒤 들어온 것, <b>사전</b>은 나가기 전에 잡은 것.</div>
+      <div><b>불만협의체</b> — 모아서 함께 따져 보는 회의. 올릴 건을 표에서 체크로 고릅니다.</div>
+      <div><b>AUDIT</b> — 제조사 공장에 직접 가서 점검하고 100점 만점으로 점수를 매기는 일.</div>
+  </div>
   </div>
 
   <div class="kpi-row kpi-3" id="issue-kpis"></div>
@@ -2504,7 +2543,7 @@
     <div class="panel">
       <div class="panel-head">
         <div>
-          <div class="panel-title">업체별 이슈 건수</div>
+          <div class="panel-title">제조사별 클레임 건수</div>
           <div class="panel-sub" id="issue-co-sub">상위 12개사</div>
         </div>
       </div>
@@ -2516,7 +2555,7 @@
           <i>~</i>
           <input type="month" class="pf-mon" data-pk="to"   min="2023-01" max="2026-12" aria-label="업체별 종료 월" />
         </span>
-        <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 이슈제목 · 비고 · 대책 내용" />
+        <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 클레임 제목 · 비고 · 대책 내용" />
         <button class="pf-reset pf-fault" data-pkf="1" aria-pressed="false" title="제조사 귀책으로 표시된 이슈만 봅니다">제조사 귀책만</button>
         <button class="pf-reset" data-pk-reset="1">초기화</button>
       </div>
@@ -2525,20 +2564,20 @@
     <div class="panel">
       <div class="panel-head">
         <div>
-          <div class="panel-title">이슈 유형별 건수</div>
+          <div class="panel-title">클레임 유형별 건수</div>
           <div class="panel-sub" id="issue-ty-sub">전체 115건 분류</div>
         </div>
       </div>
       <div class="pfilter" data-pf="tf">
         <select class="mini-sel" data-pk="company"><option value="all">제조업체 전체</option></select>
-        <select class="mini-sel" data-pk="type"><option value="all">이슈유형 전체</option></select>
+        <select class="mini-sel" data-pk="type"><option value="all">클레임유형 전체</option></select>
         <select class="mini-sel" data-pk="year"><option value="all">기간 전체</option><option value="2023">2023년</option><option value="2024">2024년</option><option value="2025">2025년</option><option value="2026">2026년</option></select>
         <span class="pf-range">
           <input type="month" class="pf-mon" data-pk="from" min="2023-01" max="2026-12" aria-label="유형별 시작 월" />
           <i>~</i>
           <input type="month" class="pf-mon" data-pk="to"   min="2023-01" max="2026-12" aria-label="유형별 종료 월" />
         </span>
-        <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 이슈제목 · 비고 · 대책 내용" />
+        <input type="search" class="pf-q" data-pk="q" placeholder="검색 — 클레임 제목 · 비고 · 대책 내용" />
         <button class="pf-reset pf-fault" data-pkf="1" aria-pressed="false" title="제조사 귀책으로 표시된 이슈만 봅니다">제조사 귀책만</button>
         <button class="pf-reset" data-pk-reset="1">초기화</button>
       </div>
@@ -2549,12 +2588,12 @@
   <div class="panel">
     <div class="panel-head">
       <div>
-        <div class="panel-title">이슈 상세</div>
+        <div class="panel-title">클레임 상세</div>
         <div class="panel-sub">열 제목 클릭 시 정렬</div>
       </div>
     </div>
     <div class="filter-bar">
-      <input type="search" id="issue-search" placeholder="업체명·제품명·브랜드·클레임 내용 검색…" />
+      <input type="search" id="issue-search" placeholder="제조사 · 제품명 · 브랜드 · 클레임 내용 검색…" />
       <select id="issue-company-filter"><option value="">전체 제조사</option></select>
       <select id="issue-type-filter"><option value="">전체 유형</option></select>
       <select id="issue-stage-filter" title="사전·사후로 걸러 봅니다">
@@ -7214,8 +7253,8 @@ function initIssueChartFilter(){
 
 /* ===== 패널 전용 필터 — 페이지 대분류 필터 위에 겹쳐 그 패널만 좁힌다 ===== */
 const PF_DEF = { q:"", company:"all", type:"all", year:"all", from:"", to:"", fault:false };
-let icF = Object.assign({}, PF_DEF);  // 업체별 이슈 건수
-let itF = Object.assign({}, PF_DEF);  // 이슈 유형별 건수
+let icF = Object.assign({}, PF_DEF);  // 제조사별 클레임 건수
+let itF = Object.assign({}, PF_DEF);  // 클레임 유형별 건수
 const itFold = {};                    // 접어 둔 중분류 — 다시 그려도 그대로 간다
 const itSeen = {};                    // 한 번이라도 그려 본 묶음 — 처음 보는 것은 접힌 채로 연다
 const PF_STATE = { cf:icF, tf:itF };
@@ -7347,7 +7386,7 @@ function renderIssueKPIs(){
   const 해 = iF.year;
   const 해뽑 = function(d){ const y = issueYear(d); return 해 === "none" ? !y : y === 해; };
   const 해건수 = (해 === "all") ? issueData.length : issueData.filter(해뽑).length;
-  const 해이름 = (해 === "all") ? "전체 이슈 건수"
+  const 해이름 = (해 === "all") ? "전체 클레임 건수"
                : (해 === "none" ? "일자 미상 이슈 건수" : 해 + "년 이슈 건수");
   const 해개사 = (해 === "all") ? allCoN
                : new Set(issueData.filter(해뽑).filter(d=>!d.company.startsWith("(")).map(d=>d.company)).size;
@@ -7364,7 +7403,7 @@ function renderIssueKPIs(){
 
   if(!top.length){ document.getElementById("issue-kpis").classList.remove("kpi-2");
     document.getElementById("issue-kpis").innerHTML = totalKPI +
-    `<div class="kpi" style="grid-column:2/-1"><div class="kpi-foot">조건에 해당하는 이슈가 없습니다.</div></div>`; return; }
+    `<div class="kpi" style="grid-column:2/-1"><div class="kpi-foot">조건에 해당하는 클레임이 없습니다.</div></div>`; return; }
 
   const byYear = {};
   ISSUE_YEARS.forEach(y=> byYear[y] = 0);
@@ -7396,7 +7435,7 @@ function renderIssueKPIs(){
     ${totalKPI}
 
     <div class="kpi kpi-top3">
-      <div class="kpi-top"><span class="kpi-label">${해 === "all" ? "최다 이슈 발생 업체" : 해 + "년 이슈 발생 업체"}</span><div class="kpi-icon">${icon('building')}</div></div>
+      <div class="kpi-top"><span class="kpi-label">${해 === "all" ? "클레임이 가장 많은 제조사" : 해 + "년 클레임이 많은 제조사"}</span><div class="kpi-icon">${icon('building')}</div></div>
       <div class="t3 big">
         ${top.map(([nm,v],i)=>`<div class="t3-row r${i+1}">
           <span class="t3-r">${i+1}위</span>
@@ -7413,7 +7452,7 @@ function renderIssueKPIs(){
          건수는 첫째 칸이 이미 말한다. 남은 두 칸이 줄을 나눠 쓴다. */
       if(iF.year !== "all") return "";
       return `<div class="kpi kpi-trend">
-        <div class="kpi-top"><span class="kpi-label">연도별 이슈 추이</span><div class="kpi-icon">${icon('repeat')}</div></div>
+        <div class="kpi-top"><span class="kpi-label">연도별 클레임 추이</span><div class="kpi-icon">${icon('repeat')}</div></div>
         <div class="sp-wrap">
           <svg class="spark big" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
             <line class="sp-base" x1="0" y1="${base}" x2="${W}" y2="${base}" vector-effect="non-scaling-stroke"/>
@@ -7497,7 +7536,7 @@ function renderIssueCompanyChart(){
       + pDesc(icF)
       + (iF.company!=="all" ? ` · ${iF.company} ${map[iF.company]||0}건 선택` : "")
     : "해당 조건 없음";
-  if(!arr.length){ wrap.innerHTML = `<div class="score-empty">조건에 해당하는 이슈가 없습니다.</div>`; return; }
+  if(!arr.length){ wrap.innerHTML = `<div class="score-empty">조건에 해당하는 클레임이 없습니다.</div>`; return; }
   const max = arr[0][1];
   const allTied = arr[arr.length-1][1] === max;
   wrap.innerHTML = arr.map(([name,val])=>{
@@ -7528,7 +7567,7 @@ function renderIssueTypeChart(){
     ? `${rows.length}건 분류 · ${arr.length}개 유형` + pDesc(itF)
       + (iF.type!=="all" ? ` · ${iF.type} ${map[iF.type]||0}건 선택` : "")
     : "해당 조건 없음";
-  if(!arr.length){ wrap.innerHTML = `<div class="score-empty">조건에 해당하는 이슈가 없습니다.</div>`; return; }
+  if(!arr.length){ wrap.innerHTML = `<div class="score-empty">조건에 해당하는 클레임이 없습니다.</div>`; return; }
   const max = Math.max(...arr.map(x=>x[1]));
   /* 접었을 때 세울 묶음 막대 — 묶음끼리의 자로 잰다 (유형 막대와는 자가 다르다) */
   const grpTot = {};
@@ -8472,7 +8511,7 @@ function renderIssueTable(){
       <td>${typeBadge2(d.type)}</td>
     </tr>
     <tr class="idet" data-idet="${i}" hidden><td colspan="13"></td></tr>`; }).join("");
-  if(!rows.length) tbody.innerHTML = '<tr><td colspan="13" class="ip-none">조건에 맞는 이슈가 없습니다.</td></tr>';
+  if(!rows.length) tbody.innerHTML = '<tr><td colspan="13" class="ip-none">조건에 맞는 클레임이 없습니다.</td></tr>';
 
   tbody.querySelectorAll(".fa-box").forEach(b=>{
     b.addEventListener("click", e=>e.stopPropagation());
@@ -12489,5 +12528,37 @@ if(document.getElementById("page-issue")) { try { initScorePanels(); } catch(e){
 try { asvStart(); } catch(e){ console.warn("asvStart", e); }
 showPage("issue");
 
+})();
+</script>
+<script>
+/* 말풀이 — 기본은 접힘. 한 번 편 사람은 편 채로 기억한다.
+   쪽에 따라 필터 줄이 둘일 수 있어 class 로 잡고 각각 따로 열고 닫는다. */
+(function(){
+  var LS = "oi-audit-gloss-open-v1";
+  function open(){ try { return localStorage.getItem(LS) === "1"; } catch(e){ return false; } }
+  function paint(){
+    var on = open();
+    document.querySelectorAll(".gloss-go").forEach(function(b){
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-expanded", on ? "true" : "false");
+      b.textContent = on ? "닫기" : "말풀이";
+    });
+    document.querySelectorAll(".gloss").forEach(function(p){ p.hidden = !on; });
+  }
+  function bind(){
+    var bs = document.querySelectorAll(".gloss-go");
+    if(!bs.length) return;
+    bs.forEach(function(b){
+      if(b.dataset.bound) return;
+      b.dataset.bound = "1";
+      b.addEventListener("click", function(){
+        try { localStorage.setItem(LS, open() ? "0" : "1"); } catch(e){}
+        paint();
+      });
+    });
+    paint();
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
 })();
 </script>
