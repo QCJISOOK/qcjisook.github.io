@@ -269,6 +269,59 @@
   .kpi-foot{ font-size:14.5px; color:var(--muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 
   /* AUDIT 페이지 요약 지표 — 3칸 */
+  /* ── 상세 접기 ──────────────────────────────────────────── */
+  .panel.ix-foldable.fold > *:not(.panel-head){ display:none; }
+  .panel.ix-foldable.fold{ padding-bottom:14px; }
+  .ixf-go{
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+    border:1px solid var(--border); border-radius:9px; background:var(--surface);
+    padding:7px 13px; font-family:inherit; font-size:14px; font-weight:700; color:var(--ink-2);
+    transition:border-color .13s, background-color .13s, color .13s;
+  }
+  .ixf-go:hover{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-tint); }
+  .ixf-go:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .ixf-n{ font-family:var(--font-mono); font-size:13px; font-weight:800; color:var(--muted); }
+  .ixf-go:hover .ixf-n{ color:var(--accent-strong); }
+  .ixf-car{ font-style:normal; font-size:10px; color:var(--muted); transition:transform .15s; }
+  .panel.ix-foldable.fold .ixf-car{ transform:rotate(-90deg); }
+
+  /* ── 점수 분포 도넛 ─────────────────────────────────────── */
+  .ixd-wrap{ display:flex; align-items:center; gap:20px; padding:14px 2px 6px; flex-wrap:wrap; }
+  .ixd-wrap.col{ flex-direction:column; align-items:stretch; gap:14px; }
+  .ixd-wrap.col .ixd-pie{ align-self:center; }
+  .ixd-pie{ position:relative; width:148px; height:148px; flex-shrink:0; }
+  .ixd-pie svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ixd-arc{ transition:stroke-width .13s; }
+  .ixd-arc.ok{ stroke:var(--good); }
+  .ixd-arc.mid{ stroke:var(--accent); }
+  .ixd-arc.bad{ stroke:var(--serious); }
+  .ixd-arc.na{ stroke:var(--border-strong); }
+  .ixd-arc.on{ stroke-width:26; }
+  .ixd-mid{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  .ixd-mid b{ font-family:var(--font-mono); font-size:27px; font-weight:800; color:var(--ink); line-height:1; }
+  .ixd-mid span{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .ixd-leg{ flex:1; min-width:188px; display:flex; flex-direction:column; gap:5px; }
+  .ixd-row{ display:grid; grid-template-columns:10px minmax(0,1fr) 46px 40px; gap:8px; align-items:center; padding:5px 7px; border-radius:7px; }
+  .ixd-row.go{ cursor:pointer; }
+  .ixd-row.go:hover{ background:var(--surface-2); }
+  .ixd-row.go:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .ixd-row.on{ background:var(--accent-tint); }
+  .ixd-dot{ width:10px; height:10px; border-radius:3px; }
+  .ixd-row.ok  .ixd-dot{ background:var(--good); }
+  .ixd-row.mid .ixd-dot{ background:var(--accent); }
+  .ixd-row.bad .ixd-dot{ background:var(--serious); }
+  .ixd-row.na  .ixd-dot{ background:var(--border-strong); }
+  .ixd-lab{ font-size:14.5px; color:var(--ink-2); font-weight:600; }
+  .ixd-v{ font-family:var(--font-mono); font-size:14.5px; font-weight:700; text-align:right; color:var(--ink); }
+  .ixd-p{ font-family:var(--font-mono); font-size:14.5px; font-weight:800; text-align:right; }
+  .ixd-row.ok  .ixd-p{ color:var(--good); }
+  .ixd-row.mid .ixd-p{ color:var(--accent-strong); }
+  .ixd-row.bad .ixd-p{ color:var(--serious); }
+  .ixd-row.na  .ixd-p{ color:var(--muted); }
+  .chart-grid.au-row1{ grid-template-columns:1fr 1fr 0.92fr; }
+  @media (max-width:1240px){ .chart-grid.au-row1{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:920px){  .chart-grid.au-row1{ grid-template-columns:1fr; } }
+
   /* ── 한눈에 보기 다섯 칸 ───────────────────────────────── */
   .kpi-row.kpi-5{ grid-template-columns:repeat(5,minmax(0,1fr)); margin-bottom:18px; }
   .kpi-row.kpi-empty{ grid-template-columns:1fr; }
@@ -2995,7 +3048,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 품질 이슈 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-14 11:09</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-14 11:16</span></div>
 </div>
 
 
@@ -3045,7 +3098,9 @@
     </div>
   </div>
 
-<div class="chart-grid">
+  <div class="kpi-row kpi-5" id="audit-kpis"></div>
+
+<div class="chart-grid au-row1">
     <div class="panel">
       <div class="panel-head">
         <div>
@@ -3079,6 +3134,16 @@
         <button class="pf-reset" id="cf-reset">초기화</button>
       </div>
       <div class="rank-list" id="audit-company-chart"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">점수 분포</div>
+          <div class="panel-sub">조각을 누르면 그 구간만 봅니다</div>
+        </div>
+      </div>
+      <div id="audit-dough"></div>
     </div>
   </div>
 
@@ -3135,12 +3200,15 @@
 
   
 
-  <div class="panel">
+  <div class="panel ix-foldable" id="au-detail-panel">
     <div class="panel-head">
       <div>
         <div class="panel-title">감사 이력 상세</div>
-        <div class="panel-sub">카드를 클릭하면 지적사항·개선사진이 펼쳐집니다</div>
+        <div class="panel-sub">한 건씩 들여다보는 카드입니다 · 클릭하면 지적사항·개선사진이 펼쳐집니다</div>
       </div>
+      <button class="ixf-go" id="au-detail-toggle" type="button" aria-expanded="false" aria-controls="au-detail-panel">
+        <span class="ixf-t">자세히 보기</span><span class="ixf-n" id="au-detail-n"></span><i class="ixf-car">▾</i>
+      </button>
     </div>
     <div class="filter-bar">
       <input type="search" id="audit-search" placeholder="업체명·특이사항 검색…" />
@@ -9212,7 +9280,7 @@ function bindCapaGallery(wrap, key){
 /* ---------- 반복 지적 패턴 패널 ---------- */
 
 /* ===================== 대분류 필터 — AUDIT 페이지 전체에 적용 ===================== */
-const GF_DEF = { period:"all", company:"all", score:"all", writer:"all", approver:"all", q:"" };
+const GF_DEF = { period:"all", company:"all", score:"all", writer:"all", approver:"all", q:"", capa:"all" };
 let gF = Object.assign({}, GF_DEF);
 
 function auditScoreOf(d){
@@ -9249,10 +9317,17 @@ function auditHaystack(d){
   return s;
 }
 
-function gMatch(d){
-  if(gF.period !== "all" && String(d.year) !== gF.period) return false;
-  if(gF.company !== "all" && d.company !== gF.company) return false;
-  if(gF.score !== "all"){
+function gMatch(d, skip){
+  /* skip 은 조건 이름 하나 또는 여럿 — 그것만 빼고 맞춘다 (전년 대비를 세려면 기간을 빼야 한다) */
+  const off = k => Array.isArray(skip) ? skip.includes(k) : skip === k;
+  if(!off("period") && gF.period !== "all" && String(d.year) !== gF.period) return false;
+  if(!off("company") && gF.company !== "all" && d.company !== gF.company) return false;
+  if(!off("capa") && gF.capa !== "all"){
+    const 있 = String(d.capa || "") === "있음";
+    if(gF.capa === "none" && 있) return false;
+    if(gF.capa === "yes" && !있) return false;
+  }
+  if(!off("score") && gF.score !== "all"){
     const v = auditScoreOf(d);
     if(gF.score === "none"){ if(v != null) return false; }
     else if(v == null) return false;
@@ -9277,17 +9352,21 @@ function gMatch(d){
   }
   return true;
 }
-function gData(){ return auditData.filter(gMatch); }
+function gData(skip){ return auditData.filter(d=>gMatch(d, skip)); }
 function gActive(){ return Object.keys(GF_DEF).some(k => gF[k] !== GF_DEF[k]); }
 
 const GF_LABEL = {
-  score: { hi:"95점 이상", mid:"90~95점", lo:"90점 미만", none:"점수 미기입" },
-  key:   { period:"기간", company:"제조사", score:"점수", writer:"평가자", approver:"승인자", q:"검색" }
+  score: { hi:"95점 이상", mid:"90~95점", lo:"90점 미만", none:"미기입" },
+  key:   { period:"기간", company:"제조사", score:"점수", writer:"평가자", approver:"승인자", q:"검색", capa:"개선조치" },
+  capa:  { none:"미확보", yes:"확보" }
 };
 function renderGFilterState(){
   const n = gData().length;
   const cnt = document.getElementById("gf-count");
   if(cnt) cnt.innerHTML = `<b>${n}</b>건 / 전체 ${auditData.length}건`;
+  /* 접혀 있어도 몇 건이 들었는지는 단추에 적어 둔다 */
+  const dn = document.getElementById("au-detail-n");
+  if(dn) dn.textContent = n + "건";
 
   const chips = document.getElementById("gf-chips");
   if(chips){
@@ -9297,6 +9376,7 @@ function renderGFilterState(){
     if(gF.score !== "all")    parts.push(["score", GF_LABEL.score[gF.score]]);
     if(gF.writer !== "all")   parts.push(["writer", gF.writer === "none" ? "미기재" : gF.writer]);
     if(gF.approver !== "all") parts.push(["approver", gF.approver === "none" ? "미기재" : gF.approver]);
+    if(gF.capa !== "all")     parts.push(["capa", GF_LABEL.capa[gF.capa]]);
     if(gF.q)                  parts.push(["q", gF.q]);
     chips.innerHTML = parts.map(([k,v])=>
       `<button class="gf-chip" data-gfclear="${k}" title="이 조건 해제">
@@ -9321,8 +9401,200 @@ function syncGFilterInputs(){
   set("gf-q", gF.q);
 }
 /* 필터가 바뀌면 이 페이지의 모든 패널을 다시 그린다 */
+/* ── 맨 위 다섯 칸 ─────────────────────────────────────────
+   「어느 제조사가 문제인가」 를 맨 왼쪽에 둔다 — 처음 보는 사람이 가장 먼저 찾는 것. */
+function renderAuditKPIs(){
+  const box = document.getElementById("audit-kpis");
+  if(!box) return;
+  const src = gData();
+  const n = src.length;
+
+  const 해 = gF.period;
+  const 해말 = (해 === "all") ? "" : 해 + "년";
+  const 범위 = 해말 || "2023–2026 누적";
+
+  /* 점수가 있는 건만 — 없는 건을 0점으로 치면 평균이 거짓이 된다 */
+  const 점 = src.map(d=>({ d:d, v:auditScoreOf(d) })).filter(x=>x.v != null);
+  const 평균 = 점.length ? 점.reduce((s,x)=>s+x.v,0) / 점.length : null;
+  const 최저 = 점.length ? 점.slice().sort((a,b)=>a.v-b.v)[0] : null;
+  const 미달 = 점.filter(x=>x.v < 90).length;
+  const 미확보 = src.filter(d=>String(d.capa || "") !== "있음").length;
+  const 개사 = new Set(src.map(d=>d.company)).size;
+
+  /* 작년과 견주려면 기간 조건은 풀고 세어야 한다 */
+  const 해빼고 = gData("period");
+  const 해별 = {}, 해점 = {};
+  해빼고.forEach(function(d){
+    해별[d.year] = (해별[d.year]||0) + 1;
+    const v = auditScoreOf(d);
+    if(v != null){ (해점[d.year] = 해점[d.year] || []).push(v); }
+  });
+  const 쓴해 = Object.keys(해별).map(Number).sort();
+  const 올 = (해 !== "all") ? +해 : (쓴해.length ? 쓴해[쓴해.length-1] : new Date().getFullYear());
+  const 작 = 올 - 1;
+  const 건차 = (해별[올]||0) - (해별[작]||0);
+  const 평 = y => (해점[y] && 해점[y].length) ? 해점[y].reduce((s,v)=>s+v,0)/해점[y].length : null;
+  const 점차 = (평(올) != null && 평(작) != null) ? (평(올) - 평(작)) : null;
+
+  if(!n){
+    box.className = "kpi-row kpi-5 kpi-empty";
+    box.innerHTML = '<div class="kpi"><div class="kpi-foot">조건에 해당하는 감사가 없습니다. 위의 «필터 초기화» 를 누르면 전체로 돌아갑니다.</div></div>';
+    return;
+  }
+
+  const 화살 = v => v > 0 ? "▲" : (v < 0 ? "▼" : "—");
+  const 결 = v => v > 0 ? "up" : (v < 0 ? "down" : "same");
+  const 칸 = [];
+
+  /* ① 점수가 가장 낮은 제조사 */
+  칸.push('<div class="kpi kpi-go kpi-lead' + (gF.company !== "all" ? " on" : "") + '"'
+    + ' data-ago="company" data-av="' + esc(최저 ? 최저.d.company : "") + '"'
+    + ' role="button" tabindex="0" title="누르면 이 제조사만 봅니다 (다시 누르면 풀림)">'
+    + '<div class="kpi-top"><span class="kpi-label">점수가 가장 낮은 제조사</span><div class="kpi-icon">' + icon('building') + '</div></div>'
+    + '<div class="kpi-name">' + esc(최저 ? 최저.d.company : "—") + '</div>'
+    + '<div class="kpi-mid"><b>' + (최저 ? 최저.v.toFixed(1) + "점" : "—") + '</b>'
+    + '<span class="kpi-sh">' + (최저 ? esc(최저.d.date || 최저.d.year + "년") : "점수 기입분 없음") + '</span></div>'
+    + '<div class="kpi-foot">' + esc(범위) + ' · 점수 기입 ' + 점.length + '건 중</div></div>');
+
+  /* ② 몇 번 했나 */
+  칸.push('<div class="kpi">'
+    + '<div class="kpi-top"><span class="kpi-label">' + (해말 ? esc(해말) + " AUDIT" : "AUDIT 실시") + '</span><div class="kpi-icon">' + icon('clipboard') + '</div></div>'
+    + '<div class="kpi-value">' + n + '<sup>건</sup></div>'
+    + '<div class="kpi-mid"><span class="kpi-delta ' + 결(건차) + '">' + 화살(건차) + ' ' + Math.abs(건차) + '건</span>'
+    + '<span class="kpi-sh">' + 작 + '년 대비</span></div>'
+    + '<div class="kpi-foot">' + esc(범위) + ' · ' + 개사 + '개사</div></div>');
+
+  /* ③ 평균 점수 */
+  칸.push('<div class="kpi">'
+    + '<div class="kpi-top"><span class="kpi-label">평균 점수</span><div class="kpi-icon">' + icon('shield') + '</div></div>'
+    + '<div class="kpi-value">' + (평균 != null ? 평균.toFixed(1) : "—") + '<sup>점</sup></div>'
+    + (점차 != null
+        ? '<div class="kpi-mid"><span class="kpi-delta ' + 결(점차) + '">' + 화살(점차) + ' ' + Math.abs(점차).toFixed(1) + '점</span><span class="kpi-sh">' + 작 + '년 대비</span></div>'
+        : '<div class="kpi-mid"><span class="kpi-sh">견줄 작년 점수가 없습니다</span></div>')
+    + '<div class="kpi-foot">점수가 적힌 ' + 점.length + '건의 평균</div></div>');
+
+  /* ④ 90점 미만 */
+  칸.push('<div class="kpi kpi-go' + (gF.score === "lo" ? " on" : "") + (미달 ? " warn" : "") + '"'
+    + ' data-ago="score" data-av="lo" role="button" tabindex="0" title="누르면 90점 미만만 봅니다 (다시 누르면 풀림)">'
+    + '<div class="kpi-top"><span class="kpi-label">90점 미만</span><div class="kpi-icon">' + icon('alert') + '</div></div>'
+    + '<div class="kpi-value">' + 미달 + '<sup>건</sup></div>'
+    + '<div class="kpi-bar"><i style="width:' + (점.length ? Math.round(미달/점.length*100) : 0) + '%"></i></div>'
+    + '<div class="kpi-foot">' + (미달 ? "점수 기입 " + 점.length + "건 중 " + Math.round(미달/점.length*100) + "%" : "없습니다") + '</div></div>');
+
+  /* ⑤ 개선조치 미확보 */
+  칸.push('<div class="kpi kpi-go' + (gF.capa === "none" ? " on" : "") + (미확보 ? " warn" : "") + '"'
+    + ' data-ago="capa" data-av="none" role="button" tabindex="0" title="누르면 개선조치가 없는 건만 봅니다 (다시 누르면 풀림)">'
+    + '<div class="kpi-top"><span class="kpi-label">개선조치 미확보</span><div class="kpi-icon">' + icon('repeat') + '</div></div>'
+    + '<div class="kpi-value">' + 미확보 + '<sup>건</sup></div>'
+    + '<div class="kpi-bar"><i style="width:' + Math.round(미확보/n*100) + '%"></i></div>'
+    + '<div class="kpi-foot">' + (미확보 ? esc(범위) + " " + n + "건 중 " + Math.round(미확보/n*100) + "%" : "모두 확보했습니다") + '</div></div>');
+
+  box.className = "kpi-row kpi-5";
+  box.innerHTML = 칸.join("");
+  box.querySelectorAll("[data-ago]").forEach(function(el){
+    const 넘김 = function(){
+      const k = el.dataset.ago, v = el.dataset.av;
+      if(!v) return;
+      gF[k] = (gF[k] === v) ? GF_DEF[k] : v;
+      syncGFilterInputs(); applyGFilter();
+    };
+    el.addEventListener("click", 넘김);
+    el.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); 넘김(); } });
+  });
+}
+
+/* ── 점수 분포 도넛 ───────────────────────────────────────── */
+function renderAuditDough(){
+  const box = document.getElementById("audit-dough");
+  if(!box) return;
+  const src = gData("score");
+  const 총 = src.length;
+  if(!총){ box.innerHTML = '<div class="score-empty">그릴 자료가 없습니다.</div>'; return; }
+
+  let hi = 0, mid = 0, lo = 0, non = 0;
+  src.forEach(function(d){
+    const v = auditScoreOf(d);
+    if(v == null) non++;
+    else if(v >= 95) hi++;
+    else if(v >= 90) mid++;
+    else lo++;
+  });
+
+  const 조각 = [
+    { key:"hi",   lab:"95점 이상", v:hi,  cls:"ok" },
+    { key:"mid",  lab:"90~95점",   v:mid, cls:"mid" },
+    { key:"lo",   lab:"90점 미만", v:lo,  cls:"bad" },
+    { key:"none", lab:"점수 미기입", v:non, cls:"na" }
+  ];
+  const R = 54, C = 2 * Math.PI * R;
+  let 지난 = 0;
+  const 호 = 조각.filter(s=>s.v).map(function(s){
+    const 길이 = s.v / 총 * C;
+    const seg = '<circle class="ixd-arc ' + s.cls + (gF.score === s.key ? " on" : "") + '"'
+      + ' r="' + R + '" cx="70" cy="70" fill="none" stroke-width="22"'
+      + ' stroke-dasharray="' + 길이.toFixed(2) + ' ' + (C - 길이).toFixed(2) + '"'
+      + ' stroke-dashoffset="' + (-지난).toFixed(2) + '"></circle>';
+    지난 += 길이;
+    return seg;
+  }).join("");
+
+  box.innerHTML = '<div class="ixd-wrap col">'
+    + '<div class="ixd-pie"><svg viewBox="0 0 140 140" aria-hidden="true">'
+    + '<circle r="' + R + '" cx="70" cy="70" fill="none" stroke="var(--surface-2)" stroke-width="22"></circle>'
+    + 호 + '</svg><div class="ixd-mid"><b>' + 총 + '</b><span>건</span></div></div>'
+    + '<div class="ixd-leg">' + 조각.map(function(s){
+        const 몫 = Math.round(s.v / 총 * 100);
+        return '<div class="ixd-row ' + s.cls + (gF.score === s.key ? " on" : "") + ' go"'
+          + ' data-adough="' + s.key + '" role="button" tabindex="0" title="누르면 이 구간만 봅니다 (다시 누르면 풀림)">'
+          + '<span class="ixd-dot"></span><span class="ixd-lab">' + s.lab + '</span>'
+          + '<span class="ixd-v">' + s.v + '건</span><span class="ixd-p">' + 몫 + '%</span></div>';
+      }).join("") + '</div></div>';
+
+  box.querySelectorAll("[data-adough]").forEach(function(el){
+    const 넘김 = function(){
+      const v = el.dataset.adough;
+      gF.score = (gF.score === v) ? "all" : v;
+      syncGFilterInputs(); applyGFilter();
+    };
+    el.addEventListener("click", 넘김);
+    el.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); 넘김(); } });
+  });
+}
+
+/* ── 상세 카드 접기 ───────────────────────────────────────── */
+const AUF_LS = "oi-audit-audetail-open-v1";
+function auDetailOpen(){ try { return localStorage.getItem(AUF_LS) === "1"; } catch(e){ return false; } }
+function auDetailPaint(){
+  const p = document.getElementById("au-detail-panel");
+  const b = document.getElementById("au-detail-toggle");
+  if(!p || !b) return;
+  const 열림 = auDetailOpen();
+  p.classList.toggle("fold", !열림);
+  b.setAttribute("aria-expanded", 열림 ? "true" : "false");
+  const t = b.querySelector(".ixf-t");
+  if(t) t.textContent = 열림 ? "접기" : "자세히 보기";
+}
+function bindAuDetailFold(){
+  const b = document.getElementById("au-detail-toggle");
+  if(!b || b.dataset.bound) return;
+  b.dataset.bound = "1";
+  b.addEventListener("click", function(){
+    const 다음 = !auDetailOpen();
+    try { localStorage.setItem(AUF_LS, 다음 ? "1" : "0"); } catch(e){}
+    auDetailPaint();
+    if(다음){
+      const p = document.getElementById("au-detail-panel");
+      if(p) window.scrollTo({ top: Math.max(0, p.getBoundingClientRect().top + window.scrollY - 64), behavior:"smooth" });
+    }
+  });
+  auDetailPaint();
+}
+
 function applyGFilter(){
   renderGFilterState();
+  renderAuditKPIs();
+  renderAuditDough();
+  bindAuDetailFold();
   renderAuditYearChart();
   renderAuditCompanyChart();
   renderScoreChart();
@@ -9374,6 +9646,7 @@ function initAuditPage(){
   initPanelFilter("yf", ()=>yF, v=>{yF=v;}, renderAuditYearChart);
   initPanelFilter("cf", ()=>cF, v=>{cF=v;}, renderAuditCompanyChart);
   renderAuditYearChart(); renderAuditCompanyChart();
+  renderAuditKPIs(); renderAuditDough(); bindAuDetailFold();
   document.getElementById("audit-search").addEventListener("input", e=>{ auditFilters.q=e.target.value; renderAuditCards(); });
   const acSel = document.getElementById("audit-company-filter");
   [...new Set(auditData.map(d=>d.company))].sort((a,b)=>a.localeCompare(b,"ko"))
