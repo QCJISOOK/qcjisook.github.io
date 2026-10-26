@@ -283,9 +283,10 @@
   <section class="block">
     <div class="block-head">
       <h2>입고건수 1~5위 업체 협력도 점수</h2>
-      <p class="desc">이번 조회 구간(9/26~10/26) 입고건수가 가장 많은 5개사를 뽑아, 확인소계(100점 환산) 점수가 높은 순으로 나열한 것입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 5개사를 뽑되, 비교는 점수 순으로 보기 쉽게 정렬했습니다.</p>
+      <p class="desc" id="top5Desc">이번 조회 구간(9/26~10/26) 입고건수가 가장 많은 5개사를 뽑아, 확인소계(100점 환산) 점수가 높은 순으로 나열한 것입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 5개사를 뽑되, 비교는 점수 순으로 보기 쉽게 정렬했습니다.</p>
     </div>
     <div class="surface-card">
+      <div class="mail-filter-row" id="top5FilterRow"></div>
       <svg class="chart-svg" id="top5Chart" viewBox="0 0 560 250" role="img" aria-label="입고건수 1~5위 업체 협력도 점수"></svg>
     </div>
   </section>
@@ -866,11 +867,13 @@
 
   /* ---------- top5 chart (입고건수 1~5위), SVG bar chart ---------- */
   var top5Svg = document.getElementById("top5Chart");
-  (function () {
+  /* entries: [{ name, score, sub }] — 점수 높은 순으로 이미 정렬된 최대 5개. entries가 비면 emptyMsg 표시 */
+  function top5DisplayName(n) { return n.replace(/\(주\)\s*|주식회사\s*|㈜\s*/g, "").replace(/\([^)]*\)\s*$/, "").trim() || n; }
+  function renderTop5(entries, emptyMsg, decimals) {
+    top5Svg.innerHTML = "";
     var W = 560, H = 250;
     var padL = 30, padR = 10, padT = 26, padB = 56;
     var plotW = W - padL - padR, plotH = H - padT - padB;
-    var top5 = ranked.slice(0, 5).sort(function (a, b) { return b.subtotal - a.subtotal; }); // 선정은 입고건수 1~5위, 정렬은 점수 높은 순
     var maxVal = 100; // fixed 0-100 scale, honest against the point scale
 
     // gridlines at 0/25/50/75/100 with tick labels
@@ -879,26 +882,33 @@
       top5Svg.appendChild(el("line", { x1: padL, x2: W - padR, y1: y, y2: y }, "grid-line"));
       top5Svg.appendChild(el("text", { x: padL - 8, y: y + 3, "text-anchor": "end" }, "axis-label")).textContent = v;
     });
+    if (!entries.length) {
+      top5Svg.appendChild(el("text", { x: W / 2, y: padT + plotH / 2, "text-anchor": "middle" }, "bar-name")).textContent = emptyMsg || "이 달의 데이터가 없습니다.";
+      return;
+    }
 
-    var bandW = plotW / top5.length;
+    var bandW = plotW / entries.length;
     var barW = Math.min(40, bandW * 0.5);
-    top5.forEach(function (r, i) {
+    entries.forEach(function (r, i) {
       var cx = padL + bandW * i + bandW / 2;
-      var barH = plotH * (r.subtotal / maxVal);
+      var barH = plotH * (r.score / maxVal);
       var y = padT + plotH - barH;
       var cls = "s" + (i + 1);
       top5Svg.appendChild(el("rect", { x: cx - barW / 2, y: y, width: barW, height: Math.max(barH, 2), rx: 4 }, cls));
       var valEl = el("text", { x: cx, y: y - 10, "text-anchor": "middle" }, "bar-value");
-      valEl.textContent = r.subtotal.toFixed(1);
+      valEl.textContent = r.score.toFixed(decimals);
       top5Svg.appendChild(valEl);
+      var nm = top5DisplayName(r.name);
       var nameEl = el("text", { x: cx, y: padT + plotH + 20, "text-anchor": "middle" }, "bar-name");
-      nameEl.textContent = r.name.length > 8 ? r.name.slice(0, 8) + "…" : r.name;
+      nameEl.textContent = nm.length > 8 ? nm.slice(0, 8) + "…" : nm;
       top5Svg.appendChild(nameEl);
-      var subEl = el("text", { x: cx, y: padT + plotH + 36, "text-anchor": "middle" }, "bar-sub");
-      subEl.textContent = "입고 " + r.in + "건";
-      top5Svg.appendChild(subEl);
+      if (r.sub) {
+        var subEl = el("text", { x: cx, y: padT + plotH + 36, "text-anchor": "middle" }, "bar-sub");
+        subEl.textContent = r.sub;
+        top5Svg.appendChild(subEl);
+      }
     });
-  })();
+  }
 
   /* main table + click-to-expand detail */
   var mainBody = document.getElementById("mainBody");
@@ -1259,6 +1269,42 @@
     });
     monthFilterRow.appendChild(b);
   });
+
+  /* "입고건수 1~5위" 차트 월 필터 — 실시간(이번 달)은 ranked, 마감본이 있는 달은 그 달 입고 1~5위, 총점만 있는 달(1~6월)은 입고건수가 없어 총점 상위 5개사 */
+  var top5DescEl = document.getElementById("top5Desc");
+  var top5DescLive = top5DescEl.textContent;
+  function top5EntriesFor(key) {
+    if (key === "current") {
+      return { entries: ranked.slice(0, 5).sort(function (a, b) { return b.subtotal - a.subtotal; }).map(function (r) { return { name: r.name, score: r.subtotal, sub: "입고 " + r.in + "건" }; }), dec: 1, desc: top5DescLive };
+    }
+    if (MONTH_ARCHIVE[key]) {
+      var ds = buildArchiveDataset(key);
+      return { entries: ds.ranked.slice(0, 5).sort(function (a, b) { return b.subtotal - a.subtotal; }).map(function (r) { return { name: r.name, score: r.subtotal, sub: "입고 " + r.in + "건" }; }), dec: 1,
+        desc: key + " 마감본(" + MONTH_ARCHIVE[key].asOf + " 기준) 입고건수가 가장 많은 5개사를 점수 높은 순으로 나열한 것입니다." };
+    }
+    var md = MONTHLY_TOTALS[key] || {};
+    var rows = Object.keys(md).map(function (n) { return { name: n, score: md[n], sub: "" }; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 5);
+    return { entries: rows, dec: 0, desc: rows.length ? key + "은 입고건수 자료가 보존되지 않아, 총점이 높은 5개사를 보여줍니다(총점만 보존된 달)." : "이 달은 보존된 데이터가 없습니다." };
+  }
+  function renderTop5For(key) {
+    var t = top5EntriesFor(key);
+    top5DescEl.textContent = t.desc;
+    renderTop5(t.entries, "이 달의 데이터가 없습니다.", t.dec);
+  }
+  var top5FilterRow = document.getElementById("top5FilterRow");
+  filterDefs.forEach(function (f) {
+    if (f[0] === "year") return;
+    var b = document.createElement("button");
+    b.className = "mail-filter-btn" + (f[0] === "current" ? " active" : "");
+    b.textContent = f[1];
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(top5FilterRow.children, function (c) { c.classList.remove("active"); });
+      b.classList.add("active");
+      renderTop5For(f[0]);
+    });
+    top5FilterRow.appendChild(b);
+  });
+  renderTop5For("current");
 
   renderMainRows();
   renderAllTable();
