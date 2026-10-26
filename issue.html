@@ -962,9 +962,11 @@
   #issue-count{ margin-left:10px; }
   #issue-table col.c-co{ width:10%; }
   #issue-table col.c-br{ width:7%; }
-  #issue-table col.c-pn{ width:70px; }
+  #issue-table col.c-pn{ width:82px; }
+  #issue-table td.pn-td{ white-space:nowrap; word-break:keep-all; }
   #issue-table col.c-pr{ width:auto; }
-  #issue-table col.c-emp{ width:92px; }
+  #issue-table col.c-emp{ width:128px; }
+  #issue-table th.emp-th{ white-space:nowrap; }
   #issue-table col.c-cat{ width:76px; }
   #issue-table td.cat-td{ white-space:nowrap; }
   .cat-chip{ display:inline-block; padding:2px 7px; border-radius:10px; font-size:11.5px; font-weight:650; background:#eef1f5; color:#3d4654; }
@@ -973,7 +975,7 @@
   .cat-chip.c-생활용품{ background:#eaf6ec; color:#2f7a3c; }
   .cat-chip.c-식품{ background:#fff4e2; color:#9a5a00; }
   .cat-chip.c-의료기기{ background:#f1ebfb; color:#6a3fb0; }
-  #issue-table td.emp-td{ white-space:nowrap; font-size:12px; line-height:1.45; color:var(--ink); }
+  #issue-table td.emp-td{ white-space:nowrap; font-size:12.5px; color:var(--ink); }
   #issue-table td.emp-td i{ font-style:normal; color:var(--ink3, #8a8f98); font-size:11px; margin-right:3px; }
   #issue-table col.c-dt{ width:106px; }
   #issue-table col.c-ty{ width:214px; }
@@ -2503,7 +2505,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-26 14:06</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-26 14:23</span></div>
 </div>
 
 
@@ -2649,7 +2651,7 @@
             <th data-key="brand">브랜드</th>
             <th data-key="code" class="num">품번</th>
             <th data-key="product">제품명</th>
-            <th data-key="emp" title="ERP 부적합처리방안 — 등록자 / 처리자">등록자/<br>처리자</th>
+            <th data-key="emp" title="ERP 부적합처리방안 — 등록자 / 처리자" class="emp-th">등록자/처리자</th>
             <th data-key="first" class="date first-th" title="처음 접수한 날 — 사후는 고객 클레임 접수일자, 사전은 제조사 클레임 접수일자">최초<br>접수일자</th>
             <th data-key="cust" class="date" title="ERP 부적합처리방안에 등록된 날 — 고객·시장에서 접수한 날짜">고객 클레임<br>접수일자</th>
             <th data-key="recv" class="date" title="제조사에 클레임을 넘긴 날짜">제조사 클레임<br>접수일자</th>
@@ -8529,9 +8531,9 @@ function renderIssueTable(){
       <td class="num cat-td"><span class="cat-chip c-${esc(issueCatOf(d))}">${esc(issueCatOf(d))}</span></td>
       <td class="co-td"><strong>${esc(d.company)}</strong></td>
       <td class="brand">${p.brand ? esc(p.brand) : dash}</td>
-      <td class="num mono">${p.code ? esc(p.code) : dash}</td>
+      <td class="num mono pn-td">${p.code ? esc(p.code) : dash}</td>
       <td class="title"><span class="ir-caret">▸</span>${p.product ? esc(p.product) : dash}${tag}</td>
-      <td class="emp-td">${(function(){ const fx = issueFix[issueKeyOf(d)] || {}; return (fx.remp || fx.pemp) ? `<div><i>등록</i>${fx.remp ? esc(fx.remp) : "—"}</div><div><i>처리</i>${fx.pemp ? esc(fx.pemp) : "—"}</div>` : dash; })()}</td>
+      <td class="emp-td">${(function(){ const fx = issueFix[issueKeyOf(d)] || {}; return (fx.remp || fx.pemp) ? `<span title="등록자 / 처리자">${fx.remp ? esc(fx.remp) : "—"} / ${fx.pemp ? esc(fx.pemp) : "—"}</span>` : dash; })()}</td>
       <td class="date first-td">${issueFirstDate(d) ? esc(issueFirstDate(d)) : dash}</td>
       <td class="date">${dt.cust ? esc(dt.cust) : dash}</td>
       <td class="date">${dt.start ? esc(dt.start) : dash}</td>
