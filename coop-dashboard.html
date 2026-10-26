@@ -397,11 +397,13 @@
 
   <section class="block">
     <div class="block-head">
-      <h2>이메일 이력 (9/1~10/1) <span class="chip accent">회신률 원자료</span></h2>
-      <p class="desc">Gmail에서 자동 수집한 2026-09-01~2026-10-01 발신 메일(심상훈·이지숙·김태웅, 성적서·관리품 제외) 스레드 원본입니다. 제목에 제조사명이 없는 건은 본문 맥락으로 추정 표시했습니다(<span class="cat-badge vendor">제조사</span>). 사내 공지·정부기관·일정 초대는 배점에서 제외하고 참고용으로만 구분해뒀습니다. 아래 "제조사별 협력도 현황"의 회신률(20점)은 이 이력을 근거로 산정했습니다 — 근거는 각 제조업체명을 눌러 확인할 수 있습니다.</p>
+      <h2>이메일 이력 <span class="chip accent">회신률 원자료</span></h2>
+      <p class="desc">Gmail에서 자동 수집한 발신 메일(심상훈·이지숙·김태웅, 성적서·관리품 제외) 스레드 원본입니다. 제목에 제조사명이 없는 건은 본문 맥락으로 추정 표시했습니다(<span class="cat-badge vendor">제조사</span>). 사내 공지·정부기관·일정 초대는 배점에서 제외하고 참고용으로만 구분해뒀습니다. 아래 "제조사별 협력도 현황"의 회신률(20점)은 이 이력을 근거로 산정했습니다 — 근거는 각 제조업체명을 눌러 확인할 수 있습니다.</p>
     </div>
     <div class="surface-card">
+      <div class="mail-filter-row" id="mailMonthRow"></div>
       <div class="mail-filter-row" id="mailFilterRow"></div>
+      <p class="desc" id="mailSummary" style="margin:6px 0 10px;"></p>
       <div class="mail-scroll">
         <div class="table-scroll">
           <table class="data mail" id="mailTable">
@@ -1312,12 +1314,34 @@
   var CAT_LABEL = { vendor:"제조사", gov:"정부기관", internal:"사내" };
   var mailBody = document.getElementById("mailBody");
   var currentMailFilter = "all";
+  var currentMailMonth = "all";
+  function mailMonthOf(m) { return m.req.slice(0, 2); }
+  /* 선택한 월·구분의 건수, 제조사 메일 회신 현황(회신률·무응답·평균 회신일)을 한 줄로 집계 */
+  function mailSummaryText(list) {
+    var label = currentMailMonth === "all" ? "전체" : parseInt(currentMailMonth, 10) + "월";
+    if (!list.length) {
+      return currentMailMonth !== "all" && parseInt(currentMailMonth, 10) === todayMidnight().getMonth() + 1
+        ? label + " 메일이 아직 수집되지 않았습니다 — Gmail 수집(Apps Script)이 갱신되면 여기에 집계됩니다."
+        : label + " 해당 메일이 없습니다.";
+    }
+    var cnt = { vendor: 0, gov: 0, internal: 0 };
+    list.forEach(function (m) { cnt[m.cat] = (cnt[m.cat] || 0) + 1; });
+    var vend = list.filter(function (m) { return m.cat === "vendor"; });
+    var rep = vend.filter(function (m) { return !!m.replyDate; });
+    var avg = rep.length ? (rep.reduce(function (s, m) { return s + m.delayDays; }, 0) / rep.length).toFixed(1) : null;
+    var t = label + " " + list.length + "건 (제조사 " + cnt.vendor + " · 정부기관 " + cnt.gov + " · 사내 " + cnt.internal + ")";
+    if (vend.length) t += " — 제조사 메일 " + vend.length + "건 중 회신 " + rep.length + "건(" + Math.round(rep.length / vend.length * 100) + "%) · 무응답 " + (vend.length - rep.length) + "건" + (avg !== null ? " · 평균 회신 " + avg + "일" : "");
+    return t;
+  }
   function renderMail(filterCat) {
     currentMailFilter = filterCat;
     mailBody.innerHTML = "";
+    var shown = [];
     emailHistory.forEach(function (m) {
       if (m._deleted) return;
+      if (currentMailMonth !== "all" && mailMonthOf(m) !== currentMailMonth) return;
       if (filterCat !== "all" && m.cat !== filterCat) return;
+      shown.push(m);
       var tr = document.createElement("tr");
       tr.innerHTML =
         '<td class="num">' + m.req + '</td>' +
@@ -1327,7 +1351,29 @@
         '<td>' + (m.replyDate ? '<span class="status-badge replied">회신 ' + m.replyDate + '(' + m.replyFrom + ', ' + m.delayDays + '일)</span>' : '<span class="status-badge noreply">무응답</span>') + '</td>';
       mailBody.appendChild(tr);
     });
+    document.getElementById("mailSummary").textContent = mailSummaryText(shown);
   }
+  var mailMonthRow = document.getElementById("mailMonthRow");
+  var mailLiveMonth = todayMidnight().getMonth() + 1;
+  var mailMonthDefs = [["all", "전체"]];
+  for (var mmn = 9; mmn <= mailLiveMonth; mmn++) {
+    (function (n) {
+      var key = String(n).padStart(2, "0");
+      mailMonthDefs.push([key, n + "월 " + emailHistory.filter(function (m) { return !m._deleted && mailMonthOf(m) === key; }).length]);
+    })(mmn);
+  }
+  mailMonthDefs.forEach(function (f, i) {
+    var b = document.createElement("button");
+    b.className = "mail-filter-btn" + (i === 0 ? " active" : "");
+    b.textContent = f[1];
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(mailMonthRow.children, function (c) { c.classList.remove("active"); });
+      b.classList.add("active");
+      currentMailMonth = f[0];
+      renderMail(currentMailFilter);
+    });
+    mailMonthRow.appendChild(b);
+  });
   var mailFilterRow = document.getElementById("mailFilterRow");
   [["all", "전체 " + emailHistory.filter(function (m) { return !m._deleted; }).length], ["vendor", "제조사"], ["gov", "정부기관"], ["internal", "사내"]].forEach(function (f, i) {
     var b = document.createElement("button");
