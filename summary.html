@@ -406,6 +406,8 @@
   .tb2 i{ font-style:normal; font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; }
   #issue-table .tb2{ flex-wrap:nowrap; }
   #issue-table .tb2 .type-badge{ white-space:nowrap; }
+  /* 칸 폭을 따르게 — inline-flex 는 글 길이만큼 벌어져 표 밖으로 나갔다 */
+  #issue-table td .tb2{ display:flex; }
   .type-row .rank-fill{ background:var(--tc,var(--accent)); }
   .type-row .swatch{ width:8px; height:8px; border-radius:2px; background:var(--tc,var(--accent)); display:inline-block; margin-right:6px; flex-shrink:0; }
   .type-row .name{ display:flex; align-items:center; }
@@ -3360,7 +3362,7 @@
     <a class="mg-out" href="index.html" title="전체 AUDIT 이력">01 ↗</a>
     <a class="mg-out" href="issue.html" title="전체 이슈 현황">02 ↗</a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-26 16:23</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-26 16:27</span></div>
 </div>
 
 
