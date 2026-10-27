@@ -242,7 +242,7 @@
   }
   .gf-sel select:focus{ outline:none; }
   .gf-search{
-    display:flex; align-items:center; gap:7px; flex:1; min-width:210px;
+    display:flex; align-items:center; gap:7px; flex:0 1 330px; min-width:170px;
     background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:3px 11px;
   }
   .gf-search:focus-within{ border-color:var(--accent); }
@@ -3386,7 +3386,7 @@
     <a class="mg-out" href="index.html" title="전체 AUDIT 이력">01 ↗</a>
     <a class="mg-out" href="issue.html" title="전체 이슈 현황">02 ↗</a>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-27 09:26</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-27 12:36</span></div>
 </div>
 
 
@@ -3600,9 +3600,10 @@
         <button class="seg-b" data-iyear="none">일자 미상</button>
       </div>
       <label class="gf-sel"><span>제조사</span><select id="if-company"><option value="all">전체</option></select></label>
+      <label class="gf-sel" title="품목으로 걸러 봅니다. 품목 칸이 없는 옛 건은 그 제조사가 주로 다루는 품목으로 묶었습니다."><span>품목</span><select id="if-cat"><option value="all">전체</option></select></label>
       <label class="gf-search">
         <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
-        <input type="search" id="if-q" placeholder="전체 검색 — 제조사 · 클레임 제목 · 유형 · 비고 · 대책 내용" autocomplete="off">
+        <input type="search" id="if-q" placeholder="검색 — 제조사 · 제목 · 비고 · 대책" autocomplete="off">
       </label>
       <span class="gf-count" id="if-count"></span>
     </div>
@@ -9735,7 +9736,7 @@ rehydrate(cxCapa); rehydrate(capaImages); rehydrate(evalPages);
 rehydrate(origPages); rehydrate(complaintPhotos); rehydrate(issueCause); rehydrate(issueShots); rehydrate(issueMails); rehydrate(issuePhotos); rehydrate(issueDocPages);;;;;;;
 
 /* ===== 이슈 페이지 대분류 필터 — KPI · 차트 · 업체카드 · 상세표 전부에 적용 ===== */
-const IF_DEF = { q:"", year:"all", company:"all", type:"all" };
+const IF_DEF = { q:"", year:"all", company:"all", type:"all", cat:"all" };
 let iF = Object.assign({}, IF_DEF);
 const ISSUE_YEARS = [2023,2024,2025,2026];
 
@@ -9764,6 +9765,7 @@ function iMatch(d, skip){
     else if(y !== iF.year) return false;
   }
   if(!off("company") && iF.company !== "all" && d.company !== iF.company) return false;
+  if(!off("cat") && iF.cat && iF.cat !== "all" && issueCat(d) !== iF.cat) return false;
   if(!off("type")    && iF.type    !== "all" && d.type    !== iF.type)    return false;
   if(!off("q") && iF.q){
     const hay = issueHaystack(d);
@@ -9777,7 +9779,12 @@ function issueChartRows(skip){ return issueData.filter(d=>iMatch(d, skip)); }
 function issueAllN(){ return issueData.filter(d=>!HIDE_SET.has(issueKeyOf(d))).length; }
 function iActive(){ return Object.keys(IF_DEF).some(k=>iF[k]!==IF_DEF[k]); }
 
-const IF_LABEL = { year:"연도", company:"제조사", type:"유형", q:"검색" };
+const IF_LABEL = { year:"연도", company:"제조사", type:"유형", q:"검색", cat:"품목" };
+/* 품목 — 아래쪽 issueCatOf() 가 이미 안다(ERP 건은 품목대분류, 나머지는 화장품).
+   같은 길을 두 번 내지 않는다. 끌어올려 쓰는 것이라 선언 차례는 걱정하지 않아도 된다. */
+function issueCat(d){
+  return (typeof issueCatOf === "function") ? issueCatOf(d) : (d.cat || "화장품");
+}
 function renderIssueFilterState(){
   const rows = issueChartRows();
   if(typeof hfSync === "function") hfSync();
@@ -9791,6 +9798,7 @@ function renderIssueFilterState(){
     const parts = [];
     if(iF.year !== "all")    parts.push(["year", iF.year === "none" ? "일자 미상" : iF.year + "년"]);
     if(iF.company !== "all") parts.push(["company", iF.company]);
+    if(iF.cat && iF.cat !== "all") parts.push(["cat", iF.cat]);
     if(iF.type !== "all")    parts.push(["type", iF.type]);
     if(iF.q)                 parts.push(["q", iF.q]);
     chips.innerHTML = parts.map(([k,v])=>
@@ -9811,6 +9819,7 @@ function renderIssueFilterState(){
 function syncIssueFilterInputs(){
   document.querySelectorAll("#if-year .seg-b").forEach(b=>b.classList.toggle("on", b.dataset.iyear===iF.year));
   const c = document.getElementById("if-company"); if(c) c.value = iF.company;
+  const ct = document.getElementById("if-cat");     if(ct) ct.value = iF.cat;
   const q = document.getElementById("if-q");       if(q) q.value = iF.q;
   const ty = document.getElementById("issue-type-filter"); if(ty) ty.value = (iF.type === "all") ? "" : iF.type;
 }
@@ -9836,6 +9845,12 @@ function initIssueChartFilter(){
     b.addEventListener("click", ()=>{ iF.year = b.dataset.iyear; syncIssueFilterInputs(); applyIssueFilter(); });
   });
   co.addEventListener("change", e=>{ iF.company = e.target.value; syncIssueFilterInputs(); applyIssueFilter(); });
+  const ca = document.getElementById("if-cat");
+  if(ca){
+    (typeof ISSUE_CATS !== "undefined" ? ISSUE_CATS : ["화장품","전자기기","생활용품","식품","의료기기","기타"])
+      .forEach(c=> ca.appendChild(el('<option value="' + esc(c) + '">' + esc(c) + '</option>')));
+    ca.addEventListener("change", e=>{ iF.cat = e.target.value; syncIssueFilterInputs(); applyIssueFilter(); });
+  }
   const q = document.getElementById("if-q");
   let t = null;
   q.addEventListener("input", e=>{

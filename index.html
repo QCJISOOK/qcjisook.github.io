@@ -2991,7 +2991,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-27 09:26</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-27 12:36</span></div>
 </div>
 
 
@@ -9424,7 +9424,7 @@ const issuePhotos = {};
 ;;;;;;
 
 /* ===== 이슈 페이지 대분류 필터 — KPI · 차트 · 업체카드 · 상세표 전부에 적용 ===== */
-const IF_DEF = { q:"", year:"all", company:"all", type:"all" };
+const IF_DEF = { q:"", year:"all", company:"all", type:"all", cat:"all" };
 let iF = Object.assign({}, IF_DEF);
 const ISSUE_YEARS = [2023,2024,2025,2026];
 
@@ -9451,6 +9451,7 @@ function iMatch(d, skip){
     else if(y !== iF.year) return false;
   }
   if(!off("company") && iF.company !== "all" && d.company !== iF.company) return false;
+  if(!off("cat") && iF.cat && iF.cat !== "all" && issueCat(d) !== iF.cat) return false;
   if(!off("type")    && iF.type    !== "all" && d.type    !== iF.type)    return false;
   if(!off("q") && iF.q){
     const hay = issueHaystack(d);
@@ -9462,7 +9463,12 @@ function iMatch(d, skip){
 function issueChartRows(skip){ return issueData.filter(d=>iMatch(d, skip)); }
 function iActive(){ return Object.keys(IF_DEF).some(k=>iF[k]!==IF_DEF[k]); }
 
-const IF_LABEL = { year:"연도", company:"제조사", type:"유형", q:"검색" };
+const IF_LABEL = { year:"연도", company:"제조사", type:"유형", q:"검색", cat:"품목" };
+/* 품목 — 아래쪽 issueCatOf() 가 이미 안다(ERP 건은 품목대분류, 나머지는 화장품).
+   같은 길을 두 번 내지 않는다. 끌어올려 쓰는 것이라 선언 차례는 걱정하지 않아도 된다. */
+function issueCat(d){
+  return (typeof issueCatOf === "function") ? issueCatOf(d) : (d.cat || "화장품");
+}
 function renderIssueFilterState(){
   const rows = issueChartRows();
   const cnt = document.getElementById("if-count");
