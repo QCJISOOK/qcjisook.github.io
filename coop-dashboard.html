@@ -278,7 +278,11 @@
     </div>
   </header>
 
-  <section class="kpis" id="kpiRow"></section>
+  <section class="block" id="kpiBlock" style="gap:10px;">
+    <div class="mail-filter-row" id="kpiFilterRow"></div>
+    <div class="kpis" id="kpiRow"></div>
+    <p class="desc" id="kpiNote" style="margin:0;"></p>
+  </section>
 
   <section class="block">
     <div class="block-head">
@@ -883,14 +887,6 @@
     d.innerHTML = '<div class="label">' + label + '</div><div class="value num">' + valueHtml + "</div>";
     return d;
   }
-  var avgSJ = (ranked.reduce(function (s, r) { return s + r.sj; }, 0) / ranked.length).toFixed(1);
-  var avgGJ = (ranked.reduce(function (s, r) { return s + r.gj; }, 0) / ranked.length).toFixed(1);
-  var avgReply = (ranked.reduce(function (s, r) { return s + r.reply; }, 0) / ranked.length).toFixed(1);
-  kpiRow.appendChild(kpiCard("채점 가능 제조사", ranked.length + " <small>/ 전체 " + (ranked.length + excluded.length) + "개사</small>"));
-  kpiRow.appendChild(kpiCard("성적서 평균 (정상입고)", avgSJ + " <small>/ 30</small>"));
-  kpiRow.appendChild(kpiCard("관리품 평균 (정상입고)", avgGJ + " <small>/ 30</small>"));
-  kpiRow.appendChild(kpiCard("회신률 평균", avgReply + " <small>/ 20</small>"));
-  kpiRow.appendChild(kpiCard("귀책 클레임(9월)", "1 <small>건 · 우성플라스틱(순위 외)</small>"));
 
   /* ---------- shared svg helper ---------- */
   var svgNS = "http://www.w3.org/2000/svg";
@@ -1228,6 +1224,7 @@
     renderMainRows();
     renderAllTable();
     renderHistory();
+    if (currentKpiKey === "current") renderKpiFor("current");
   }
   function askRowDelete(tr) {
     var actionsTd = tr.querySelector(".dt-actions");
@@ -1256,6 +1253,7 @@
     renderAllTable();
     renderMail(currentMailFilter);
     renderHistory();
+    if (currentKpiKey === "current") renderKpiFor("current");
   }
   mainBody.addEventListener("click", function (ev) {
     var editBtn = ev.target.closest(".row-edit-btn");
@@ -1305,6 +1303,55 @@
     });
     monthFilterRow.appendChild(b);
   });
+
+  /* 상단 KPI — 월별 항목 평균(성적서·관리품·클레임·회신률). 실시간은 ranked, 마감본이 있는 달은 그 달 마감본, 총점만 있는 달(1~6월)은 항목 점수가 없어 "-" */
+  var currentKpiKey = "current";
+  function kpiAvg(list, pick) { return list.reduce(function (s, r) { return s + pick(r); }, 0) / list.length; }
+  function renderKpiFor(key) {
+    currentKpiKey = key;
+    kpiRow.innerHTML = "";
+    var list = null, noteTxt = "";
+    if (key === "current") { list = ranked; }
+    else if (MONTH_ARCHIVE[key]) { list = buildArchiveDataset(key).ranked; }
+    var cards = [
+      ["성적서 평균", 30, function (r) { return r.sj; }],
+      ["관리품 평균", 30, function (r) { return r.gj; }],
+      ["클레임 평균", 20, function (r) { return r.claim + r.recur; }],
+      ["회신률 평균", 20, function (r) { return r.reply; }]
+    ];
+    cards.forEach(function (c) {
+      var v = list && list.length ? kpiAvg(list, c[2]).toFixed(1) : "-";
+      kpiRow.appendChild(kpiCard(c[0] + (c[1] === 30 ? " (정상입고)" : ""), v + " <small>/ " + c[1] + "</small>"));
+    });
+    if (list) {
+      var label = key === "current" ? "이번 달(실시간)" : key + " 마감본";
+      noteTxt = label + " — 입고 6건 이상 채점 대상 " + list.length + "개사의 단순 평균입니다.";
+    } else {
+      var md = MONTHLY_TOTALS[key];
+      var names = md ? Object.keys(md) : [];
+      if (names.length) {
+        var tot = names.reduce(function (s, n) { return s + md[n]; }, 0) / names.length;
+        noteTxt = key + "은 항목별(성적서·관리품·클레임·회신률) 점수가 보존되지 않고 총점만 있어 항목 평균을 낼 수 없습니다. (참고: 총점 평균 " + tot.toFixed(1) + "점, " + names.length + "개사)";
+      } else {
+        noteTxt = key + "은 보존된 데이터가 없습니다.";
+      }
+    }
+    document.getElementById("kpiNote").textContent = noteTxt;
+  }
+  var kpiFilterRow = document.getElementById("kpiFilterRow");
+  filterDefs.forEach(function (f) {
+    if (f[0] === "year") return;
+    var b = document.createElement("button");
+    b.className = "mail-filter-btn" + (f[0] === "current" ? " active" : "");
+    b.textContent = f[1];
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(kpiFilterRow.children, function (c) { c.classList.remove("active"); });
+      b.classList.add("active");
+      renderKpiFor(f[0]);
+    });
+    kpiFilterRow.appendChild(b);
+  });
+  renderKpiFor("current");
 
   /* "입고건수 1~5위" 차트 월 필터 — 실시간(이번 달)은 ranked, 마감본이 있는 달은 그 달 입고 1~5위, 총점만 있는 달(1~6월)은 입고건수가 없어 총점 상위 5개사 */
   var top5DescEl = document.getElementById("top5Desc");
