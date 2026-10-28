@@ -2539,7 +2539,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-28 14:23</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-10-28 15:04</span></div>
 </div>
 
 
@@ -2666,7 +2666,7 @@
       <span class="result-count" id="fault-count"></span>
       <span class="result-count" id="cx-count"></span>
       <button class="cxs-go" id="ix-xl-export"
-        title="지금 걸린 조건(기간·제조사·유형·검색) 그대로 사후 클레임을 접수대장 양식으로 뽑습니다 · 같은 품번은 한 줄로 모읍니다">접수대장 엑셀</button>
+        title="지금 걸린 조건(사전/사후·기간·제조사·유형·검색) 그대로 접수대장 양식으로 뽑습니다 · 사후는 같은 품번을 한 줄로 모으고, 사전은 줄마다 그대로 뽑습니다">접수대장 엑셀</button>
       <span class="result-count" id="issue-count"></span>
     </div>
     <div class="table-wrap">
@@ -8113,7 +8113,8 @@ const HIDE_PRE26 = [
   "이앤씨|24|바다포도포어리파이닝스킨팩80매 손잡이 파손",
   "엘에스화장품|LS1|코직산나이아신아마이드브라이트닝패드140ml(80매) 관리품 감압(CT) 테스트에서 누액 확인 — Bottle Neck 부위",
   "엘에스화장품|LS2|그래핀 마스크 (딥콜라겐 그래핀 겔 핏 부스팅 / 피디알엔 핑크 비타민 겔 핏 글로우) 신제품 그래핀 마스크 안전성 자료 협의 — 용출·원단 자극·안정성·미세전류",
-  "코바스|KV1|딥콜라겐레티널부스트업마스크4매입(국내) 국내용 표기용량 적합성 — 필름 제외 실 내용량이 표시량 이상인지 증빙 요청"
+  "코바스|KV1|딥콜라겐레티널부스트업마스크4매입(국내) 국내용 표기용량 적합성 — 필름 제외 실 내용량이 표시량 이상인지 증빙 요청",
+  "코스모코스|14|마미케어 애사비클렌저200ml×2(백설공주) 펌프 오픈 불량"
 ];
 /* 26년 사전은 관리품 관리대장에 있는 것만 남긴다 (2026-10-27).
    옛 「제조업체 이슈」 폴더에서 온 2026년 사전이다. 자료는 그대로 남아 있고,
@@ -9477,7 +9478,8 @@ const IXXL_COLS = [
   { c:9,  w:30.4, h:"접수내용" },
   { c:10, w:12.2, h:"접수일" },
   { c:11, w:92.4, h:"진행상태 상세" },
-  { c:12, w:24.2, h:"사진" }
+  { c:12, w:24.2, h:"사진" },
+  { c:13, w:9,    h:"구분" }
 ];
 const IXXL_ROWH = 127.5;                      /* 사진이 들어가는 줄 높이 */
 
@@ -9500,12 +9502,12 @@ function ixXlRows(){
   const seen = {}, out = [];
   let 합침 = 0;
   issueFiltered().forEach(function(d){
-    if(cxStageOf(d) !== "post") return;                  /* 사후만 */
+    const st = cxStageOf(d);                             /* 화면 고르개 그대로 — 사전도 뽑는다 */
     const p = issueParts(d), dt = issueDatesOf(d);
     const code = String(p.code || "").trim();
     const when = dt.cust || dt.start || issueFirstDate(d) || "";
-    const row = { d: d, p: p, dt: dt, code: code, when: when };
-    if(!code){ out.push(row); return; }                  /* 품번이 없으면 따로 센다 */
+    const row = { d: d, p: p, dt: dt, code: code, when: when, st: st };
+    if(st !== "post" || !code){ out.push(row); return; } /* 사전·미표기·품번없음은 줄마다 그대로 */
     const had = seen[code];
     if(!had){ seen[code] = row; out.push(row); return; }
     합침++;
@@ -9645,7 +9647,7 @@ function ixXlStyles(){
 async function ixXlBuild(){
   const got = ixXlRows();
   const rows = got.rows;
-  if(!rows.length){ alert("뽑을 사후 클레임이 없습니다.\n\n기간·제조사·유형 조건을 넓혀 보세요."); return null; }
+  if(!rows.length){ alert("뽑을 클레임이 없습니다.\n\n기간·제조사·유형 조건을 넓혀 보세요."); return null; }
 
   const pics = [];                            /* {row, bytes, ext} */
   const links = [];                           /* 그림으로 못 넣어 링크만 거는 줄 */
@@ -9653,7 +9655,7 @@ async function ixXlBuild(){
   const HEAD = 4;
 
   /* 머리줄 */
-  let head = '<row r="' + HEAD + '" spans="2:12">';
+  let head = '<row r="' + HEAD + '" spans="2:13">';
   IXXL_COLS.forEach(function(c){
     head += '<c r="' + ixXlCol(c.c) + HEAD + '" s="1" t="inlineStr"><is><t>' + ixXlEsc(c.h) + '</t></is></c>';
   });
@@ -9678,9 +9680,10 @@ async function ixXlBuild(){
       { c:9,  v:p.claim || fx.claimFull || "" },
       { c:10, v:r.when, dt:1 },
       { c:11, v:ixXlDetail(d) },
-      { c:12, v:(pic && pic.link) ? ("사진 " + pic.n + "장 열기") : "" }   /* 그림으로 못 넣은 것은 링크로 */
+      { c:12, v:(pic && pic.link) ? ("사진 " + pic.n + "장 열기") : "" },  /* 그림으로 못 넣은 것은 링크로 */
+      { c:13, v:(r.st === "pre" ? "사전" : r.st === "post" ? "사후" : "") }
     ];
-    let line = '<row r="' + rn + '" spans="2:12"' + (shot ? ' ht="' + IXXL_ROWH + '" customHeight="1"' : "") + '>';
+    let line = '<row r="' + rn + '" spans="2:13"' + (shot ? ' ht="' + IXXL_ROWH + '" customHeight="1"' : "") + '>';
     값.forEach(function(x){
       const ref = ixXlCol(x.c) + rn;
       if(x.dt){
@@ -9703,7 +9706,7 @@ async function ixXlBuild(){
   const sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
     + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-    + '<dimension ref="B' + HEAD + ':L' + (HEAD + rows.length) + '"/>'
+    + '<dimension ref="B' + HEAD + ':M' + (HEAD + rows.length) + '"/>'
     + '<sheetViews><sheetView tabSelected="1" zoomScale="70" zoomScaleNormal="70" workbookViewId="0">'
     +   '<pane ySplit="' + HEAD + '" topLeftCell="A' + (HEAD + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
     + '<sheetFormatPr defaultRowHeight="17.4"/>'
