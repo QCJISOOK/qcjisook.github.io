@@ -319,7 +319,6 @@
 
   <section class="block" id="kpiBlock" style="gap:10px;">
     <div class="kpi-cards" id="kpiRow"></div>
-    <p class="desc" id="kpiNote" style="margin:0;"></p>
   </section>
 
   <section class="block" id="avgSection">
@@ -1548,10 +1547,8 @@
       if (val !== null && k === 4) {
         var g = val - KPI_TARGET;
         sub = '<span class="k-chip' + (g >= 0 ? "" : " bad") + '">목표 ' + KPI_TARGET + "점 대비 " + (g >= 0 ? "▲" : "▼") + " " + Math.abs(g).toFixed(1) + "</span><span>" + md.length + "개월 월평균 · 최근 " + last.m + "월 " + last.v[4].toFixed(1) + "점</span>";
-      } else if (val !== null) {
-        sub = "<span>만점 " + max + "점 · 달성률 " + Math.round(val / max * 100) + "%</span><span>최근 " + last.m + "월 " + last.v[k].toFixed(1) + " " + arrow(last.v[k] - val) + "</span>";
-      } else sub = "데이터 없음";
-      c.innerHTML = head + big + '<div class="k-sub">' + sub + "</div>";
+      } else if (val === null) sub = "데이터 없음";
+      c.innerHTML = head + big + (sub ? '<div class="k-sub">' + sub + "</div>" : "");
       kpiRow.appendChild(c);
     }
     card("26년 누적 평균점수", null, 4, 100);
@@ -1559,9 +1556,6 @@
     card("관리품 평균", KPI_COLORS[1], 1, 30);
     card("업체정보 · 클레임", KPI_COLORS[2], 2, 20);
     card("회신 · 회신률", KPI_COLORS[3], 3, 20);
-    document.getElementById("kpiNote").textContent = md.length
-      ? "26년 1~" + last.m + "월 누적 — 월별 업체 전체 평균을 다시 평균한 값입니다(" + md.length + "개월). 1~8월은 구 기준(업체정보 20점·회신 20점), 9월부터는 신 기준(클레임 20점·회신률 20점)이라 항목 구성이 다릅니다. 최근 월 값 옆 ▲▼는 누적 평균 대비입니다."
-      : "집계된 달이 없습니다.";
   }
   renderKpiFor("current");
 
