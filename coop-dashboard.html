@@ -325,7 +325,7 @@
   <section class="block" id="avgSection">
     <div class="block-head">
       <h2>월별 평균 점수 추이</h2>
-      <p class="desc">항목(성적서·관리품·클레임·회신률)별 평균 점수를 쌓아 올린 값이 그 달 업체 전체의 평균 총점입니다. 빨간 점선은 목표 80점, 검은 실선은 월평균(월별 평균 총점의 평균)입니다. 1~8월은 구 기준(엑셀 협력도 시트·입고 5건 이상, 클레임 자리=업체정보, 회신률 자리=회신), 9월부터는 신 기준(입고 6건 이상)이라 항목 구성이 다릅니다. 막대 조각에 마우스를 올리면 점수가 나옵니다.</p>
+      <p class="desc">항목(성적서·관리품·클레임·회신률)별 평균 점수를 쌓아 올린 값이 그 달 업체 전체의 평균 총점입니다. 빨간 점선은 목표 80점, 검은 실선은 누적평균(월별 평균 총점의 평균, 데이터가 갱신되면 자동으로 다시 계산)입니다. 1~8월은 구 기준(엑셀 협력도 시트·입고 5건 이상, 클레임 자리=업체정보, 회신률 자리=회신), 9월부터는 신 기준(입고 6건 이상)이라 항목 구성이 다릅니다. 막대 조각에 마우스를 올리면 점수가 나옵니다.</p>
     </div>
     <div class="surface-card">
       <div class="pill-row"><div class="pill-group" id="avgYearRow"></div><span class="pill-sep"></span><div class="pill-group" id="avgModeRow"></div></div>
@@ -1841,6 +1841,7 @@
     return out;
   }
   var AVG_TARGET = 80;
+  var AVG_YEAR = todayMidnight().getFullYear();
   var avgMode = "month";
   /* 기간 묶음 — 월 / 분기 / 반기 / 년. 묶음의 값 = 그 기간 월별 평균(데이터가 있는 달)의 평균 */
   function avgPeriods(data, mode) {
@@ -1874,8 +1875,8 @@
       var ln = el("line", { x1: padL, x2: W - padR, y1: yOf(v), y2: yOf(v) }, "grid-line"); ln.setAttribute("stroke-dasharray", "1 4"); svg.appendChild(ln);
       var yt = el("text", { x: padL - 8, y: yOf(v) + 3, "text-anchor": "end" }, "axis-label"); yt.setAttribute("style", "font-size:10.5px"); yt.textContent = v; svg.appendChild(yt);
     });
-    /* 구간(구 기준 | 신 기준) — 구간마다 머리말·목표선·월평균선을 따로 그린다. 월 보기가 아니면 한 구간 */
-    var secs = [{ a: 0, b: periods.length, t: "2026년" }];
+    /* 구간(구 기준 | 신 기준) — 구간마다 머리말·목표선·누적평균선을 따로 그린다. 월 보기가 아니면 한 구간 */
+    var secs = [{ a: 0, b: periods.length, t: AVG_YEAR + "년" }];
     secs.forEach(function (sec, si) {
       var xa = padL + groupW * sec.a, xb = padL + groupW * sec.b;
       var vals = periods.slice(sec.a, sec.b).filter(function (d) { return d.v; }).map(function (d) { return d.v[4]; });
@@ -1884,7 +1885,7 @@
       hd.textContent = sec.t + "   "; svg.appendChild(hd);
       var t1 = el("tspan", {}); t1.setAttribute("style", "fill:var(--crit)"); t1.textContent = "목표 " + AVG_TARGET + "점"; hd.appendChild(t1);
       var t2 = el("tspan", {}); t2.setAttribute("style", "fill:var(--ink-faint)"); t2.textContent = " · "; hd.appendChild(t2);
-      var t3 = el("tspan", {}); t3.setAttribute("style", "fill:var(--ink)"); t3.textContent = secAvg === null ? "월평균 -" : "월평균 " + secAvg.toFixed(1) + "점"; hd.appendChild(t3);
+      var t3 = el("tspan", {}); t3.setAttribute("style", "fill:var(--ink)"); t3.textContent = secAvg === null ? "누적평균 -" : "누적평균 " + secAvg.toFixed(1) + "점"; hd.appendChild(t3);
       if (si > 0) { var dv = el("line", { x1: xa, x2: xa, y1: 6, y2: padT + plotH + 8 }); dv.setAttribute("style", "stroke:var(--line);stroke-width:1.6"); svg.appendChild(dv); }
       sec.lines = { x1: xa + (si ? 6 : 0), x2: xb - (si < secs.length - 1 ? 6 : 0), avg: secAvg };
     });
@@ -1893,7 +1894,7 @@
     var MX = [30, 30, 20, 20];
     function tipHtml(d, k) {
       var names = CMP_NAMES(d), g = d.v[4] - AVG_TARGET;
-      var h = '<div class="tip-title">26년 ' + d.label + (d.partial ? " (진행 중)" : "") + " · " + names[k] + "</div>";
+      var h = '<div class="tip-title">' + String(AVG_YEAR).slice(2) + '년 ' + d.label + (d.partial ? " (진행 중)" : "") + " · " + names[k] + "</div>";
       h += '<div class="tip-row tip-main"><span class="tip-dot" style="background:' + AVG_COLORS[k] + '"></span>평균 점수<span class="num">' + d.v[k].toFixed(1) + "점</span></div>";
       h += '<div class="tip-row">만점<span class="num">' + MX[k] + "점</span></div>";
       h += '<div class="tip-row">달성률<span class="num">' + Math.round(d.v[k] / MX[k] * 100) + "%</span></div>";
@@ -1927,13 +1928,13 @@
       var tv = el("text", { x: cx, y: yOf(d.v[4]) - 7, "text-anchor": "middle" }, "bar-value"); tv.setAttribute("style", "font-size:11.5px"); tv.textContent = d.v[4].toFixed(0) + (d.partial ? "*" : "");
       svg.appendChild(tv);
     });
-    /* 구간별 목표선(빨간 점선)·월평균선(검은 실선) */
+    /* 구간별 목표선(빨간 점선)·누적평균선(검은 실선) */
     secs.forEach(function (sec) {
       var L = sec.lines;
       var tl = el("line", { x1: L.x1, x2: L.x2, y1: yOf(AVG_TARGET), y2: yOf(AVG_TARGET) }); tl.setAttribute("style", "stroke:var(--crit);stroke-width:1.3;stroke-dasharray:4 3;pointer-events:none"); svg.appendChild(tl);
       if (L.avg !== null) { var al = el("line", { x1: L.x1, x2: L.x2, y1: yOf(L.avg), y2: yOf(L.avg) }); al.setAttribute("style", "stroke:var(--ink);stroke-width:1.5;pointer-events:none"); svg.appendChild(al); }
     });
-    /* 목표선·월평균선 호버 — 선 위에 투명한 굵은 선을 얹어 말풍선을 띄운다 */
+    /* 목표선·누적평균선 호버 — 선 위에 투명한 굵은 선을 얹어 말풍선을 띄운다 */
     var pd = periods.filter(function (d) { return d.v; });
     function lineTipHtml(kind, avgVal) {
       var h = "";
@@ -1942,12 +1943,12 @@
         h += '<div class="tip-title">목표 ' + AVG_TARGET + '점</div>';
         h += '<div class="tip-row tip-main"><span class="tip-dot" style="background:var(--crit)"></span>목표 점수<span class="num">' + AVG_TARGET + '점</span></div>';
         h += '<div class="tip-row">목표 이상<span class="num">' + hit.length + ' / ' + pd.length + (avgMode === "month" ? "개월" : "개 기간") + '</span></div>';
-        if (avgAll !== null) h += '<div class="tip-row">월평균 대비<span class="num">' + avgAll.toFixed(1) + '점 (' + (avgAll - AVG_TARGET >= 0 ? "+" : "") + (avgAll - AVG_TARGET).toFixed(1) + ')</span></div>';
+        if (avgAll !== null) h += '<div class="tip-row">누적평균 대비<span class="num">' + avgAll.toFixed(1) + '점 (' + (avgAll - AVG_TARGET >= 0 ? "+" : "") + (avgAll - AVG_TARGET).toFixed(1) + ')</span></div>';
         if (miss.length) h += '<div class="tip-foot">목표 미달: ' + miss.slice(0, 6).map(function (d) { return d.label + " " + d.v[4].toFixed(1); }).join(", ") + (miss.length > 6 ? " 외 " + (miss.length - 6) + "곳" : "") + '</div>';
       } else {
         var best = pd.reduce(function (a, d) { return !a || d.v[4] > a.v[4] ? d : a; }, null), worst = pd.reduce(function (a, d) { return !a || d.v[4] < a.v[4] ? d : a; }, null);
         var g = avgVal - AVG_TARGET, nm = ["성적서", "관리품", "클레임 · 업체정보", "회신률 · 회신"], mx = [30, 30, 20, 20];
-        h += '<div class="tip-title">월평균 ' + avgVal.toFixed(1) + '점</div>';
+        h += '<div class="tip-title">누적평균 ' + avgVal.toFixed(1) + '점</div>';
         h += '<div class="tip-row tip-main"><span class="tip-dot" style="background:var(--ink)"></span>평균 총점<span class="num">' + avgVal.toFixed(1) + '점 (' + withData.length + '개월)</span></div>';
         h += '<div class="tip-row">목표 대비<span class="num" style="color:' + (g >= 0 ? "var(--good)" : "var(--crit)") + '">' + (g >= 0 ? "+" : "") + g.toFixed(1) + '점</span></div>';
         [0, 1, 2, 3].forEach(function (k) { h += '<div class="tip-row"><span class="tip-dot" style="background:' + AVG_COLORS[k] + '"></span>' + nm[k] + '<span class="num">' + avgComp[k].toFixed(1) + ' / ' + mx[k] + '</span></div>'; });
@@ -1975,7 +1976,7 @@
       s.innerHTML = '<span class="lg-swatch" style="background:' + AVG_COLORS[x[1]] + '"></span>' + x[0]; lg.appendChild(s);
     });
     var s1 = document.createElement("span"); s1.className = "lg-item"; s1.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px dashed var(--crit)"></span>목표 ' + AVG_TARGET + '점'; lg.appendChild(s1);
-    var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>월평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
+    var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>누적평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
     var s3 = document.createElement("span"); s3.className = "lg-item"; s3.style.color = "var(--warn)"; s3.textContent = "* 진행 중인 기간 — 아직 다 채워지지 않음"; lg.appendChild(s3);
     document.getElementById("avgThPeriod").textContent = avgMode === "month" ? "월" : avgMode === "quarter" ? "분기" : avgMode === "half" ? "반기" : "년";
     var body = document.getElementById("avgBody"); body.innerHTML = "";
@@ -1990,7 +1991,7 @@
     });
     if (avgAll !== null) {
       var fr = document.createElement("tr"); fr.className = "grand-total"; var fg = avgAll - AVG_TARGET;
-      fr.innerHTML = '<td></td><td style="text-align:left">월평균 (' + withData.length + '개월)</td><td></td><td class="num subtotal-cell">' + avgAll.toFixed(1) + '</td><td class="num" style="color:' + (fg >= 0 ? "var(--good)" : "var(--crit)") + '">' + (fg >= 0 ? "+" : "") + fg.toFixed(1) + '</td><td class="num">' + avgComp[0].toFixed(1) + '</td><td class="num">' + avgComp[1].toFixed(1) + '</td><td class="num">' + avgComp[2].toFixed(1) + '</td><td class="num">' + avgComp[3].toFixed(1) + '</td>';
+      fr.innerHTML = '<td></td><td style="text-align:left">누적평균 (' + withData.length + '개월)</td><td></td><td class="num subtotal-cell">' + avgAll.toFixed(1) + '</td><td class="num" style="color:' + (fg >= 0 ? "var(--good)" : "var(--crit)") + '">' + (fg >= 0 ? "+" : "") + fg.toFixed(1) + '</td><td class="num">' + avgComp[0].toFixed(1) + '</td><td class="num">' + avgComp[1].toFixed(1) + '</td><td class="num">' + avgComp[2].toFixed(1) + '</td><td class="num">' + avgComp[3].toFixed(1) + '</td>';
       body.appendChild(fr);
     }
   }
