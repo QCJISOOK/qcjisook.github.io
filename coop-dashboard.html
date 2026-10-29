@@ -366,9 +366,62 @@
   <section class="block" id="criteriaSection">
     <div class="block-head">
       <h2>점수 산정 기준</h2>
+      <div class="score-rule-box" id="scoreRuleBoxOld">
+        <div class="score-rule-head">
+          <div class="score-rule-title">협력도 점수 산정 기준 — 구 기준 (2026.8월까지 · 100점 만점)</div>
+          <button type="button" id="scoreRuleExportBtnOld" class="export-btn">⬇ 고해상도 이미지로 저장</button>
+        </div>
+        <div class="score-rule-tables">
+          <div class="score-table-wrap">
+            <table class="score-table">
+              <colgroup><col style="width:104px"><col><col style="width:82px"></colgroup>
+              <thead><tr><th>항목</th><th>내용</th><th>배점</th></tr></thead>
+              <tbody>
+                <tr><td rowspan="6" class="st-cat">성적서</td><td class="st-sub">제품검사준수현황 (영업일 기준 · 화장품 품목)</td><td class="st-sub">30점</td></tr>
+                <tr><td>입고 당일</td><td class="num">30</td></tr>
+                <tr><td>입고일로부터 2일 이내</td><td class="num">26</td></tr>
+                <tr><td>입고일로부터 4일 이내</td><td class="num">22</td></tr>
+                <tr><td>입고일로부터 6일 이내</td><td class="num">18</td></tr>
+                <tr><td>입고일로부터 6일 초과(미제출 포함)</td><td class="num">14</td></tr>
+
+                <tr><td rowspan="6" class="st-cat">관리품</td><td class="st-sub">제품검사준수현황 (영업일 기준 · 화장품 품목)</td><td class="st-sub">30점</td></tr>
+                <tr><td>입고 당일</td><td class="num">30</td></tr>
+                <tr><td>입고일로부터 2일 이내</td><td class="num">26</td></tr>
+                <tr><td>입고일로부터 4일 이내</td><td class="num">22</td></tr>
+                <tr><td>입고일로부터 6일 이내</td><td class="num">18</td></tr>
+                <tr><td>입고일로부터 6일 초과(미제출 포함)</td><td class="num">14</td></tr>
+
+                <tr><td rowspan="5" class="st-cat">업체정보<small>4개 항목 × 5점</small></td><td class="st-sub">업체 보유 서류 (엑셀 협력도 시트에 입력한 점수)</td><td class="st-sub">20점</td></tr>
+                <tr><td>제품표준서</td><td class="num">5</td></tr>
+                <tr><td>위수탁계약서</td><td class="num">5</td></tr>
+                <tr><td>PL보험증권</td><td class="num">5</td></tr>
+                <tr><td>인증 (CGMP 등)</td><td class="num">5</td></tr>
+
+                <tr><td rowspan="3" class="st-cat">회신<small>클레임회신 10 + 회신률 10</small></td><td class="st-sub">회신 (엑셀 협력도 시트에 입력한 점수)</td><td class="st-sub">20점</td></tr>
+                <tr><td>클레임 회신</td><td class="num">10</td></tr>
+                <tr><td>문의 회신률</td><td class="num">10</td></tr>
+
+                <tr class="st-total"><td colspan="2">총점</td><td>100점</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="grade-table-wrap">
+            <table class="grade-table">
+              <thead><tr><th colspan="2">제조사 협력도 등급</th></tr></thead>
+              <tbody>
+                <tr><td class="grade-letter">S등급</td><td class="grade-range">90 ~ 100점</td></tr>
+                <tr><td class="grade-letter">A등급</td><td class="grade-range">80 ~ 89점</td></tr>
+                <tr><td class="grade-letter">B등급</td><td class="grade-range">70 ~ 79점</td></tr>
+                <tr><td class="grade-letter">C등급</td><td class="grade-range">60 ~ 69점</td></tr>
+                <tr><td class="grade-letter">D등급</td><td class="grade-range">60점 미만</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <div class="score-rule-box" id="scoreRuleBox">
         <div class="score-rule-head">
-          <div class="score-rule-title">협력도 점수 산정 기준 (100점 만점)</div>
+          <div class="score-rule-title">협력도 점수 산정 기준 — 신 기준 (2026.9월 이후 · 100점 만점)</div>
           <button type="button" id="scoreRuleExportBtn" class="export-btn">⬇ 고해상도 이미지로 저장</button>
         </div>
         <div class="score-rule-tables">
@@ -514,7 +567,7 @@
         <div><b>미제출 = 감점 (평가 제외 아님)</b> — 아직 전달되지 않은 성적서·관리품은 "평가 대상 아님"으로 빼지 않고, <b>오늘 날짜 기준 경과 영업일</b>을 그대로 위 배점표에 대입해 감점 점수로 반영합니다. 예: 입고일 9/30인데 관리품이 10/1까지 안 오면 경과 1영업일 → 20점으로 계산. 실제로 전달되면 그 날짜로 확정 점수가 바뀌고, 계속 안 오면 날이 갈수록 점수가 더 떨어집니다. 그래서 페이지를 다시 열 때마다(특히 다음날) 미제출 건의 점수가 자동으로 더 낮아질 수 있습니다.</div>
         <div><b>선입고 제외</b> — 성적서 판정일(완제품판정일자)이 입고일자보다 늦은 품목(선입고, 판정 전에 먼저 입고 처리된 건)은 성적서·관리품 제출속도 평균 계산에서 제외합니다. 상세 패널의 품목별 표에서 성적서·관리품이 이미 접수된 품목만 "정상입고/선입고"를 표시하고, 아직 접수되지 않은 품목은 아직 단정할 수 없어 "-"로 표시합니다(감점 계산 자체는 접수 여부와 무관하게 그대로 적용됩니다).</div>
         <div><b>표본 하한</b> — 당월 입고건수가 5건 이하인 제조사는 점수를 매기지 않고 "-"로 표시합니다.</div>
-        <div><b>수동 수정·삭제</b> — 성적서·관리품·클레임·회신율 4개 표는 각 행의 "✎ 수정"으로 값을 직접 고치거나 "🗑 삭제"로 관련 없는 행을 뺄 수 있습니다. 저장/삭제 즉시 제조사별 점수·총점·"전체 제조업체 협력도 점수" 표·"월별 협력도 점수 현황"의 9월 항목까지 바로 다시 계산되어 반영됩니다(이 중 "월별 협력도 점수 현황"은 "입고건수 1~5위" 차트와 같은 기준으로 매번 다시 뽑습니다). <b>이 수정·삭제 내용은 지금 보고 있는 이 컴퓨터의 브라우저에만 저장</b>되며 다른 PC·다른 사람·Artifact 링크로 보는 사람에게는 공유되지 않습니다.</div>
+        <div><b>수동 수정·삭제</b> — 성적서·관리품·클레임·회신율 4개 표는 각 행의 "✎ 수정"으로 값을 직접 고치거나 "🗑 삭제"로 관련 없는 행을 뺄 수 있습니다. 저장/삭제 즉시 제조사별 점수·총점·"전체 제조업체 협력도 점수" 표·"월별 협력도 점수 현황"의 9월 항목까지 바로 다시 계산되어 반영됩니다(이 중 "월별 협력도 점수 현황"은 "입고건수 1~5위" 차트와 같은 기준으로 매번 다시 뽑습니다). <b>이 수정·삭제 내용은 저장 즉시 공동 기록 서버에 올라가 이 대시보드를 여는 모든 사람(공개 주소·Artifact)에게 15초 안팎으로 같이 반영</b>됩니다. 인터넷이 끊기면 이 브라우저에 쌓아 두었다가 연결되면 자동으로 올립니다(화면 왼쪽 아래 ☁ 표시로 확인). 같은 칸을 두 사람이 동시에 고치면 나중에 저장한 쪽이 남습니다.</div>
         <div><b>귀책 필터</b> — 클레임 발생·재발은 "제조사 귀책"으로 표시된 건만 셉니다(02 클레임 접수 현황 기준, 접수일자 = 최초접수일자). 한 접수가 여러 줄로 등록된 경우 줄 하나를 1건으로 셉니다.</div>
         <div><b>클레임 발생건수(12점)</b> — 0건 12 / 1건 8 / 2건 4 / 3건 2 / 4건 이상 0</div>
         <div><b>클레임 재발건(8점)</b> — 재발없음 8 / 동일유형 2회(1회 재발) 5 / 정확히 3회 2 / 4회 이상 0</div>
@@ -675,22 +728,157 @@
     return new Date(2026, Number(p[0]) - 1, Number(p[1]));
   }
 
-  /* 수동 수정 저장소 — 이 브라우저(이 PC)에만 저장되며 다른 컴퓨터·다른 사람과 공유되지 않습니다 */
-  var EDIT_KEY = "coopDashboardEdits_v1";
+  /* 수동 수정 저장소 — 공동 기록 서버(Apps Script, AUDIT 대시보드와 같은 서버)에 저장해 모든 사용자에게 실시간으로 공유한다.
+     행은 "업체|입고일|품번|LOT|n번째"(메일은 "요청일|제목|제조사|n번째") 같은 원본 식별자로 가리킨다 — 매일 데이터가 다시 내려와도 같은 행에 수정이 붙는다.
+     줄 하나 = 서버의 items 한 줄(key "ix@협력도"). AUDIT 쪽 화면은 "ix@" 줄을 읽기만 하고 모르는 구역은 무시한다. 서버가 끊기면 이 브라우저에 쌓아 두었다가 연결되면 올린다. */
+  var EDIT_KEY = "coopDashboardEdits_v1"; /* 예전(이 브라우저에만 저장하던) 저장소 — 읽어서 서버로 옮긴 뒤 비운다 */
   function loadEditStore() {
     try {
       var s = JSON.parse(localStorage.getItem(EDIT_KEY));
       if (!s || !s.items || !s.mails) s = { items: {}, mails: {} };
       if (!s.deletedItems) s.deletedItems = {};
       if (!s.deletedMails) s.deletedMails = {};
-      if (!s.archives) s.archives = {}; /* 월 마감본(MONTH_ARCHIVE) 수정분 — { "9월": { items, mails, deletedItems, deletedMails } } */
+      if (!s.archives) s.archives = {};
       return s;
     } catch (e) { return { items: {}, mails: {}, deletedItems: {}, deletedMails: {}, archives: {} }; }
   }
-  function saveEditStore(store) {
-    try { localStorage.setItem(EDIT_KEY, JSON.stringify(store)); } catch (e) {}
+  var COOP_URL = "https://script.google.com/macros/s/AKfycbzPchqprUCokJwlJomEmoOcJbWb71izDX0pdbnxxjBPSdLbdxpHjjbWpTLZcVoEsqu1Vw/exec", COOP_KEY = "hqkyye-x3vezq-kkhfit-p7gj26", COOP_KEYNAME = "ix@협력도", COOP_SEC = "coop";
+  var COOP_CACHE = "coopServerCache_v1", COOP_PEND = "coopPending_v1";
+  var coopRecs = {}, coopSince = "", coopQ = {}, coopBusy = false, coopTimer = null, coopLastOk = "", coopFail = false;
+  (function () {
+    try {
+      var c = JSON.parse(localStorage.getItem(COOP_CACHE) || "null");
+      if (c) { coopRecs = c.recs || {}; coopSince = c.since || ""; }
+      var p = JSON.parse(localStorage.getItem(COOP_PEND) || "null");
+      if (p) { coopQ = p; Object.keys(coopQ).forEach(function (id) { try { coopRecs[id] = JSON.parse(coopQ[id].json); } catch (e) {} }); }
+    } catch (e) {}
+  })();
+  function coopId(kind, oid) { return "coop\u0001" + kind + "\u0001" + oid; }
+  function coopRec(kind, oid, company) { return coopRecs[coopId(kind, oid)] || { k: kind, o: oid, c: company || "", e: {}, x: 0 }; }
+  function coopSaveLocal() { try { localStorage.setItem(COOP_CACHE, JSON.stringify({ recs: coopRecs, since: coopSince })); localStorage.setItem(COOP_PEND, JSON.stringify(coopQ)); } catch (e) {} }
+  var coopBadge = null;
+  function coopSay() {
+    if (!coopBadge) {
+      coopBadge = document.createElement("div");
+      coopBadge.style.cssText = "position:fixed;left:14px;bottom:12px;z-index:900;font-size:11.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);box-shadow:0 2px 8px rgba(0,0,0,.12)";
+      document.body.appendChild(coopBadge);
+    }
+    var n = Object.keys(coopQ).length;
+    if (n) { coopBadge.textContent = coopFail ? "☁ 서버에 못 올림 — 대기 " + n + "건 (연결되면 자동 저장)" : "☁ 저장 중… (" + n + "건)"; coopBadge.style.color = coopFail ? "var(--crit)" : "var(--ink-soft)"; }
+    else { coopBadge.textContent = "☁ 공유 저장됨" + (coopLastOk ? " · " + coopLastOk + " 확인" : ""); coopBadge.style.color = "var(--good)"; }
   }
-  var editStore = loadEditStore();
+  function coopNow() { var d = new Date(); function p(x) { return String(x).padStart(2, "0"); } return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()); }
+  /* 수정·삭제 한 건을 서버에 올릴 줄에 세운다 */
+  function coopPut(rec) {
+    var id = coopId(rec.k, rec.o);
+    rec.t = Date.now();
+    coopRecs[id] = rec;
+    coopQ[id] = { id: id, key: COOP_KEYNAME, sec: COOP_SEC, json: JSON.stringify(rec) };
+    coopSaveLocal(); coopSay();
+    clearTimeout(coopTimer); coopTimer = setTimeout(coopPush, 600);
+  }
+  function coopPush() {
+    if (coopBusy) return;
+    var ids = Object.keys(coopQ);
+    if (!ids.length) { coopSay(); return; }
+    var sent = ids.map(function (id) { return coopQ[id]; });
+    coopBusy = true;
+    fetch(COOP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ by: "협력도 대시보드", k: COOP_KEY, items: sent }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) throw new Error(j.err || "서버 오류");
+        sent.forEach(function (x) { if (coopQ[x.id] && coopQ[x.id].json === x.json) delete coopQ[x.id]; });
+        coopFail = false; coopLastOk = coopNow(); coopSaveLocal();
+      })
+      .catch(function () { coopFail = true; setTimeout(coopPush, 8000); })
+      .then(function () { coopBusy = false; coopSay(); if (Object.keys(coopQ).length && !coopFail) coopPush(); });
+  }
+  function coopShift(at, sec) { /* "yyyy-MM-dd HH:mm:ss" 를 sec 초 앞으로 — 같은 초에 쓰인 줄을 놓치지 않게 겹쳐 받는다 */
+    var d = new Date(at.replace(" ", "T")); if (isNaN(d)) return at;
+    d.setSeconds(d.getSeconds() - sec);
+    function p(x) { return String(x).padStart(2, "0"); }
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+  /* 원본 식별자 — 수정이 덧씌워지기 전(원본 그대로)일 때만 만든다 */
+  function coopOidItems(map) {
+    Object.keys(map).forEach(function (co) {
+      var seen = {};
+      map[co].forEach(function (it) { var b = co + "|" + it[0] + "|" + it[1] + "|" + it[3]; seen[b] = (seen[b] || 0) + 1; it.__oid = b + "|" + seen[b]; });
+    });
+  }
+  function coopOidMails(list) {
+    var seen = {};
+    list.forEach(function (m) { var b = m.req + "|" + m.subj + "|" + m.who; seen[b] = (seen[b] || 0) + 1; m.__oid = b + "|" + seen[b]; });
+  }
+  function coopApplyItems(map) {
+    Object.keys(map).forEach(function (co) {
+      map[co].forEach(function (it) {
+        var r = coopRecs[coopId("i", it.__oid)];
+        if (!r) return;
+        Object.keys(r.e || {}).forEach(function (fi) { it[Number(fi)] = r.e[fi]; });
+        it._deleted = !!r.x;
+      });
+    });
+  }
+  function coopApplyMails(list) {
+    list.forEach(function (m) {
+      var r = coopRecs[coopId("m", m.__oid)];
+      if (!r) return;
+      Object.keys(r.e || {}).forEach(function (k) { m[k] = r.e[k]; });
+      m._deleted = !!r.x;
+      if (r.e && ("replyDate" in r.e || "req" in r.e)) m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
+    });
+  }
+  /* 서버에서 남의 수정이 들어왔을 때 — 살아 있는 데이터(이번 달·열어 본 마감본)에 다시 얹고 화면을 새로 그린다 */
+  function coopReapply() {
+    if (document.querySelector(".dt-edit-input")) { setTimeout(coopReapply, 3000); return; } /* 내가 고치는 중이면 끝나길 기다린다 */
+    coopApplyItems(LIVE.itemData); coopApplyMails(LIVE.emailHistory);
+    ranked.forEach(recomputeCompany);
+    ranked.sort(function (x, y) { return y.in - x.in; });
+    Object.keys(archiveCache).forEach(function (k) {
+      var ds = archiveCache[k];
+      coopApplyItems(ds.itemData); coopApplyMails(ds.emailHistory);
+      swapDataset(ds);
+      try { ds.ranked.forEach(recomputeCompany); ds.ranked.sort(function (x, y) { return y.in - x.in; }); } finally { restoreLive(); }
+    });
+    refreshAll();
+  }
+  function coopPull() {
+    var u = COOP_URL + "?k=" + encodeURIComponent(COOP_KEY) + (coopSince ? "&since=" + encodeURIComponent(coopSince) : "");
+    return fetch(u, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.ok) throw new Error(j.err || "서버 오류");
+      var n = 0;
+      (j.items || []).forEach(function (r2) {
+        if (r2.key !== COOP_KEYNAME || r2.sec !== COOP_SEC || coopQ[r2.id]) return; /* 내가 아직 못 올린 줄은 건드리지 않는다 */
+        var o = null; try { o = JSON.parse(r2.json); } catch (e) { return; }
+        if (!o) return;
+        var cur = coopRecs[r2.id];
+        if (cur && JSON.stringify(cur) === JSON.stringify(o)) return;
+        coopRecs[r2.id] = o; n++;
+      });
+      coopSince = coopShift(j.at, 10); coopFail = false; coopLastOk = coopNow(); coopSaveLocal(); coopSay();
+      if (n) coopReapply();
+    }).catch(function () { coopFail = true; coopSay(); });
+  }
+  /* 예전에 이 브라우저에만 저장해 둔 수정이 남아 있으면 서버로 옮긴다(한 번) — 서버에 이미 있는 줄은 덮지 않는다 */
+  function coopMigrate() {
+    var st = loadEditStore();
+    var any = Object.keys(st.items).length || Object.keys(st.mails).length || Object.keys(st.deletedItems).length || Object.keys(st.deletedMails).length || Object.keys(st.archives).length;
+    if (!any) return;
+    var moved = 0;
+    function putItem(it, co, patch, del) { if (!it || !it.__oid || coopRecs[coopId("i", it.__oid)]) return; var r = coopRec("i", it.__oid, co); if (patch) Object.keys(patch).forEach(function (f) { r.e[f] = patch[f]; }); if (del) r.x = 1; coopPut(r); moved++; }
+    function putMail(m, patch, del) { if (!m || !m.__oid || coopRecs[coopId("m", m.__oid)]) return; var r = coopRec("m", m.__oid, m.who || ""); if (patch) Object.keys(patch).forEach(function (f) { r.e[f] = patch[f]; }); if (del) r.x = 1; coopPut(r); moved++; }
+    function scan(b, itemMap, mails) {
+      Object.keys(b.items || {}).forEach(function (co) { Object.keys(b.items[co]).forEach(function (ri) { putItem((itemMap[co] || [])[Number(ri)], co, b.items[co][ri], 0); }); });
+      Object.keys(b.deletedItems || {}).forEach(function (co) { Object.keys(b.deletedItems[co]).forEach(function (ri) { var it = (itemMap[co] || [])[Number(ri)]; if (it && coopRecs[coopId("i", it.__oid)]) { var r = coopRecs[coopId("i", it.__oid)]; if (!r.x) { r.x = 1; coopPut(r); moved++; } } else putItem(it, co, null, 1); }); });
+      Object.keys(b.mails || {}).forEach(function (id) { putMail(mails[Number(id)], b.mails[id], 0); });
+      Object.keys(b.deletedMails || {}).forEach(function (id) { var m = mails[Number(id)]; if (m && coopRecs[coopId("m", m.__oid)]) { var r = coopRecs[coopId("m", m.__oid)]; if (!r.x) { r.x = 1; coopPut(r); moved++; } } else putMail(m, null, 1); });
+    }
+    scan(st, LIVE.itemData, LIVE.emailHistory);
+    Object.keys(st.archives).forEach(function (k) { if (!MONTH_ARCHIVE[k]) return; var ds = buildArchiveDataset(k); scan(st.archives[k], ds.itemData, ds.emailHistory); });
+    try { localStorage.setItem(EDIT_KEY + "_옮김백업", localStorage.getItem(EDIT_KEY)); localStorage.removeItem(EDIT_KEY); } catch (e) {}
+    if (moved) coopReapply();
+  }
 
   emailHistory.forEach(function (m, i) {
     m._id = i;
@@ -700,16 +888,8 @@
     if (m.recur === undefined) m.recur = "-";
     if (m.content === undefined) m.content = "-";
   });
-  Object.keys(editStore.mails).forEach(function (id) {
-    var m = emailHistory[Number(id)];
-    if (!m) return;
-    var patch = editStore.mails[id];
-    Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
-  });
-  Object.keys(editStore.deletedMails).forEach(function (id) {
-    var m = emailHistory[Number(id)];
-    if (m) m._deleted = true;
-  });
+  coopOidMails(emailHistory); /* 원본 식별자는 수정을 덧씌우기 전에 */
+  coopApplyMails(emailHistory);
   emailHistory.forEach(function (m) {
     m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
   });
@@ -845,24 +1025,8 @@
   Object.keys(itemData).forEach(function (company) {
     itemData[company].forEach(function (it, i) { it.__idx = i; }); // 원본 순서 고정 — 삭제해도 다른 행 번호가 밀리지 않도록
   });
-  Object.keys(editStore.items).forEach(function (company) {
-    var arr = itemData[company];
-    if (!arr) return;
-    Object.keys(editStore.items[company]).forEach(function (ri) {
-      var idx = Number(ri);
-      if (!arr[idx]) return;
-      var patch = editStore.items[company][ri];
-      Object.keys(patch).forEach(function (fi) { arr[idx][Number(fi)] = patch[fi]; });
-    });
-  });
-  Object.keys(editStore.deletedItems).forEach(function (company) {
-    var arr = itemData[company];
-    if (!arr) return;
-    Object.keys(editStore.deletedItems[company]).forEach(function (ri) {
-      var idx = Number(ri);
-      if (arr[idx]) arr[idx]._deleted = true;
-    });
-  });
+  coopOidItems(itemData);
+  coopApplyItems(itemData);
   function visibleItems(company) {
     var ym = scopeYMNow(); // 입고일자가 그 달인 건만
     return (itemData[company] || []).filter(function (it) { return !it._deleted && it[0].slice(0, 7) === ym; });
@@ -960,7 +1124,7 @@
         '<td class="dt-actions"><button type="button" class="row-edit-btn">✎ 수정</button> <button type="button" class="row-del-btn">🗑 삭제</button></td>' +
       '</tr>';
     }).join("");
-    return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rowsHtml + '</tbody></table></div><div class="dt-note">총 ' + list.length + '건 (품질관리 포털 "입고+출하" 원장). 선입고(판정일이 입고일보다 늦은 건)는 점수 평균에서 제외됩니다. 미제출 건은 오늘 날짜 기준 경과 영업일로 추정 감점 반영 — 매일 다시 열어보면 지연될수록 점수가 더 낮게 보임. 행의 "✎ 수정"으로 값을 직접 고칠 수 있습니다(이 컴퓨터에만 저장).</div>';
+    return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rowsHtml + '</tbody></table></div><div class="dt-note">총 ' + list.length + '건 (품질관리 포털 "입고+출하" 원장). 선입고(판정일이 입고일보다 늦은 건)는 점수 평균에서 제외됩니다. 미제출 건은 오늘 날짜 기준 경과 영업일로 추정 감점 반영 — 매일 다시 열어보면 지연될수록 점수가 더 낮게 보임. 행의 "✎ 수정"으로 값을 직접 고칠 수 있습니다(저장 즉시 모든 사용자에게 공유됩니다).</div>';
   }
 
   function recomputeCompany(r) {
@@ -1242,13 +1406,8 @@
       c.delayDays = c.replyDate ? Math.round((parseMD(c.replyDate) - parseMD(c.req)) / 86400000) : null;
       ds.emailHistory.push(c);
     });
-    var ed = loadEditStore().archives[key];
-    if (ed) {
-      Object.keys(ed.items || {}).forEach(function (co) { var arr = ds.itemData[co]; if (!arr) return; Object.keys(ed.items[co]).forEach(function (ri) { var it = arr[Number(ri)]; if (!it) return; Object.keys(ed.items[co][ri]).forEach(function (fi) { it[Number(fi)] = ed.items[co][ri][fi]; }); }); });
-      Object.keys(ed.deletedItems || {}).forEach(function (co) { var arr = ds.itemData[co]; if (!arr) return; Object.keys(ed.deletedItems[co]).forEach(function (ri) { if (arr[Number(ri)]) arr[Number(ri)]._deleted = true; }); });
-      Object.keys(ed.mails || {}).forEach(function (id) { var m = ds.emailHistory[Number(id)]; if (!m) return; Object.keys(ed.mails[id]).forEach(function (k) { m[k] = ed.mails[id][k]; }); if (m.replyDate !== undefined) m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null; });
-      Object.keys(ed.deletedMails || {}).forEach(function (id) { if (ds.emailHistory[Number(id)]) ds.emailHistory[Number(id)]._deleted = true; });
-    }
+    coopOidItems(ds.itemData); coopOidMails(ds.emailHistory);
+    coopApplyItems(ds.itemData); coopApplyMails(ds.emailHistory);
     swapDataset(ds);
     ds.ranked.forEach(recomputeCompany);
     ds.ranked.sort(function (x, y) { return y.in - x.in; });
@@ -1524,11 +1683,6 @@
   }
   /* 지금 보는 표가 월 마감본이면 그 달 키, 아니면 null — 수정·삭제는 마감본 자신의 데이터와 저장 칸(archives)에 반영한다 */
   function archiveKeyNow() { return MONTH_ARCHIVE[currentMonthFilter] ? currentMonthFilter : null; }
-  function archiveStore(store, key) {
-    var a = store.archives[key] = store.archives[key] || {};
-    a.items = a.items || {}; a.mails = a.mails || {}; a.deletedItems = a.deletedItems || {}; a.deletedMails = a.deletedMails || {};
-    return a;
-  }
   /* 점수가 바뀌면 화면의 모든 집계(표·차트·KPI·상위5위·월별 현황)를 한꺼번에 다시 그린다 */
   function refreshAll() {
     renderMainRows();
@@ -1559,7 +1713,6 @@
       edits[td.getAttribute("data-field")] = input ? input.value.trim() : td.textContent;
     });
     ["5", "6", "8"].forEach(function (f) { if (edits[f] === "") edits[f] = "-"; }); /* 날짜 칸을 비우면 "-"(없음)로 */
-    var store = loadEditStore(), bucket = akey ? archiveStore(store, akey) : store;
     if (table === "sj" || table === "gj") {
       var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
       var arr = (ds ? ds.itemData : itemData)[company];
@@ -1567,12 +1720,9 @@
       /* 접수(전달)일을 바꾸면 포털에서 가져온 옛 점수는 무효 — "-"로 비워 새 날짜 기준으로 다시 계산되게 한다 */
       var dIdx = table === "sj" ? "6" : "8", pIdx = table === "sj" ? "7" : "9";
       if (edits[dIdx] !== undefined && edits[dIdx] !== arr[idx][Number(dIdx)] && edits[pIdx] === undefined) edits[pIdx] = "-";
-      bucket.items[company] = bucket.items[company] || {};
-      bucket.items[company][idx] = bucket.items[company][idx] || {};
-      Object.keys(edits).forEach(function (fi) {
-        arr[idx][Number(fi)] = edits[fi];
-        bucket.items[company][idx][fi] = edits[fi];
-      });
+      var rec = coopRec("i", arr[idx].__oid, company);
+      Object.keys(edits).forEach(function (fi) { arr[idx][Number(fi)] = edits[fi]; rec.e[fi] = edits[fi]; });
+      coopPut(rec);
     } else {
       var mailId = Number(tr.getAttribute("data-mail-id"));
       var m = (ds ? ds.emailHistory : emailHistory)[mailId];
@@ -1581,10 +1731,10 @@
         m[k] = (k === "replyDate" && (edits[k] === "" || edits[k] === "-")) ? null : edits[k];
       });
       m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
-      bucket.mails[mailId] = bucket.mails[mailId] || {};
-      Object.keys(edits).forEach(function (k) { bucket.mails[mailId][k] = m[k]; });
+      var mrec = coopRec("m", m.__oid, m.who || "");
+      Object.keys(edits).forEach(function (k) { mrec.e[k] = m[k]; });
+      coopPut(mrec);
     }
-    saveEditStore(store);
     afterRowChange(akey);
   }
   function askRowDelete(tr) {
@@ -1594,20 +1744,15 @@
   function commitRowDelete(tr) {
     var table = tr.getAttribute("data-table");
     var akey = archiveKeyNow(), ds = akey ? buildArchiveDataset(akey) : null;
-    var store = loadEditStore(), bucket = akey ? archiveStore(store, akey) : store;
     if (table === "sj" || table === "gj") {
       var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
       var arr = (ds ? ds.itemData : itemData)[company];
-      if (arr && arr[idx]) arr[idx]._deleted = true;
-      bucket.deletedItems[company] = bucket.deletedItems[company] || {};
-      bucket.deletedItems[company][idx] = true;
+      if (arr && arr[idx]) { arr[idx]._deleted = true; var rec = coopRec("i", arr[idx].__oid, company); rec.x = 1; coopPut(rec); }
     } else {
       var mailId = Number(tr.getAttribute("data-mail-id"));
       var m = (ds ? ds.emailHistory : emailHistory)[mailId];
-      if (m) m._deleted = true;
-      bucket.deletedMails[mailId] = true;
+      if (m) { m._deleted = true; var mrec = coopRec("m", m.__oid, m.who || ""); mrec.x = 1; coopPut(mrec); }
     }
-    saveEditStore(store);
     afterRowChange(akey);
   }
   mainBody.addEventListener("click", function (ev) {
@@ -1644,7 +1789,7 @@
   filterDefs.push(["year", "2026년 전체"]);
   function noteFor(key) {
     if (key === "current" || key === "y2025") return "";
-    if (MONTH_ARCHIVE[key]) return key + " 마감본 — " + MONTH_ARCHIVE[key].asOf + " 기준으로 보존한 세부 데이터입니다. 행을 누르면 그 달의 성적서·관리품·클레임·회신률 근거가 펼쳐지고, 행의 \"✎ 수정\"으로 값을 고칠 수 있습니다(이 컴퓨터에만 저장).";
+    if (MONTH_ARCHIVE[key]) return key + " 마감본 — " + MONTH_ARCHIVE[key].asOf + " 기준으로 보존한 세부 데이터입니다. 행을 누르면 그 달의 성적서·관리품·클레임·회신률 근거가 펼쳐지고, 행의 \"✎ 수정\"으로 값을 고칠 수 있습니다(저장 즉시 모든 사용자에게 공유됩니다).";
     if (OLD_MONTHS[key]) return key + "은 구 기준(엑셀 협력도 시트)으로 산정한 자료입니다 — 성적서·관리품 점수는 입고일 기준 영업일 구간 30/26/22/18/14점, 업체정보(제품표준서·위수탁계약서·PL보험증권·인증 각 5점 = 20점)와 회신(클레임회신 10 + 문의 회신률 10 = 20점)은 엑셀에 입력된 값입니다. 입고 5건 이상 업체만 집계했고(* = 정확히 5건), 관리품 미제출 건은 엑셀 오류(#VALUE!) 대신 14점으로 보았습니다. 9월부터의 신 기준(성적서30·관리품30·클레임20·회신률20)과 항목 구성이 달라 총점 직접 비교는 참고용입니다.";
     var ms = monthsFor(key);
     var label = key === "year" ? "2026년 누적(" + ms[0] + "~" + ms[ms.length - 1] + "월)" : parseInt(key.slice(1), 10) + "분기(" + (ms.length ? ms[0] + "~" + ms[ms.length - 1] + "월" : "해당 월 없음") + ")";
@@ -2125,7 +2270,6 @@
     });
     var s1 = document.createElement("span"); s1.className = "lg-item"; s1.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px dashed var(--crit)"></span>목표 ' + AVG_TARGET + '점'; lg.appendChild(s1);
     var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>누적평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
-    var s3 = document.createElement("span"); s3.className = "lg-item"; s3.style.color = "var(--warn)"; s3.textContent = "* 진행 중인 기간 — 아직 다 채워지지 않음"; lg.appendChild(s3);
     document.getElementById("avgThPeriod").textContent = avgMode === "month" ? "월" : avgMode === "quarter" ? "분기" : avgMode === "half" ? "반기" : "년";
     var body = document.getElementById("avgBody"); body.innerHTML = "";
     periods.forEach(function (d) {
@@ -2299,15 +2443,15 @@
      내용과 무관하게 캔버스를 "오염"시켜 toBlob()이 SecurityError로 막힌다(직접 확인) — 그래서 못 쓴다.
      대신 화면 밖(off-screen)에 고정 너비로 복제본을 렌더링한 뒤, 각 셀의 실제 배치(getBoundingClientRect)를
      그대로 읽어 SVG rect/line/text로 다시 그린다 — 줄바꿈 없는 폭을 보장해 텍스트가 셀 안에 한 줄로 들어간다. */
-  function buildScoreRuleBlob() {
+  function buildScoreRuleBlob(boxId) {
     return new Promise(function (resolve, reject) {
-      var original = document.getElementById("scoreRuleBox");
+      var original = document.getElementById(boxId || "scoreRuleBox");
       var EXPORT_W = 850; /* score-rule-tables max-width(820) + box 좌우 padding(28) */
       var holder = document.createElement("div");
       holder.style.cssText = "position:fixed;left:-9999px;top:0;width:" + EXPORT_W + "px;";
       var clone = original.cloneNode(true);
       clone.removeAttribute("id");
-      var btn = clone.querySelector("#scoreRuleExportBtn");
+      var btn = clone.querySelector(".export-btn");
       if (btn) btn.remove();
       holder.appendChild(clone);
       document.body.appendChild(holder);
@@ -2409,20 +2553,22 @@
       }
     });
   }
-  async function exportScoreRulePng() {
+  async function exportScoreRulePng(boxId, tag) {
     var today = todayMidnight();
     var ymd = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
     var blob;
     try {
-      blob = await buildScoreRuleBlob();
+      blob = await buildScoreRuleBlob(boxId);
     } catch (e) {
       window.alert("이미지 생성에 실패했습니다. 브라우저 설정(팝업/다운로드 차단)을 확인해주세요.");
       return;
     }
-    await saveBlobAsFile(blob, "협력도_점수_산정_기준_" + ymd + ".png");
+    await saveBlobAsFile(blob, "협력도_점수_산정_기준_" + (tag || "신기준") + "_" + ymd + ".png");
   }
   var scoreRuleExportBtn = document.getElementById("scoreRuleExportBtn");
-  if (scoreRuleExportBtn) scoreRuleExportBtn.addEventListener("click", exportScoreRulePng);
+  if (scoreRuleExportBtn) scoreRuleExportBtn.addEventListener("click", function () { exportScoreRulePng("scoreRuleBox", "신기준"); });
+  var scoreRuleExportBtnOld = document.getElementById("scoreRuleExportBtnOld");
+  if (scoreRuleExportBtnOld) scoreRuleExportBtnOld.addEventListener("click", function () { exportScoreRulePng("scoreRuleBoxOld", "구기준"); });
 
   /* pending items */
   var pending = [
@@ -2436,6 +2582,12 @@
     d.innerHTML = '<span class="pi-label">' + p.label + '</span><span class="pi-detail">' + p.detail + '</span>';
     pendingGrid.appendChild(d);
   });
+  /* 공동 기록 서버 — 처음 한 번 받아 오고(그 뒤 옛 로컬 수정이 있으면 옮김), 15초마다 남의 수정을 받아 온다 */
+  coopSay();
+  coopPull().then(function () { try { coopMigrate(); } catch (e) {} });
+  setInterval(function () { if (!document.hidden) coopPull(); }, 15000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) coopPull(); });
+  if (Object.keys(coopQ).length) coopPush();
 })();
 </script>
 
