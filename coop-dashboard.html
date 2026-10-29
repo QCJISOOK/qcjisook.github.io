@@ -69,6 +69,17 @@
   .pill.warn { color: var(--warn); }
 
   .kpis { display: flex; flex-wrap: wrap; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding-block: 18px; }
+  /* 상단 KPI 카드 — 총 평균점수 + 성적서·관리품·업체정보(클레임)·회신 */
+  .kpi-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .kcard { border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px 15px; background: var(--paper); display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+  .kcard .k-title { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .kcard .k-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .kcard .k-val { font-size: 32px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .kcard .k-val small { font-size: 14px; font-weight: 600; color: var(--ink-soft); margin-left: 3px; letter-spacing: 0; }
+  .kcard .k-sub { font-size: 11px; color: var(--ink-faint); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; line-height: 1.5; }
+  .kcard .k-chip { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--good); color: var(--good); background: var(--good-soft); white-space: nowrap; }
+  .kcard .k-chip.bad { border-color: var(--crit); color: var(--crit); background: var(--crit-soft); }
+  .kcard .k-up { color: var(--good); font-weight: 700; } .kcard .k-down { color: var(--crit); font-weight: 700; }
   .kpi { flex: 1 1 200px; display: flex; flex-direction: column; gap: 5px; padding: 0 22px; border-left: 1px solid var(--line); }
   .kpi:first-child { border-left: none; padding-left: 0; }
   @media (max-width: 700px) { .kpi { border-left: none; border-top: 1px solid var(--line); padding: 14px 0 0; flex-basis: 45%; } .kpi:first-child { border-top: none; } }
@@ -158,6 +169,14 @@
     font-size: 11.5px; font-weight: 500; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line);
     background: var(--surface); color: var(--ink-soft); cursor: pointer;
   }
+  .avg-tip { position: fixed; z-index: 60; pointer-events: none; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 13px 9px; box-shadow: 0 8px 24px rgba(0,0,0,.16); font-size: 12px; min-width: 200px; color: var(--ink); }
+  .avg-tip[hidden] { display: none; }
+  .avg-tip b { font-size: 13px; }
+  .avg-tip .tip-total { margin: 4px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+  .avg-tip .tip-row { display: flex; align-items: center; gap: 7px; padding: 1.5px 0; color: var(--ink-soft); }
+  .avg-tip .tip-row .num { margin-left: auto; color: var(--ink); font-weight: 700; }
+  .avg-tip .tip-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+  .avg-tip .tip-foot { margin-top: 6px; font-size: 10.5px; color: var(--ink-faint); }
   .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 16px; }
   .calc-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
   .calc-grid input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; }
@@ -287,7 +306,7 @@
 
   <section class="block" id="kpiBlock" style="gap:10px;">
     <div class="mail-filter-row" id="kpiFilterRow"></div>
-    <div class="kpis" id="kpiRow"></div>
+    <div class="kpi-cards" id="kpiRow"></div>
     <p class="desc" id="kpiNote" style="margin:0;"></p>
   </section>
 
@@ -455,6 +474,7 @@
     <div class="surface-card">
       <div class="mail-filter-row" id="avgModeRow"></div>
       <div class="legend-row" id="avgLegend"></div>
+      <div class="avg-tip" id="avgTip" hidden></div>
       <svg class="chart-svg" id="avgChart" viewBox="0 0 860 360" role="img" aria-label="월별 업체 전체 평균 점수"></svg>
       <div class="table-scroll"><table class="data" id="avgTable"><thead><tr><th id="avgThPeriod">월</th><th>기준</th><th>집계</th><th>평균 총점<br>(100점)</th><th>목표 대비</th><th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임 / 업체정보<br>(20)</th><th>회신률 / 회신<br>(20)</th></tr></thead><tbody id="avgBody"></tbody></table></div>
     </div>
@@ -1456,45 +1476,40 @@
   /* 상단 KPI — 월별 항목 평균(성적서·관리품·클레임·회신률). 실시간은 ranked, 마감본이 있는 달은 그 달 마감본, 총점만 있는 달(1~6월)은 항목 점수가 없어 "-" */
   var currentKpiKey = "current";
   function kpiAvg(list, pick) { return list.reduce(function (s, r) { return s + pick(r); }, 0) / list.length; }
+  var KPI_TARGET = 80, KPI_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
   function renderKpiFor(key) {
     currentKpiKey = key;
     kpiRow.innerHTML = "";
-    var list = null, noteTxt = "";
-    var isOld = !!OLD_MONTHS[key];
-    if (key === "current") { list = ranked; }
-    else if (isOld) { list = OLD_MONTHS[key]; }
-    else if (MONTH_ARCHIVE[key]) { list = buildArchiveDataset(key).ranked; }
-    var cards = isOld ? [
-      ["성적서 평균", 30, function (r) { return r.sj; }],
-      ["관리품 평균", 30, function (r) { return r.gj; }],
-      ["업체정보 평균 (구 기준)", 20, function (r) { return r.inf; }],
-      ["회신 평균 (클레임회신+문의)", 20, function (r) { return r.rep; }]
-    ] : [
-      ["성적서 평균", 30, function (r) { return r.sj; }],
-      ["관리품 평균", 30, function (r) { return r.gj; }],
-      ["클레임 평균", 20, function (r) { return r.claim + r.recur; }],
-      ["회신률 평균", 20, function (r) { return r.reply; }]
-    ];
-    cards.forEach(function (c) {
-      var v = list && list.length ? kpiAvg(list, c[2]).toFixed(1) : "-";
-      kpiRow.appendChild(kpiCard(c[0] + (c[1] === 30 && !isOld ? " (정상입고)" : ""), v + " <small>/ " + c[1] + "</small>"));
-    });
-    if (list && isOld) {
-      noteTxt = key + " — 구 기준, 입고 5건 이상 " + list.length + "개사의 단순 평균입니다. (구 기준에는 클레임 발생·재발 항목이 없고 업체정보 20점이 들어 있어 클레임 칸은 업체정보로 바꿔 보여줍니다. 총점 평균 " + kpiAvg(list, function (r) { return r.t; }).toFixed(1) + "점)";
-    } else if (list) {
-      var label = key === "current" ? "이번 달(실시간)" : key + " 마감본";
-      noteTxt = label + " — 입고 6건 이상 채점 대상 " + list.length + "개사의 단순 평균입니다.";
-    } else {
-      var md = MONTHLY_TOTALS[key];
-      var names = md ? Object.keys(md) : [];
-      if (names.length) {
-        var tot = names.reduce(function (s, n) { return s + md[n]; }, 0) / names.length;
-        noteTxt = key + "은 항목별(성적서·관리품·클레임·회신률) 점수가 보존되지 않고 총점만 있어 항목 평균을 낼 수 없습니다. (참고: 총점 평균 " + tot.toFixed(1) + "점, " + names.length + "개사)";
+    var mo = key === "current" ? todayMidnight().getMonth() + 1 : parseInt(key, 10);
+    var all = avgMonthData(), d = all[mo - 1], prev = mo > 1 ? all[mo - 2] : null;
+    var isOld = !!OLD_MONTHS[mo + "월"];
+    function arrow(diff, unit) { return '<span class="' + (diff >= 0 ? "k-up" : "k-down") + '">' + (diff >= 0 ? "▲" : "▼") + " " + Math.abs(diff).toFixed(1) + (unit || "") + "</span>"; }
+    function card(title, color, val, max, k) {
+      var c = document.createElement("div"); c.className = "kcard";
+      var head = '<div class="k-title">' + (color ? '<span class="k-dot" style="background:' + color + '"></span>' : "") + title + "</div>";
+      var big = '<div class="k-val num">' + (val === null ? "-" : val.toFixed(1)) + "<small>점" + (max ? " / " + max : "") + "</small></div>";
+      var sub = "";
+      if (val === null) sub = "데이터 없음";
+      else if (k === "total") {
+        var g = val - KPI_TARGET;
+        sub = '<span class="k-chip' + (g >= 0 ? "" : " bad") + '">목표 ' + KPI_TARGET + "점 대비 " + (g >= 0 ? "▲" : "▼") + " " + Math.abs(g).toFixed(1) + "</span>" + (prev && prev.v ? "<span>전월 " + prev.v[4].toFixed(1) + "점 " + arrow(val - prev.v[4]) + "</span>" : "");
       } else {
-        noteTxt = key + "은 보존된 데이터가 없습니다.";
+        sub = "<span>만점 " + max + "점 · 달성률 " + Math.round(val / max * 100) + "%</span>" + (prev && prev.v ? "<span>전월 " + prev.v[k].toFixed(1) + " " + arrow(val - prev.v[k]) + "</span>" : "");
       }
+      c.innerHTML = head + big + '<div class="k-sub">' + sub + "</div>";
+      kpiRow.appendChild(c);
     }
-    document.getElementById("kpiNote").textContent = noteTxt;
+    var v = d && d.v ? d.v : null;
+    card("총 평균점수 (" + mo + "월)", null, v ? v[4] : null, 100, "total");
+    card("성적서 평균", KPI_COLORS[0], v ? v[0] : null, 30, 0);
+    card("관리품 평균", KPI_COLORS[1], v ? v[1] : null, 30, 1);
+    card("업체정보" + (isOld ? "" : " · 클레임"), KPI_COLORS[2], v ? v[2] : null, 20, 2);
+    card("회신" + (isOld ? "" : " · 회신률"), KPI_COLORS[3], v ? v[3] : null, 20, 3);
+    var note;
+    if (!v) note = mo + "월은 보존된 데이터가 없습니다.";
+    else if (isOld) note = mo + "월 — 구 기준(엑셀 협력도 시트), 입고 5건 이상 " + d.n + "개사의 단순 평균입니다. 구 기준에는 클레임 항목이 없고 업체정보 20점(제품표준서·위수탁계약서·PL보험증권·인증)이 들어 있으며, 회신은 클레임회신 10 + 문의 회신률 10점입니다.";
+    else note = (key === "current" ? "이번 달(실시간)" : mo + "월 마감본") + " — 신 기준, 입고 6건 이상 채점 대상 " + d.n + "개사의 단순 평균입니다. 업체정보 칸은 신 기준에서 클레임(발생 12 + 재발 8), 회신은 회신률(클레임회신속도 10 + 문의 10)입니다.";
+    document.getElementById("kpiNote").textContent = note;
   }
   var kpiFilterRow = document.getElementById("kpiFilterRow");
   filterDefs.forEach(function (f) {
@@ -1832,26 +1847,51 @@
       svg.appendChild(el("text", { x: bx - 6, y: padT - 20, "text-anchor": "end" }, "target-label")).textContent = "구 기준 (1~8월)";
       svg.appendChild(el("text", { x: bx + 6, y: padT - 20, "text-anchor": "start" }, "target-label")).textContent = "신 기준 (9월~)";
     }
+    var bands = [];
     periods.forEach(function (d, gi) {
       var cx = padL + groupW * gi + groupW / 2;
+      /* 마우스를 올렸을 때 보이는 옅은 띠 (막대 뒤) */
+      var band = el("rect", { x: padL + groupW * gi + 3, y: padT - 12, width: groupW - 6, height: plotH + 12, rx: 8 }); band.setAttribute("style", "fill:var(--accent-soft);opacity:0;transition:opacity .1s"); svg.appendChild(band); bands.push(band);
       var ml = el("text", { x: cx, y: padT + plotH + 22, "text-anchor": "middle" }, "month-label"); ml.textContent = d.label + (d.partial ? "*" : "");
       if (!d.v) ml.setAttribute("style", "opacity:.45");
       svg.appendChild(ml);
       if (!d.v) return;
-      var acc = 0, names = ["성적서", "관리품", "클레임/업체정보", "회신률/회신"];
+      var acc = 0;
       [0, 1, 2, 3].forEach(function (k) {
         var h = plotH * d.v[k] / 100, y = padT + plotH - plotH * (acc + d.v[k]) / 100; acc += d.v[k];
-        var r = el("rect", { x: cx - barW / 2, y: y, width: barW, height: Math.max(h - 1.5, 0.5), rx: 3, fill: AVG_COLORS[k] });
-        var ti = document.createElementNS(svgNS, "title"); ti.textContent = d.label + " " + names[k] + " " + d.v[k].toFixed(1) + "점"; r.appendChild(ti);
-        svg.appendChild(r);
-        if (h >= 14) { var sv = el("text", { x: cx, y: y + h / 2 + 3, "text-anchor": "middle" }); sv.setAttribute("style", "fill:#fff;font-size:10.5px;font-weight:700;font-family:'IBM Plex Mono',monospace"); sv.textContent = Math.round(d.v[k]); svg.appendChild(sv); }
+        svg.appendChild(el("rect", { x: cx - barW / 2, y: y, width: barW, height: Math.max(h - 1.5, 0.5), rx: 3, fill: AVG_COLORS[k] }));
       });
-      var tv = el("text", { x: cx, y: yOf(d.v[4]) - 7, "text-anchor": "middle" }, "bar-value"); tv.setAttribute("style", "font-size:12px"); tv.textContent = d.v[4].toFixed(0) + (d.partial ? "*" : "");
-      svg.appendChild(tv);
     });
     /* 목표선(빨간 점선) · 월평균선(검은 실선) — 막대 위에 그린다 */
     var tl = el("line", { x1: padL, x2: W - padR, y1: yOf(AVG_TARGET), y2: yOf(AVG_TARGET) }); tl.setAttribute("style", "stroke:var(--crit);stroke-width:1.4;stroke-dasharray:5 4"); svg.appendChild(tl);
     if (avgAll !== null) { var al = el("line", { x1: padL, x2: W - padR, y1: yOf(avgAll), y2: yOf(avgAll) }); al.setAttribute("style", "stroke:var(--ink);stroke-width:1.6"); svg.appendChild(al); }
+    /* 호버 말풍선 — 막대 한 줄 전체가 호버 영역 */
+    var tip = document.getElementById("avgTip");
+    function tipHtml(d) {
+      if (!d.v) return "<b>" + d.label + "</b><div class=\"tip-row\">" + (d.nMonths === 1 ? "데이터 없음 · 아직 오지 않음" : "데이터 없음") + "</div>";
+      var old = d.std && d.std.indexOf("구 기준") === 0, nw = d.std && d.std.indexOf("신 기준") === 0;
+      var names = ["성적서", "관리품", old ? "업체정보" : nw ? "클레임" : "클레임 · 업체정보", old ? "회신" : nw ? "회신률" : "회신률 · 회신"], mx = [30, 30, 20, 20];
+      var g = d.v[4] - AVG_TARGET;
+      var h = "<b>" + d.label + (d.partial ? " (진행 중)" : "") + "</b>";
+      h += '<div class="tip-total">평균 총점 <span class="num">' + d.v[4].toFixed(1) + '점</span> <span style="color:' + (g >= 0 ? "var(--good)" : "var(--crit)") + '">목표 대비 ' + (g >= 0 ? "+" : "") + g.toFixed(1) + "</span></div>";
+      [0, 1, 2, 3].forEach(function (k) { h += '<div class="tip-row"><span class="tip-dot" style="background:' + AVG_COLORS[k] + '"></span>' + names[k] + '<span class="num">' + d.v[k].toFixed(1) + " / " + mx[k] + "</span></div>"; });
+      h += '<div class="tip-foot">' + (d.cnt !== null ? d.cnt + "개사" : d.n + "개월 평균") + " · " + (d.std || "") + "</div>";
+      return h;
+    }
+    function moveTip(ev) {
+      var w = tip.offsetWidth, hgt = tip.offsetHeight, x = ev.clientX + 16, y = ev.clientY + 16;
+      if (x + w > window.innerWidth - 8) x = ev.clientX - w - 16;
+      if (y + hgt > window.innerHeight - 8) y = ev.clientY - hgt - 16;
+      tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+    }
+    periods.forEach(function (d, gi) {
+      var hit = el("rect", { x: padL + groupW * gi, y: padT - 12, width: groupW, height: plotH + 40, fill: "transparent" }); hit.style.cursor = "default";
+      hit.addEventListener("mouseenter", function (ev) { bands[gi].style.opacity = ".7"; tip.innerHTML = tipHtml(d); tip.hidden = false; moveTip(ev); });
+      hit.addEventListener("mousemove", moveTip);
+      hit.addEventListener("mouseleave", function () { bands[gi].style.opacity = "0"; tip.hidden = true; });
+      hit.addEventListener("click", function (ev) { /* 터치 화면: 눌러서 보기 */ tip.innerHTML = tipHtml(d); tip.hidden = false; moveTip(ev); });
+      svg.appendChild(hit);
+    });
     var lg = document.getElementById("avgLegend");
     lg.innerHTML = "";
     ["성적서", "클레임 (구 기준: 업체정보)", "관리품", "회신률 (구 기준: 회신)"].forEach(function (t) { /* 순서 정리용 */ });
