@@ -676,8 +676,9 @@
       if (!s || !s.items || !s.mails) s = { items: {}, mails: {} };
       if (!s.deletedItems) s.deletedItems = {};
       if (!s.deletedMails) s.deletedMails = {};
+      if (!s.archives) s.archives = {}; /* 월 마감본(MONTH_ARCHIVE) 수정분 — { "9월": { items, mails, deletedItems, deletedMails } } */
       return s;
-    } catch (e) { return { items: {}, mails: {}, deletedItems: {}, deletedMails: {} }; }
+    } catch (e) { return { items: {}, mails: {}, deletedItems: {}, deletedMails: {}, archives: {} }; }
   }
   function saveEditStore(store) {
     try { localStorage.setItem(EDIT_KEY, JSON.stringify(store)); } catch (e) {}
@@ -1189,6 +1190,13 @@
       c.delayDays = c.replyDate ? Math.round((parseMD(c.replyDate) - parseMD(c.req)) / 86400000) : null;
       ds.emailHistory.push(c);
     });
+    var ed = loadEditStore().archives[key];
+    if (ed) {
+      Object.keys(ed.items || {}).forEach(function (co) { var arr = ds.itemData[co]; if (!arr) return; Object.keys(ed.items[co]).forEach(function (ri) { var it = arr[Number(ri)]; if (!it) return; Object.keys(ed.items[co][ri]).forEach(function (fi) { it[Number(fi)] = ed.items[co][ri][fi]; }); }); });
+      Object.keys(ed.deletedItems || {}).forEach(function (co) { var arr = ds.itemData[co]; if (!arr) return; Object.keys(ed.deletedItems[co]).forEach(function (ri) { if (arr[Number(ri)]) arr[Number(ri)]._deleted = true; }); });
+      Object.keys(ed.mails || {}).forEach(function (id) { var m = ds.emailHistory[Number(id)]; if (!m) return; Object.keys(ed.mails[id]).forEach(function (k) { m[k] = ed.mails[id][k]; }); if (m.replyDate !== undefined) m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null; });
+      Object.keys(ed.deletedMails || {}).forEach(function (id) { if (ds.emailHistory[Number(id)]) ds.emailHistory[Number(id)]._deleted = true; });
+    }
     swapDataset(ds);
     ds.ranked.forEach(recomputeCompany);
     ds.ranked.sort(function (x, y) { return y.in - x.in; });
@@ -1365,7 +1373,7 @@
     if (MONTH_ARCHIVE[key]) {
       setMainHeader("new");
       var ds = buildArchiveDataset(key);
-      swapDataset(ds); mainTable.classList.add("readonly");
+      swapDataset(ds);
       renderMainRowsLive();
       restoreLive();
       return;
@@ -1461,66 +1469,22 @@
     var actionsTd = tr.querySelector(".dt-actions");
     actionsTd.innerHTML = '<button type="button" class="row-save-btn">저장</button> <button type="button" class="row-cancel-btn">취소</button>';
   }
-  function commitRowEdit(tr) {
-    var table = tr.getAttribute("data-table");
-    var edits = {};
-    tr.querySelectorAll(".dt-editable").forEach(function (td) {
-      var input = td.querySelector("input");
-      edits[td.getAttribute("data-field")] = input ? input.value.trim() : td.textContent;
-    });
-    if (table === "sj" || table === "gj") {
-      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
-      var arr = itemData[company];
-      if (!arr || !arr[idx]) return;
-      var store1 = loadEditStore();
-      store1.items[company] = store1.items[company] || {};
-      store1.items[company][idx] = store1.items[company][idx] || {};
-      Object.keys(edits).forEach(function (fi) {
-        arr[idx][Number(fi)] = edits[fi];
-        store1.items[company][idx][fi] = edits[fi];
-      });
-      saveEditStore(store1);
-    } else {
-      var mailId = Number(tr.getAttribute("data-mail-id"));
-      var m = emailHistory[mailId];
-      if (!m) return;
-      Object.keys(edits).forEach(function (k) {
-        m[k] = (k === "replyDate" && (edits[k] === "" || edits[k] === "-")) ? null : edits[k];
-      });
-      m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
-      var store2 = loadEditStore();
-      store2.mails[mailId] = store2.mails[mailId] || {};
-      Object.keys(edits).forEach(function (k) { store2.mails[mailId][k] = m[k]; });
-      saveEditStore(store2);
-    }
-    ranked.forEach(recomputeCompany);
-    renderMainRows();
-    renderAllTable();
-    renderHistory();
-    renderAvgChart();
-    if (currentKpiKey === "current") renderKpiFor("current");
+  /* 지금 보는 표가 월 마감본이면 그 달 키, 아니면 null — 수정·삭제는 마감본 자신의 데이터와 저장 칸(archives)에 반영한다 */
+  function archiveKeyNow() { return MONTH_ARCHIVE[currentMonthFilter] ? currentMonthFilter : null; }
+  function archiveStore(store, key) {
+    var a = store.archives[key] = store.archives[key] || {};
+    a.items = a.items || {}; a.mails = a.mails || {}; a.deletedItems = a.deletedItems || {}; a.deletedMails = a.deletedMails || {};
+    return a;
   }
-  function askRowDelete(tr) {
-    var actionsTd = tr.querySelector(".dt-actions");
-    actionsTd.innerHTML = '<span class="dt-del-confirm">정말 삭제?</span> <button type="button" class="row-delconfirm-btn">예, 삭제</button> <button type="button" class="row-cancel-btn">아니오</button>';
-  }
-  function commitRowDelete(tr) {
-    var table = tr.getAttribute("data-table");
-    if (table === "sj" || table === "gj") {
-      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
-      var arr = itemData[company];
-      if (arr && arr[idx]) arr[idx]._deleted = true;
-      var store1 = loadEditStore();
-      store1.deletedItems[company] = store1.deletedItems[company] || {};
-      store1.deletedItems[company][idx] = true;
-      saveEditStore(store1);
-    } else {
-      var mailId = Number(tr.getAttribute("data-mail-id"));
-      var m = emailHistory[mailId];
-      if (m) m._deleted = true;
-      var store2 = loadEditStore();
-      store2.deletedMails[mailId] = true;
-      saveEditStore(store2);
+  function afterRowChange(akey) {
+    if (akey) {
+      var ds = buildArchiveDataset(akey);
+      swapDataset(ds);
+      try { ds.ranked.forEach(recomputeCompany); ds.ranked.sort(function (x, y) { return y.in - x.in; }); } finally { restoreLive(); }
+      renderMainRows();
+      renderAvgChart();
+      renderKpiFor();
+      return;
     }
     ranked.forEach(recomputeCompany);
     renderMainRows();
@@ -1529,6 +1493,66 @@
     renderHistory();
     renderAvgChart();
     if (currentKpiKey === "current") renderKpiFor("current");
+  }
+  function commitRowEdit(tr) {
+    var table = tr.getAttribute("data-table");
+    var akey = archiveKeyNow(), ds = akey ? buildArchiveDataset(akey) : null;
+    var edits = {};
+    tr.querySelectorAll(".dt-editable").forEach(function (td) {
+      var input = td.querySelector("input");
+      edits[td.getAttribute("data-field")] = input ? input.value.trim() : td.textContent;
+    });
+    ["5", "6", "8"].forEach(function (f) { if (edits[f] === "") edits[f] = "-"; }); /* 날짜 칸을 비우면 "-"(없음)로 */
+    var store = loadEditStore(), bucket = akey ? archiveStore(store, akey) : store;
+    if (table === "sj" || table === "gj") {
+      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
+      var arr = (ds ? ds.itemData : itemData)[company];
+      if (!arr || !arr[idx]) return;
+      /* 접수(전달)일을 바꾸면 포털에서 가져온 옛 점수는 무효 — "-"로 비워 새 날짜 기준으로 다시 계산되게 한다 */
+      var dIdx = table === "sj" ? "6" : "8", pIdx = table === "sj" ? "7" : "9";
+      if (edits[dIdx] !== undefined && edits[dIdx] !== arr[idx][Number(dIdx)] && edits[pIdx] === undefined) edits[pIdx] = "-";
+      bucket.items[company] = bucket.items[company] || {};
+      bucket.items[company][idx] = bucket.items[company][idx] || {};
+      Object.keys(edits).forEach(function (fi) {
+        arr[idx][Number(fi)] = edits[fi];
+        bucket.items[company][idx][fi] = edits[fi];
+      });
+    } else {
+      var mailId = Number(tr.getAttribute("data-mail-id"));
+      var m = (ds ? ds.emailHistory : emailHistory)[mailId];
+      if (!m) return;
+      Object.keys(edits).forEach(function (k) {
+        m[k] = (k === "replyDate" && (edits[k] === "" || edits[k] === "-")) ? null : edits[k];
+      });
+      m.delayDays = m.replyDate ? Math.round((parseMD(m.replyDate) - parseMD(m.req)) / 86400000) : null;
+      bucket.mails[mailId] = bucket.mails[mailId] || {};
+      Object.keys(edits).forEach(function (k) { bucket.mails[mailId][k] = m[k]; });
+    }
+    saveEditStore(store);
+    afterRowChange(akey);
+  }
+  function askRowDelete(tr) {
+    var actionsTd = tr.querySelector(".dt-actions");
+    actionsTd.innerHTML = '<span class="dt-del-confirm">정말 삭제?</span> <button type="button" class="row-delconfirm-btn">예, 삭제</button> <button type="button" class="row-cancel-btn">아니오</button>';
+  }
+  function commitRowDelete(tr) {
+    var table = tr.getAttribute("data-table");
+    var akey = archiveKeyNow(), ds = akey ? buildArchiveDataset(akey) : null;
+    var store = loadEditStore(), bucket = akey ? archiveStore(store, akey) : store;
+    if (table === "sj" || table === "gj") {
+      var company = tr.getAttribute("data-company"), idx = Number(tr.getAttribute("data-idx"));
+      var arr = (ds ? ds.itemData : itemData)[company];
+      if (arr && arr[idx]) arr[idx]._deleted = true;
+      bucket.deletedItems[company] = bucket.deletedItems[company] || {};
+      bucket.deletedItems[company][idx] = true;
+    } else {
+      var mailId = Number(tr.getAttribute("data-mail-id"));
+      var m = (ds ? ds.emailHistory : emailHistory)[mailId];
+      if (m) m._deleted = true;
+      bucket.deletedMails[mailId] = true;
+    }
+    saveEditStore(store);
+    afterRowChange(akey);
   }
   mainBody.addEventListener("click", function (ev) {
     var editBtn = ev.target.closest(".row-edit-btn");
@@ -1564,7 +1588,7 @@
   filterDefs.push(["year", "2026년 전체"]);
   function noteFor(key) {
     if (key === "current" || key === "y2025") return "";
-    if (MONTH_ARCHIVE[key]) return key + " 마감본 — " + MONTH_ARCHIVE[key].asOf + " 기준으로 보존한 세부 데이터입니다(읽기 전용). 행을 누르면 그 달의 성적서·관리품·클레임·회신률 근거가 펼쳐집니다.";
+    if (MONTH_ARCHIVE[key]) return key + " 마감본 — " + MONTH_ARCHIVE[key].asOf + " 기준으로 보존한 세부 데이터입니다. 행을 누르면 그 달의 성적서·관리품·클레임·회신률 근거가 펼쳐지고, 행의 \"✎ 수정\"으로 값을 고칠 수 있습니다(이 컴퓨터에만 저장).";
     if (OLD_MONTHS[key]) return key + "은 구 기준(엑셀 협력도 시트)으로 산정한 자료입니다 — 성적서·관리품 점수는 입고일 기준 영업일 구간 30/26/22/18/14점, 업체정보(제품표준서·위수탁계약서·PL보험증권·인증 각 5점 = 20점)와 회신(클레임회신 10 + 문의 회신률 10 = 20점)은 엑셀에 입력된 값입니다. 입고 5건 이상 업체만 집계했고(* = 정확히 5건), 관리품 미제출 건은 엑셀 오류(#VALUE!) 대신 14점으로 보았습니다. 9월부터의 신 기준(성적서30·관리품30·클레임20·회신률20)과 항목 구성이 달라 총점 직접 비교는 참고용입니다.";
     var ms = monthsFor(key);
     var label = key === "year" ? "2026년 누적(" + ms[0] + "~" + ms[ms.length - 1] + "월)" : parseInt(key.slice(1), 10) + "분기(" + (ms.length ? ms[0] + "~" + ms[ms.length - 1] + "월" : "해당 월 없음") + ")";
