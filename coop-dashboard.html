@@ -2161,12 +2161,12 @@
     svg.innerHTML = "";
     var W = 860, H = 360, padL = 40, padR = 14, padT = 58, padB = 40;
     var plotW = W - padL - padR, plotH = H - padT - padB, groupW = plotW / periods.length;
-    var barW = Math.min(avgMode === "month" ? 34 : 90, groupW * 0.62);
+    var barW = Math.min(avgMode === "month" ? 22 : 64, groupW * 0.5), AVG_TREND = "#33415c";
     function yOf(v) { return padT + plotH * (1 - v / 100); }
     function mean(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
     [0, 20, 40, 60, 80, 100].forEach(function (v) {
-      var ln = el("line", { x1: padL, x2: W - padR, y1: yOf(v), y2: yOf(v) }, "grid-line"); ln.setAttribute("stroke-dasharray", "1 4"); svg.appendChild(ln);
-      var yt = el("text", { x: padL - 8, y: yOf(v) + 3, "text-anchor": "end" }, "axis-label"); yt.setAttribute("style", "font-size:10.5px"); yt.textContent = v; svg.appendChild(yt);
+      var ln = el("line", { x1: padL, x2: W - padR, y1: yOf(v), y2: yOf(v) }, "grid-line"); ln.setAttribute("style", "stroke:var(--line);stroke-width:1;opacity:.75"); svg.appendChild(ln);
+      var yt = el("text", { x: padL - 8, y: yOf(v) + 3, "text-anchor": "end" }, "axis-label"); yt.setAttribute("style", "font-size:10px;fill:var(--ink-faint)"); yt.textContent = v; svg.appendChild(yt);
     });
     /* 구간(구 기준 | 신 기준) — 구간마다 머리말·목표선·누적평균선을 따로 그린다. 월 보기가 아니면 한 구간 */
     var secs = [{ a: 0, b: periods.length, t: AVG_YEAR + "년" }];
@@ -2204,13 +2204,17 @@
     }
     periods.forEach(function (d, gi) {
       var cx = padL + groupW * gi + groupW / 2;
-      var ml = el("text", { x: cx, y: padT + plotH + 22, "text-anchor": "middle" }, "month-label"); ml.setAttribute("style", "font-size:11px;font-weight:500;fill:var(--ink-faint)" + (d.v ? "" : ";opacity:.55")); ml.textContent = d.label + (d.partial ? "*" : "");
+      var ml = el("text", { x: cx, y: padT + plotH + 22, "text-anchor": "middle" }, "month-label"); ml.setAttribute("style", "font-size:10.5px;font-weight:500;fill:var(--ink-faint)" + (d.v ? "" : ";opacity:.55")); ml.textContent = d.label + (d.partial ? "*" : "");
       svg.appendChild(ml);
       if (!d.v) return;
       var acc = 0;
       [0, 1, 2, 3].forEach(function (k) {
         var h = plotH * d.v[k] / 100, y = padT + plotH - plotH * (acc + d.v[k]) / 100; acc += d.v[k];
-        var r = el("rect", { x: cx - barW / 2, y: y, width: barW, height: Math.max(h - 2, 0.5), rx: 2.5, fill: AVG_COLORS[k] });
+        var bx = cx - barW / 2, hh = Math.max(h, 0.5), rr = Math.min(3.5, barW / 2, hh);
+        var r = k === 3
+          ? el("path", { d: "M" + bx + "," + (y + hh) + " L" + bx + "," + (y + rr) + " Q" + bx + "," + y + " " + (bx + rr) + "," + y + " L" + (bx + barW - rr) + "," + y + " Q" + (bx + barW) + "," + y + " " + (bx + barW) + "," + (y + rr) + " L" + (bx + barW) + "," + (y + hh) + " Z", fill: AVG_COLORS[k] })
+          : el("rect", { x: bx, y: y, width: barW, height: hh, fill: AVG_COLORS[k] });
+        r.setAttribute("style", "stroke:var(--paper);stroke-width:1");
         r.style.cursor = "default";
         r.addEventListener("mouseenter", function (ev) { r.style.filter = "brightness(1.12)"; tip.innerHTML = tipHtml(d, k); tip.hidden = false; moveTip(ev); });
         r.addEventListener("mousemove", moveTip);
@@ -2218,9 +2222,22 @@
         r.addEventListener("click", function (ev) { tip.innerHTML = tipHtml(d, k); tip.hidden = false; moveTip(ev); });
         svg.appendChild(r);
       });
-      var tv = el("text", { x: cx, y: yOf(d.v[4]) - 7, "text-anchor": "middle" }, "bar-value"); tv.setAttribute("style", "font-size:11.5px"); tv.textContent = d.v[4].toFixed(0) + (d.partial ? "*" : "");
+      var tv = el("text", { x: cx, y: yOf(d.v[4]) - 12, "text-anchor": "middle" }, "bar-value"); tv.setAttribute("style", "font-size:10.5px"); tv.textContent = d.v[4].toFixed(0) + (d.partial ? "*" : "");
       svg.appendChild(tv);
     });
+    /* 월(기간)별 평균 총점 추이선 — 막대 위 합계를 이은 선에 흰 점 */
+    (function () {
+      var pts = [];
+      periods.forEach(function (d, gi) { if (d.v) pts.push([padL + groupW * gi + groupW / 2, yOf(d.v[4])]); });
+      if (pts.length > 1) {
+        var pl = el("polyline", { points: pts.map(function (p) { return p[0] + "," + p[1]; }).join(" "), fill: "none" });
+        pl.setAttribute("style", "stroke:" + AVG_TREND + ";stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;pointer-events:none"); svg.appendChild(pl);
+      }
+      pts.forEach(function (p) {
+        var c = el("circle", { cx: p[0], cy: p[1], r: 3.2 });
+        c.setAttribute("style", "fill:var(--paper);stroke:" + AVG_TREND + ";stroke-width:1.6;pointer-events:none"); svg.appendChild(c);
+      });
+    })();
     /* 구간별 목표선(빨간 점선)·누적평균선(검은 실선) */
     secs.forEach(function (sec) {
       var L = sec.lines;
@@ -2269,6 +2286,7 @@
       s.innerHTML = '<span class="lg-swatch" style="background:' + AVG_COLORS[x[1]] + '"></span>' + x[0]; lg.appendChild(s);
     });
     var s1 = document.createElement("span"); s1.className = "lg-item"; s1.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px dashed var(--crit)"></span>목표 ' + AVG_TARGET + '점'; lg.appendChild(s1);
+    var s0 = document.createElement("span"); s0.className = "lg-item"; s0.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid ' + AVG_TREND + '"></span>평균 총점 추이'; lg.appendChild(s0);
     var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>누적평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
     document.getElementById("avgThPeriod").textContent = avgMode === "month" ? "월" : avgMode === "quarter" ? "분기" : avgMode === "half" ? "반기" : "년";
     var body = document.getElementById("avgBody"); body.innerHTML = "";
