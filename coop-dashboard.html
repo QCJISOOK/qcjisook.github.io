@@ -220,6 +220,13 @@
   table.dt tbody tr.dt-pick.on { background: var(--accent-soft); }
   table.dt tbody tr.dt-pick.on td:first-child { color: var(--accent); font-weight: 700; }
   .mo-detail > .detail-panel { padding: 0; }
+  .dt-zoom-btn { font: inherit; font-size: 11px; font-weight: 600; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+  .dt-zoom-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .dt-section.zoomed { position: fixed; inset: 2.5vh 2.5vw; z-index: 1000; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px 20px; box-shadow: 0 0 0 100vmax rgba(10, 16, 24, .55), 0 12px 40px rgba(0, 0, 0, .35); overflow: hidden; }
+  .dt-section.zoomed .dt-scroll { flex: 1 1 auto; max-height: none; min-height: 0; }
+  .dt-section.zoomed table.dt { font-size: 13px; }
+  .dt-section.zoomed table.dt thead th { font-size: 12px; }
+  .dt-section.zoomed .dt-note { font-size: 12.5px; }
   tr.detail-row td { background: var(--accent-soft); padding: 0; border-bottom: 1px solid var(--line); }
   .detail-panel { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 22px; white-space: normal; }
   .di-note-mark { color: var(--warn); font-weight: 700; }
@@ -1131,6 +1138,44 @@
     return '<div class="dt-scroll"><table class="dt">' + head + '<tbody>' + rows + '</tbody></table></div>';
   }
 
+  /* 각 표 섹션을 화면 가득 확대해서 보는 기능 — 표는 제자리(DOM)에 둔 채 위로 띄우므로 ✎ 수정·🗑 삭제가 그대로 동작하고, 수정 후 다시 그려져도 확대 상태를 유지한다 */
+  var zoomKey = null;
+  function decorateZoom(panel, name) {
+    var ym = scopeYMNow();
+    Array.prototype.forEach.call(panel.querySelectorAll(".dt-section"), function (sec, i) {
+      var head = sec.querySelector(".dt-head");
+      if (!head || !sec.querySelector(".dt-scroll")) return;
+      sec.setAttribute("data-zoom-key", name + "|" + ym + "|" + i);
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "dt-zoom-btn"; b.textContent = "⤢ 크게 보기";
+      head.appendChild(b);
+    });
+    return panel;
+  }
+  function restoreZoom() {
+    if (!zoomKey) return;
+    var hit = null;
+    Array.prototype.forEach.call(document.querySelectorAll("#mainBody .dt-section[data-zoom-key]"), function (sec) { if (sec.getAttribute("data-zoom-key") === zoomKey) hit = sec; });
+    if (hit && !hit.closest("tr.detail-row").hidden) setZoom(hit, true); else zoomKey = null;
+  }
+  function setZoom(sec, on) {
+    sec.classList.toggle("zoomed", on);
+    var b = sec.querySelector(".dt-zoom-btn");
+    if (b) b.textContent = on ? "✕ 닫기 (Esc)" : "⤢ 크게 보기";
+    zoomKey = on ? sec.getAttribute("data-zoom-key") : null;
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".dt-zoom-btn");
+    if (!b) return;
+    ev.stopPropagation();
+    var sec = b.closest(".dt-section");
+    setZoom(sec, !sec.classList.contains("zoomed"));
+  }, true);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape") return;
+    var z = document.querySelector(".dt-section.zoomed");
+    if (z) setZoom(z, false);
+  });
   function buildDetailPanel(r) {
     var claimDetail = r.claimNote
       ? r.claimNote
@@ -1163,7 +1208,7 @@
         replyTableHtml(commonMails) +
       '</div>' +
       '<div class="detail-total">총점 <b>' + r.subtotal.toFixed(1) + ' / 100</b>점.</div>';
-    return wrap;
+    return decorateZoom(wrap, r.name);
   }
 
   var allBody = document.getElementById("allBody");
@@ -1284,7 +1329,7 @@
       '<div class="dt-section"><div class="dt-head"><span class="dt-title">3. 업체정보</span><span class="dt-score">' + c.inf + ' / 20</span></div><div class="dt-note">제품표준서 · 위수탁계약서 · PL보험증권 · 인증 각 5점 — 엑셀에 입력된 점수만 있고 세부 이력은 보관되어 있지 않습니다.</div></div>' +
       '<div class="dt-section"><div class="dt-head"><span class="dt-title">4. 회신</span><span class="dt-score">' + c.rep + ' / 20</span></div><div class="dt-note">클레임 회신 10 + 문의 회신률 10 — 엑셀에 입력된 점수만 있고 메일 이력은 보관되어 있지 않습니다.</div></div>' +
       '<div class="detail-total">총점 <b>' + c.t.toFixed(1) + ' / 100</b>점 (구 기준).</div>';
-    return wrap;
+    return decorateZoom(wrap, name);
   }
   function monthPanel(name, mo) {
     var key = mo + "월", out = null;
@@ -1361,7 +1406,8 @@
       mainBody.appendChild(detailTr);
     });
   }
-  function renderMainRows() {
+  function renderMainRows() { renderMainRowsInner(); restoreZoom(); }
+  function renderMainRowsInner() {
     var key = currentMonthFilter;
     mainTable.classList.remove("readonly");
     if (key === "y2025") {
