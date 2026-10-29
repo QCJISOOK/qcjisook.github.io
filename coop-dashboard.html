@@ -330,7 +330,7 @@
       <div class="legend-row" id="avgLegend"></div>
       <div class="avg-tip" id="avgTip" hidden></div>
       <svg class="chart-svg" id="avgChart" viewBox="0 0 860 360" role="img" aria-label="월별 평균 점수 추이"></svg>
-      <div class="table-scroll"><table class="data" id="avgTable"><thead><tr><th id="avgThPeriod">월</th><th>기준</th><th>집계</th><th>평균 총점<br>(100점)</th><th>목표 대비</th><th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임 / 업체정보<br>(20)</th><th>회신률 / 회신<br>(20)</th></tr></thead><tbody id="avgBody"></tbody></table></div>
+      <div class="table-scroll"><table class="data" id="avgTable"><thead><tr><th id="avgThPeriod">월</th><th>집계</th><th>평균 총점<br>(100점)</th><th>목표 대비</th><th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임 / 업체정보<br>(20)</th><th>회신률 / 회신<br>(20)</th></tr></thead><tbody id="avgBody"></tbody></table></div>
     </div>
   </section>
 
@@ -1975,16 +1975,16 @@
     var body = document.getElementById("avgBody"); body.innerHTML = "";
     periods.forEach(function (d) {
       var tr = document.createElement("tr");
-      if (!d.v) { tr.innerHTML = '<td>' + d.label + '</td><td style="text-align:left;color:var(--ink-faint)">' + (d.nMonths === 1 ? "데이터 없음·아직 오지 않음" : "데이터 없음") + '</td><td colspan="7" class="num"><span class="cell-na">-</span></td>'; }
+      if (!d.v) { tr.innerHTML = '<td>' + d.label + '</td><td colspan="7" style="text-align:left;color:var(--ink-faint)">' + (d.nMonths === 1 ? "데이터 없음·아직 오지 않음" : "데이터 없음") + '</td>'; }
       else {
         var g = d.v[4] - AVG_TARGET;
-        tr.innerHTML = '<td>' + d.label + (d.partial ? "*" : "") + '</td><td style="text-align:left">' + d.std + '</td><td class="num">' + (d.cnt !== null ? d.cnt + "개사" : d.n + "개월 평균") + '</td><td class="num subtotal-cell">' + d.v[4].toFixed(1) + '</td><td class="num" style="color:' + (g >= 0 ? "var(--good)" : "var(--crit)") + '">' + (g >= 0 ? "+" : "") + g.toFixed(1) + '</td><td class="num">' + d.v[0].toFixed(1) + '</td><td class="num">' + d.v[1].toFixed(1) + '</td><td class="num">' + d.v[2].toFixed(1) + '</td><td class="num">' + d.v[3].toFixed(1) + '</td>';
+        tr.innerHTML = '<td>' + d.label + (d.partial ? "*" : "") + '</td><td class="num">' + (d.cnt !== null ? d.cnt + "개사" : d.n + "개월 평균") + '</td><td class="num subtotal-cell">' + d.v[4].toFixed(1) + '</td><td class="num" style="color:' + (g >= 0 ? "var(--good)" : "var(--crit)") + '">' + (g >= 0 ? "+" : "") + g.toFixed(1) + '</td><td class="num">' + d.v[0].toFixed(1) + '</td><td class="num">' + d.v[1].toFixed(1) + '</td><td class="num">' + d.v[2].toFixed(1) + '</td><td class="num">' + d.v[3].toFixed(1) + '</td>';
       }
       body.appendChild(tr);
     });
     if (avgAll !== null) {
       var fr = document.createElement("tr"); fr.className = "grand-total"; var fg = avgAll - AVG_TARGET;
-      fr.innerHTML = '<td></td><td style="text-align:left">누적평균 (' + withData.length + '개월)</td><td></td><td class="num subtotal-cell">' + avgAll.toFixed(1) + '</td><td class="num" style="color:' + (fg >= 0 ? "var(--good)" : "var(--crit)") + '">' + (fg >= 0 ? "+" : "") + fg.toFixed(1) + '</td><td class="num">' + avgComp[0].toFixed(1) + '</td><td class="num">' + avgComp[1].toFixed(1) + '</td><td class="num">' + avgComp[2].toFixed(1) + '</td><td class="num">' + avgComp[3].toFixed(1) + '</td>';
+      fr.innerHTML = '<td colspan="2" style="text-align:left">누적평균 (' + withData.length + '개월)</td><td class="num subtotal-cell">' + avgAll.toFixed(1) + '</td><td class="num" style="color:' + (fg >= 0 ? "var(--good)" : "var(--crit)") + '">' + (fg >= 0 ? "+" : "") + fg.toFixed(1) + '</td><td class="num">' + avgComp[0].toFixed(1) + '</td><td class="num">' + avgComp[1].toFixed(1) + '</td><td class="num">' + avgComp[2].toFixed(1) + '</td><td class="num">' + avgComp[3].toFixed(1) + '</td>';
       body.appendChild(fr);
     }
   }
