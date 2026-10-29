@@ -1933,6 +1933,41 @@
       var tl = el("line", { x1: L.x1, x2: L.x2, y1: yOf(AVG_TARGET), y2: yOf(AVG_TARGET) }); tl.setAttribute("style", "stroke:var(--crit);stroke-width:1.3;stroke-dasharray:4 3;pointer-events:none"); svg.appendChild(tl);
       if (L.avg !== null) { var al = el("line", { x1: L.x1, x2: L.x2, y1: yOf(L.avg), y2: yOf(L.avg) }); al.setAttribute("style", "stroke:var(--ink);stroke-width:1.5;pointer-events:none"); svg.appendChild(al); }
     });
+    /* 목표선·월평균선 호버 — 선 위에 투명한 굵은 선을 얹어 말풍선을 띄운다 */
+    var pd = periods.filter(function (d) { return d.v; });
+    function lineTipHtml(kind, avgVal) {
+      var h = "";
+      if (kind === "target") {
+        var hit = pd.filter(function (d) { return d.v[4] >= AVG_TARGET; }), miss = pd.filter(function (d) { return d.v[4] < AVG_TARGET; });
+        h += '<div class="tip-title">목표 ' + AVG_TARGET + '점</div>';
+        h += '<div class="tip-row tip-main"><span class="tip-dot" style="background:var(--crit)"></span>목표 점수<span class="num">' + AVG_TARGET + '점</span></div>';
+        h += '<div class="tip-row">목표 이상<span class="num">' + hit.length + ' / ' + pd.length + (avgMode === "month" ? "개월" : "개 기간") + '</span></div>';
+        if (avgAll !== null) h += '<div class="tip-row">월평균 대비<span class="num">' + avgAll.toFixed(1) + '점 (' + (avgAll - AVG_TARGET >= 0 ? "+" : "") + (avgAll - AVG_TARGET).toFixed(1) + ')</span></div>';
+        if (miss.length) h += '<div class="tip-foot">목표 미달: ' + miss.slice(0, 6).map(function (d) { return d.label + " " + d.v[4].toFixed(1); }).join(", ") + (miss.length > 6 ? " 외 " + (miss.length - 6) + "곳" : "") + '</div>';
+      } else {
+        var best = pd.reduce(function (a, d) { return !a || d.v[4] > a.v[4] ? d : a; }, null), worst = pd.reduce(function (a, d) { return !a || d.v[4] < a.v[4] ? d : a; }, null);
+        var g = avgVal - AVG_TARGET, nm = ["성적서", "관리품", "클레임 · 업체정보", "회신률 · 회신"], mx = [30, 30, 20, 20];
+        h += '<div class="tip-title">월평균 ' + avgVal.toFixed(1) + '점</div>';
+        h += '<div class="tip-row tip-main"><span class="tip-dot" style="background:var(--ink)"></span>평균 총점<span class="num">' + avgVal.toFixed(1) + '점 (' + withData.length + '개월)</span></div>';
+        h += '<div class="tip-row">목표 대비<span class="num" style="color:' + (g >= 0 ? "var(--good)" : "var(--crit)") + '">' + (g >= 0 ? "+" : "") + g.toFixed(1) + '점</span></div>';
+        [0, 1, 2, 3].forEach(function (k) { h += '<div class="tip-row"><span class="tip-dot" style="background:' + AVG_COLORS[k] + '"></span>' + nm[k] + '<span class="num">' + avgComp[k].toFixed(1) + ' / ' + mx[k] + '</span></div>'; });
+        if (best && worst) h += '<div class="tip-foot">최고 ' + best.label + " " + best.v[4].toFixed(1) + "점 · 최저 " + worst.label + " " + worst.v[4].toFixed(1) + "점</div>";
+      }
+      return h;
+    }
+    secs.forEach(function (sec) {
+      var L = sec.lines;
+      [["target", AVG_TARGET], ["avg", L.avg]].forEach(function (x) {
+        if (x[1] === null || x[1] === undefined) return;
+        var hl = el("line", { x1: L.x1, x2: L.x2, y1: yOf(x[1]), y2: yOf(x[1]) });
+        hl.setAttribute("style", "stroke:transparent;stroke-width:12;pointer-events:stroke;cursor:default");
+        hl.addEventListener("mouseenter", function (ev) { tip.innerHTML = lineTipHtml(x[0], x[1]); tip.hidden = false; moveTip(ev); });
+        hl.addEventListener("mousemove", moveTip);
+        hl.addEventListener("mouseleave", function () { tip.hidden = true; });
+        hl.addEventListener("click", function (ev) { tip.innerHTML = lineTipHtml(x[0], x[1]); tip.hidden = false; moveTip(ev); });
+        svg.appendChild(hl);
+      });
+    });
     var lg = document.getElementById("avgLegend");
     lg.innerHTML = "";
     [["성적서", 0], ["관리품", 1], ["클레임 (구 기준: 업체정보)", 2], ["회신률 (구 기준: 회신)", 3]].forEach(function (x) {
