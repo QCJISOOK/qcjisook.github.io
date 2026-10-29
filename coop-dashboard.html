@@ -190,14 +190,6 @@
   #mainTable thead th[data-sort]:hover { color: var(--ink); }
   #mainTable thead th.sorted { color: var(--ink); font-weight: 700; }
   .sort-arrow { font-size: 9px; margin-left: 3px; color: var(--accent); }
-  .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 16px; }
-  .calc-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
-  .calc-grid input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; }
-  .calc-grid input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .calc-out { font-size: 12px; font-weight: 700; color: var(--accent); min-height: 16px; font-family: "IBM Plex Mono", monospace; }
-  .calc-total { margin-top: 10px; font-size: 13px; color: var(--ink); line-height: 1.7; }
-  .calc-total b { color: var(--accent); font-family: "IBM Plex Mono", monospace; font-size: 16px; }
-  table.score-table tr.hit td { background: var(--warn-soft) !important; color: var(--ink); font-weight: 700; }
   .export-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
   #mainTable.readonly table.dt .dt-actions { display: none !important; }
 
@@ -362,7 +354,7 @@
 
   <section class="block" id="criteriaSection">
     <div class="block-head">
-      <h2>점수 산정 기준 · 계산기</h2>
+      <h2>점수 산정 기준</h2>
       <div class="score-rule-box" id="scoreRuleBox">
         <div class="score-rule-head">
           <div class="score-rule-title">협력도 점수 산정 기준 (100점 만점)</div>
@@ -427,25 +419,6 @@
             </table>
           </div>
         </div>
-      </div>
-      <div class="score-rule-box" id="calcBox">
-        <div class="score-rule-head"><div class="score-rule-title">점수 계산기 <span style="font-weight:500;color:var(--ink-faint);font-size:11px">— 값을 넣으면 위 산정 기준 표에서 해당 구간이 표시되고 점수가 계산됩니다 (신 기준)</span></div><button type="button" id="calcReset" class="export-btn">값 지우기</button></div>
-        <div class="calc-grid">
-          <label>성적서 — 입고 후 제출까지 영업일<input type="number" min="0" step="1" id="calc-sj" placeholder="0=입고 당일"><span class="calc-out" id="out-sj"></span></label>
-          <label>관리품 — 입고 후 제출까지 영업일<input type="number" min="0" step="1" id="calc-gj" placeholder="0=입고 당일"><span class="calc-out" id="out-gj"></span></label>
-          <label>클레임 발생 — 제조사 귀책 건수<input type="number" min="0" step="1" id="calc-cn" placeholder="0건"><span class="calc-out" id="out-cn"></span></label>
-          <label>클레임 재발 — 같은 유형 누적 횟수<input type="number" min="0" step="1" id="calc-ck" placeholder="재발 없음=1"><span class="calc-out" id="out-ck"></span></label>
-          <label>클레임 회신속도 — 평균 회신일<input type="number" min="0" step="0.5" id="calc-cr" placeholder="메일 없으면 비움"><span class="calc-out" id="out-cr"></span></label>
-          <label>문의 회신률 — 평균 지연일<input type="number" min="0" step="0.5" id="calc-qr" placeholder="0=당일, 없으면 비움"><span class="calc-out" id="out-qr"></span></label>
-        </div>
-        <div class="calc-total" id="calcTotal"></div>
-        <div class="calc-grid" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
-          <label>또는 항목 점수로 총점 계산 — 성적서(30)<input type="number" min="0" max="30" step="0.1" id="sum-sj"></label>
-          <label>관리품(30)<input type="number" min="0" max="30" step="0.1" id="sum-gj"></label>
-          <label>클레임(20)<input type="number" min="0" max="20" step="0.1" id="sum-cl"></label>
-          <label>회신률(20)<input type="number" min="0" max="20" step="0.1" id="sum-rp"></label>
-        </div>
-        <div class="calc-total" id="sumTotal"></div>
       </div>
     </div>
   </section>
@@ -2266,51 +2239,6 @@
     }
     await saveBlobAsFile(blob, "협력도_점수_산정_기준_" + ymd + ".png");
   }
-  /* 점수 계산기 — 신 기준 배점표에 값을 대입 */
-  (function () {
-    var trs = Array.prototype.slice.call(document.querySelectorAll("#scoreRuleBox table.score-table tbody tr"));
-    var G = { sj: [1, 5], gj: [7, 5], cn: [13, 5], ck: [19, 4], cr: [24, 3], qr: [28, 4] };
-    function band(id, idx, pts, text) {
-      var g = G[id];
-      for (var i = 0; i < g[1]; i++) trs[g[0] + i].classList.toggle("hit", idx === i);
-      document.getElementById("out-" + id).textContent = pts === null ? "" : text + " → " + pts + "점";
-    }
-    function val(id) { var v = document.getElementById("calc-" + id).value; return v === "" ? null : Number(v); }
-    function grade(s) { return s >= 90 ? "S" : s >= 80 ? "A" : s >= 70 ? "B" : s >= 60 ? "C" : "D"; }
-    function calc() {
-      var sj = val("sj"), gj = val("gj"), cn = val("cn"), ck = val("ck"), cr = val("cr"), qr = val("qr");
-      var s = { sj: null, gj: null, cn: null, ck: null, cr: null, qr: null };
-      var i;
-      if (sj === null) band("sj", -1, null); else { i = sj <= 0 ? 0 : sj <= 3 ? 1 : sj <= 5 ? 2 : sj <= 7 ? 3 : 4; s.sj = [30, 20, 10, 5, 0][i]; band("sj", i, s.sj, sj + "영업일"); }
-      if (gj === null) band("gj", -1, null); else { i = gj <= 0 ? 0 : gj <= 2 ? 1 : gj <= 4 ? 2 : gj <= 6 ? 3 : 4; s.gj = [30, 20, 10, 5, 0][i]; band("gj", i, s.gj, gj + "영업일"); }
-      if (cn === null) band("cn", -1, null); else { i = cn <= 0 ? 0 : cn >= 4 ? 4 : cn; s.cn = [12, 8, 4, 2, 0][i]; band("cn", i, s.cn, cn + "건"); }
-      if (ck === null) band("ck", -1, null); else { i = ck <= 1 ? 0 : ck === 2 ? 1 : ck === 3 ? 2 : 3; s.ck = [8, 5, 2, 0][i]; band("ck", i, s.ck, "누적 " + ck + "회"); }
-      /* 회신: 비워 두면 그 달 해당 메일이 없는 것 → 만점 */
-      if (cr === null) { s.cr = 10; band("cr", -1, 10, "메일 없음(만점)"); } else { i = cr <= 7 ? 0 : cr <= 14 ? 1 : 2; s.cr = [10, 5, 0][i]; band("cr", i, s.cr, "평균 " + cr + "일"); }
-      if (qr === null) { s.qr = 10; band("qr", -1, 10, "메일 없음(만점)"); } else { i = qr <= 0 ? 0 : qr <= 2 ? 1 : qr <= 5 ? 2 : 3; s.qr = [10, 6, 3, 0][i]; band("qr", i, s.qr, "지연 " + qr + "일"); }
-      var filled = ["sj", "gj", "cn", "ck"].filter(function (k) { return s[k] !== null; }).length;
-      var sum = (s.sj || 0) + (s.gj || 0) + (s.cn || 0) + (s.ck || 0) + s.cr + s.qr;
-      var el2 = document.getElementById("calcTotal");
-      if (sj === null && gj === null && cn === null && ck === null && cr === null && qr === null) { el2.innerHTML = "값을 넣어 보세요. 클레임 회신·문의 회신은 비워 두면 그 달 해당 메일이 없는 것으로 보고 만점(10점)입니다."; return; }
-      el2.innerHTML = "성적서 <b>" + (s.sj === null ? "-" : s.sj) + "</b>/30 · 관리품 <b>" + (s.gj === null ? "-" : s.gj) + "</b>/30 · 클레임 <b>" + ((s.cn === null && s.ck === null) ? "-" : (s.cn || 0) + (s.ck || 0)) + "</b>/20 (발생 " + (s.cn === null ? "-" : s.cn) + " + 재발 " + (s.ck === null ? "-" : s.ck) + ") · 회신률 <b>" + (s.cr + s.qr) + "</b>/20 (클레임 " + s.cr + " + 문의 " + s.qr + ")<br>합계 <b>" + sum + "</b>점" + (filled < 4 ? " (입력하지 않은 항목은 0점으로 계산)" : "") + " · 등급 <b>" + grade(sum) + "</b> · 목표 " + AVG_TARGET_CALC + "점 대비 " + (sum - AVG_TARGET_CALC >= 0 ? "+" : "") + (sum - AVG_TARGET_CALC) + "점";
-    }
-    var AVG_TARGET_CALC = 80;
-    ["sj", "gj", "cn", "ck", "cr", "qr"].forEach(function (id) { document.getElementById("calc-" + id).addEventListener("input", calc); });
-    function sumCalc() {
-      var ids = ["sj", "gj", "cl", "rp"], mx = [30, 30, 20, 20], vals = ids.map(function (k) { return document.getElementById("sum-" + k).value; });
-      var out = document.getElementById("sumTotal");
-      if (vals.every(function (v) { return v === ""; })) { out.innerHTML = "성적서·관리품·클레임·회신률 점수를 넣으면 총점과 등급이 나옵니다."; return; }
-      var t = 0; vals.forEach(function (v, i) { t += Math.min(Number(v || 0), mx[i]); });
-      t = Math.round(t * 10) / 10;
-      out.innerHTML = "총점 <b>" + t + "</b>/100 · 등급 <b>" + grade(t) + "</b> · 목표 80점 대비 " + (t - 80 >= 0 ? "+" : "") + (Math.round((t - 80) * 10) / 10) + "점";
-    }
-    ["sj", "gj", "cl", "rp"].forEach(function (k) { document.getElementById("sum-" + k).addEventListener("input", sumCalc); });
-    document.getElementById("calcReset").addEventListener("click", function () {
-      ["calc-sj", "calc-gj", "calc-cn", "calc-ck", "calc-cr", "calc-qr", "sum-sj", "sum-gj", "sum-cl", "sum-rp"].forEach(function (id) { document.getElementById(id).value = ""; });
-      calc(); sumCalc();
-    });
-    calc(); sumCalc();
-  })();
   var scoreRuleExportBtn = document.getElementById("scoreRuleExportBtn");
   if (scoreRuleExportBtn) scoreRuleExportBtn.addEventListener("click", exportScoreRulePng);
 
