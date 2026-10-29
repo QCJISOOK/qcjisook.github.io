@@ -1,7 +1,5 @@
 
 
-
-
 <title>협력도 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,6 +177,19 @@
   .avg-tip .tip-foot { margin-top: 6px; font-size: 10.5px; color: var(--ink-faint); }
   #avgLegend .lg-item { font-size: 12.5px; color: var(--ink); }
   #avgLegend .lg-swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .pill-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 2px 0 14px; }
+  .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill-btn { font: inherit; font-size: 13px; font-weight: 700; padding: 7px 17px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); color: var(--ink-soft); cursor: pointer; }
+  .pill-btn:hover { border-color: var(--ink-faint); }
+  .pill-btn.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .pill-sep { width: 1px; height: 22px; background: var(--line); }
+  .ctl-lab { font-size: 12.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 7px; font-weight: 600; }
+  .ctl-lab select { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+  #mainTable thead th { border-bottom: 1.5px solid var(--ink); color: var(--ink-soft); font-weight: 500; vertical-align: bottom; }
+  #mainTable thead th[data-sort] { cursor: pointer; user-select: none; }
+  #mainTable thead th[data-sort]:hover { color: var(--ink); }
+  #mainTable thead th.sorted { color: var(--ink); font-weight: 700; }
+  .sort-arrow { font-size: 9px; margin-left: 3px; color: var(--accent); }
   .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 16px; }
   .calc-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
   .calc-grid input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); width: 100%; }
@@ -307,26 +318,53 @@
   </header>
 
   <section class="block" id="kpiBlock" style="gap:10px;">
-    <div class="mail-filter-row" id="kpiFilterRow"></div>
     <div class="kpi-cards" id="kpiRow"></div>
     <p class="desc" id="kpiNote" style="margin:0;"></p>
   </section>
 
-  <section class="block">
+  <section class="block" id="avgSection">
     <div class="block-head">
-      <h2>입고건수 1~5위 업체 협력도 점수</h2>
-      <p class="desc" id="top5Desc">이번 달(10/1~10/29) 입고건수가 가장 많은 5개사를 뽑아, 확인소계(100점 환산) 점수가 높은 순으로 나열한 것입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 5개사를 뽑되, 비교는 점수 순으로 보기 쉽게 정렬했습니다.</p>
+      <h2>월별 평균 점수 추이</h2>
+      <p class="desc">항목(성적서·관리품·클레임·회신률)별 평균 점수를 쌓아 올린 값이 그 달 업체 전체의 평균 총점입니다. 빨간 점선은 목표 80점, 검은 실선은 월평균(월별 평균 총점의 평균)입니다. 1~8월은 구 기준(엑셀 협력도 시트·입고 5건 이상, 클레임 자리=업체정보, 회신률 자리=회신), 9월부터는 신 기준(입고 6건 이상)이라 항목 구성이 다릅니다. 막대 조각에 마우스를 올리면 점수가 나옵니다.</p>
     </div>
     <div class="surface-card">
-      <div class="mail-filter-row" id="top5FilterRow"></div>
-      <svg class="chart-svg" id="top5Chart" viewBox="0 0 560 250" role="img" aria-label="입고건수 1~5위 업체 협력도 점수"></svg>
+      <div class="pill-row"><div class="pill-group" id="avgYearRow"></div><span class="pill-sep"></span><div class="pill-group" id="avgModeRow"></div></div>
+      <div class="legend-row" id="avgLegend"></div>
+      <div class="avg-tip" id="avgTip" hidden></div>
+      <svg class="chart-svg" id="avgChart" viewBox="0 0 860 360" role="img" aria-label="월별 평균 점수 추이"></svg>
+      <div class="table-scroll"><table class="data" id="avgTable"><thead><tr><th id="avgThPeriod">월</th><th>기준</th><th>집계</th><th>평균 총점<br>(100점)</th><th>목표 대비</th><th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임 / 업체정보<br>(20)</th><th>회신률 / 회신<br>(20)</th></tr></thead><tbody id="avgBody"></tbody></table></div>
     </div>
   </section>
 
-  <section class="block">
+  <section class="block" id="tableSection">
     <div class="block-head">
       <h2>제조사별 협력도 현황 <span class="chip accent">정상입고 6건 이상</span></h2>
-      <p class="desc">입고건수 많은 순. 채점 대상(그 달 입고 6건 이상) 제조사는 고정되어 있지 않고 매일 당월 누적 기준으로 다시 정해집니다. 제조업체명을 누르면 배점 산출 근거가 펼쳐집니다. 성적서·관리품 제출속도는 영업일(토·일·공휴일 제외) 기준입니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 계산에서 제외했습니다. 클레임은 "제조사 귀책"으로 확인된 건 중 접수일자가 그 달인 것만 집계합니다. 펼침 패널의 품목별 목록은 품질관리 포털의 "입고+출하" 원장에서 이번 달(10/1~10/29) 입고분을 그대로 가져온 것이라, LOT·판정 단위로 줄이 나뉘어 상단 평균 점수의 표본 수와 정확히 일치하지 않을 수 있습니다.</p>
+      <p class="desc">입고건수 많은 순. 채점 대상(그 달 입고 6건 이상) 제조사는 고정되어 있지 않고 매일 당월 누적 기준으로 다시 정해집니다. 제조업체명을 누르면 배점 산출 근거가 펼쳐집니다. 성적서·관리품 제출속도는 영업일(토·일·공휴일 제외) 기준입니다. "선입고"(완제품판정일자가 입고일자보다 늦은 건)는 계산에서 제외했습니다. 클레임은 "제조사 귀책"으로 확인된 건 중 접수일자가 그 달인 것만 집계합니다. 펼침 패널의 품목별 목록은 품질관리 포털의 "입고+출하" 원장에서 이번 달(10/1~10/29) 입고분을 그대로 가져온 것이라, LOT·판정 단위로 줄이 나뉘어 상단 평균 점수의 표본 수와 정확히 일치하지 않을 수 있습니다. 머리글을 누르면 정렬됩니다.</p>
+    </div>
+    <div class="surface-card">
+      <div class="pill-row" id="tblCtl">
+        <div class="pill-group" id="tblYearRow"></div>
+        <label class="ctl-lab">분기 <select id="tblQuarter"></select></label>
+        <label class="ctl-lab">월 <select id="tblMonth"></select></label>
+      </div>
+      <p class="desc" id="monthFilterNote" style="display:none;"></p>
+      <div class="table-scroll">
+        <table class="data" id="mainTable">
+          <thead>
+            <tr>
+              <th>순위</th><th data-sort="name">제조업체</th><th data-sort="i">입고건수</th><th data-sort="d">선입고</th><th data-sort="o">정상입고</th>
+              <th data-sort="sj">성적서<br>(30)</th><th data-sort="gj">관리품<br>(30)</th><th id="thClaim" data-sort="c3">클레임<br>(20)</th><th id="thReply" data-sort="c4">회신률<br>(20)</th><th data-sort="t">총점<br>(100점)</th>
+            </tr>
+          </thead>
+          <tbody id="mainBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="criteriaSection">
+    <div class="block-head">
+      <h2>점수 산정 기준 · 계산기</h2>
       <div class="score-rule-box" id="scoreRuleBox">
         <div class="score-rule-head">
           <div class="score-rule-title">협력도 점수 산정 기준 (100점 만점)</div>
@@ -412,22 +450,19 @@
         <div class="calc-total" id="sumTotal"></div>
       </div>
     </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>입고건수 1~5위 업체 협력도 점수</h2>
+      <p class="desc" id="top5Desc">이번 달(10/1~10/29) 입고건수가 가장 많은 5개사를 뽑아, 확인소계(100점 환산) 점수가 높은 순으로 나열한 것입니다. 물량이 큰 업체일수록 협력도 관리 우선순위가 높다는 관점에서 5개사를 뽑되, 비교는 점수 순으로 보기 쉽게 정렬했습니다.</p>
+    </div>
     <div class="surface-card">
-      <div class="mail-filter-row" id="monthFilterRow"></div>
-      <p class="desc" id="monthFilterNote" style="display:none;">과거 월은 품목별 세부 데이터가 보존되지 않아 "총점"만 집계된 자료입니다 — 입고건수·성적서·관리품·클레임·회신률 세부 점수는 제공되지 않습니다.</p>
-      <div class="table-scroll">
-        <table class="data" id="mainTable">
-          <thead>
-            <tr>
-              <th>순위</th><th>제조업체</th><th>입고건수</th><th>선입고</th><th>정상입고</th>
-              <th>성적서<br>(30)</th><th>관리품<br>(30)</th><th id="thClaim">클레임<br>(20)</th><th id="thReply">회신률<br>(20)</th><th>총점<br>(100점)</th>
-            </tr>
-          </thead>
-          <tbody id="mainBody"></tbody>
-        </table>
-      </div>
+      <div class="mail-filter-row" id="top5FilterRow"></div>
+      <svg class="chart-svg" id="top5Chart" viewBox="0 0 560 250" role="img" aria-label="입고건수 1~5위 업체 협력도 점수"></svg>
     </div>
   </section>
+
 
   <section class="block">
     <div class="block-head">
@@ -468,19 +503,6 @@
     </div>
   </section>
 
-  <section class="block">
-    <div class="block-head">
-      <h2>월별 업체 전체 평균 점수 <span class="chip accent">목표 80점</span></h2>
-      <p class="desc">그 달 채점된 업체 전체의 평균 점수를 항목(성적서·관리품·클레임·회신률)별로 쌓은 막대입니다. 빨간 점선은 목표 80점, 검은 실선은 월평균 점수(월별 평균 총점의 평균)입니다. 1~8월은 구 기준(엑셀 협력도 시트·입고 5건 이상, 클레임 자리는 업체정보, 회신률 자리는 회신), 9월은 마감본·10월은 실시간(신 기준·입고 6건 이상)이라 8월까지와 9월부터는 항목 구성이 달라 참고용입니다. 분기·반기·년은 그 기간 월별 평균의 평균입니다.</p>
-    </div>
-    <div class="surface-card">
-      <div class="mail-filter-row" id="avgModeRow"></div>
-      <div class="legend-row" id="avgLegend"></div>
-      <div class="avg-tip" id="avgTip" hidden></div>
-      <svg class="chart-svg" id="avgChart" viewBox="0 0 860 360" role="img" aria-label="월별 업체 전체 평균 점수"></svg>
-      <div class="table-scroll"><table class="data" id="avgTable"><thead><tr><th id="avgThPeriod">월</th><th>기준</th><th>집계</th><th>평균 총점<br>(100점)</th><th>목표 대비</th><th>성적서<br>(30)</th><th>관리품<br>(30)</th><th>클레임 / 업체정보<br>(20)</th><th>회신률 / 회신<br>(20)</th></tr></thead><tbody id="avgBody"></tbody></table></div>
-    </div>
-  </section>
 
   <section class="block">
     <div class="block-head">
@@ -1199,26 +1221,101 @@
     archiveCache[key] = ds;
     return ds;
   }
-  function setMainHeader(old) {
-    document.getElementById("thClaim").innerHTML = old ? "업체정보<br>(20)" : "클레임<br>(20)";
-    document.getElementById("thReply").innerHTML = old ? "회신<br>(20)" : "회신률<br>(20)";
+  /* ---- 제조사별 협력도 현황 표 — 필터(연도·분기·월), 머리글 정렬, 분기·연 누적 보기 ---- */
+  var tblState = { year: "all", quarter: "all", month: "current" };
+  var tblSort = { col: null, dir: -1 };
+  function liveMoNo() { return todayMidnight().getMonth() + 1; }
+  function listForMonth(mo) { /* 그 달 업체 목록 → 공통 형태 */
+    var key = mo + "월", out = [];
+    if (OLD_MONTHS[key]) { OLD_MONTHS[key].forEach(function (c) { out.push({ name: c.n, i: c.i, d: c.d, o: c.o, sj: c.sj, gj: c.gj, c3: c.inf, c4: c.rep, t: c.t }); }); return out; }
+    var src = MONTH_ARCHIVE[key] ? buildArchiveDataset(key).ranked : (mo === liveMoNo() ? ranked : null);
+    if (!src) return out;
+    src.forEach(function (r) { out.push({ name: r.name, i: r.in, d: r.dev, o: r.scoreN, sj: r.sj, gj: r.gj, c3: r.claim + r.recur, c4: r.reply, t: r.subtotal }); });
+    return out;
+  }
+  function aggRows(months) {
+    var by = {};
+    months.forEach(function (mo) { listForMonth(mo).forEach(function (r) { (by[r.name] = by[r.name] || []).push(r); }); });
+    return Object.keys(by).map(function (n) {
+      var recs = by[n];
+      function sum(k) { return recs.reduce(function (s, x) { return s + x[k]; }, 0); }
+      function avg(k) { return sum(k) / recs.length; }
+      return { name: n, i: sum("i"), d: sum("d"), o: sum("o"), sj: avg("sj"), gj: avg("gj"), c3: avg("c3"), c4: avg("c4"), t: avg("t"), months: recs.length };
+    }).sort(function (a, b) { return b.t - a.t; });
+  }
+  function kindOfMonths(months) {
+    var o = 0, n = 0;
+    months.forEach(function (mo) { if (OLD_MONTHS[mo + "월"]) o++; else n++; });
+    return o && n ? "mixed" : o ? "old" : "new";
+  }
+  function monthsFor(key) {
+    var lm = liveMoNo(), a, b, i, out = [];
+    if (key === "year") { a = 1; b = lm; } else { var q = parseInt(key.slice(1), 10); a = q * 3 - 2; b = Math.min(q * 3, lm); }
+    for (i = a; i <= b; i++) out.push(i);
+    return out;
+  }
+  function setMainHeader(kind) {
+    document.getElementById("thClaim").innerHTML = kind === "old" ? "업체정보<br>(20)" : kind === "mixed" ? "클레임 / 업체정보<br>(20)" : "클레임<br>(20)";
+    document.getElementById("thReply").innerHTML = kind === "old" ? "회신<br>(20)" : kind === "mixed" ? "회신률 / 회신<br>(20)" : "회신률<br>(20)";
+    var ths = document.querySelectorAll("#mainTable thead th[data-sort]");
+    Array.prototype.forEach.call(ths, function (th) {
+      var oldArrow = th.querySelector(".sort-arrow"); if (oldArrow) oldArrow.parentNode.removeChild(oldArrow);
+      var on = th.getAttribute("data-sort") === tblSort.col;
+      th.classList.toggle("sorted", on);
+      if (on) th.insertAdjacentHTML("beforeend", '<span class="sort-arrow">' + (tblSort.dir > 0 ? "▲" : "▼") + "</span>");
+    });
+  }
+  function sortList(arr, get) {
+    if (tblSort.col === null) return arr.slice();
+    var c = tblSort.col, d = tblSort.dir;
+    return arr.slice().sort(function (a, b) { var x = get(a, c), y = get(b, c); return typeof x === "string" ? d * x.localeCompare(y) : d * (x - y); });
+  }
+  function plainRows(rows, opts) {
+    mainBody.innerHTML = "";
+    if (!rows.length) { mainBody.innerHTML = '<tr><td colspan="10" class="dt-empty">이 기간의 데이터가 없습니다.</td></tr>'; return; }
+    sortList(rows, function (r, c) { return r[c]; }).forEach(function (r, idx) {
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>' + (idx + 1) + '</td>' +
+        '<td class="mk-name">' + r.name + (opts.months ? ' <span class="cell-na" style="font-size:11px">· ' + r.months + '개월</span>' : '') + '</td>' +
+        '<td class="num">' + r.i + (opts.star && r.i === 5 ? '<span class="foot-star">*</span>' : '') + '</td>' +
+        '<td class="num">' + r.d + '</td><td class="num">' + r.o + '</td>' +
+        '<td class="num">' + r.sj.toFixed(1) + '</td><td class="num">' + r.gj.toFixed(1) + '</td>' +
+        '<td class="num">' + (opts.months ? r.c3.toFixed(1) : r.c3) + '</td><td class="num">' + (opts.months ? r.c4.toFixed(1) : r.c4) + '</td>' +
+        '<td class="num subtotal-cell">' + r.t.toFixed(1) + '</td>';
+      mainBody.appendChild(tr);
+    });
   }
   function renderMainRows() {
-    setMainHeader(!!OLD_MONTHS[currentMonthFilter]);
-    if (currentMonthFilter === "current") { mainTable.classList.remove("readonly"); renderMainRowsLive(); return; }
-    if (MONTH_ARCHIVE[currentMonthFilter]) {
-      var ds = buildArchiveDataset(currentMonthFilter);
+    var key = currentMonthFilter;
+    mainTable.classList.remove("readonly");
+    if (key === "y2025") {
+      setMainHeader("new");
+      mainBody.innerHTML = '<tr><td colspan="10" class="dt-empty">2025년 협력도 점수는 집계된 데이터가 없습니다 (2026년부터 집계).</td></tr>';
+      return;
+    }
+    if (key === "current") { setMainHeader("new"); renderMainRowsLive(); return; }
+    if (MONTH_ARCHIVE[key]) {
+      setMainHeader("new");
+      var ds = buildArchiveDataset(key);
       swapDataset(ds); mainTable.classList.add("readonly");
       renderMainRowsLive();
       restoreLive();
       return;
     }
-    mainTable.classList.remove("readonly");
-    renderMainRowsForMonth(currentMonthFilter);
+    if (OLD_MONTHS[key]) {
+      setMainHeader("old");
+      plainRows(listForMonth(parseInt(key, 10)).sort(function (a, b) { return b.t - a.t; }), { star: true });
+      return;
+    }
+    var months = monthsFor(key);
+    setMainHeader(kindOfMonths(months));
+    plainRows(aggRows(months), { months: true });
   }
+  function liveRowVal(r, c) { return c === "name" ? r.name : c === "i" ? r.in : c === "d" ? r.dev : c === "o" ? r.scoreN : c === "sj" ? r.sj : c === "gj" ? r.gj : c === "c3" ? r.claim + r.recur : c === "c4" ? r.reply : r.subtotal; }
   function renderMainRowsLive() {
     mainBody.innerHTML = "";
-    ranked.forEach(function (r, idx) {
+    sortList(ranked, liveRowVal).forEach(function (r, idx) {
       var tr = document.createElement("tr");
       tr.className = "clickable";
       tr.innerHTML =
@@ -1255,71 +1352,14 @@
       mainBody.appendChild(detailTr);
     });
   }
-
-  /* 과거 월 필터 — 품목 단위 세부 데이터가 없는 달은 "총점"만 보여준다 (사용자가 직접 전달한 MONTHLY_TOTALS 기준) */
-  function renderMainRowsForMonth(monthKey) {
-    mainBody.innerHTML = "";
-    var rows;
-    var oldList = OLD_MONTHS[monthKey];
-    if (oldList) {
-      oldList.forEach(function (c, idx) {
-        var tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td>' + (idx + 1) + '</td><td class="mk-name">' + c.n + '</td>' +
-          '<td class="num">' + c.i + (c.i === 5 ? '<span class="foot-star">*</span>' : '') + '</td>' +
-          '<td class="num">' + c.d + '</td><td class="num">' + c.o + '</td>' +
-          '<td class="num">' + c.sj.toFixed(1) + '</td><td class="num">' + c.gj.toFixed(1) + '</td>' +
-          '<td class="num">' + c.inf + '</td><td class="num">' + c.rep + '</td>' +
-          '<td class="num subtotal-cell">' + c.t.toFixed(1) + '</td>';
-        mainBody.appendChild(tr);
-      });
-      return;
-    }
-    if (monthKey === "year") {
-      var yearNames = [];
-      Object.keys(OLD_MONTHS).forEach(function (k) { OLD_MONTHS[k].forEach(function (c) { if (yearNames.indexOf(c.n) === -1) yearNames.push(c.n); }); });
-      ranked.forEach(function (r) { if (yearNames.indexOf(r.name) === -1) yearNames.push(r.name); });
-      Object.keys(MONTH_ARCHIVE).forEach(function (k) { buildArchiveDataset(k).ranked.forEach(function (r) { if (yearNames.indexOf(r.name) === -1) yearNames.push(r.name); }); });
-      rows = yearNames.map(function (name) {
-        var vals = [];
-        Object.keys(OLD_MONTHS).forEach(function (k) { OLD_MONTHS[k].forEach(function (c) { if (c.n === name) vals.push(c.t); }); });
-        Object.keys(MONTH_ARCHIVE).forEach(function (k) {
-          buildArchiveDataset(k).ranked.forEach(function (r) { if (r.name === name && r.subtotal !== undefined) vals.push(Math.round(r.subtotal)); });
-        });
-        var live = null;
-        for (var i = 0; i < ranked.length; i++) { if (ranked[i].name === name) { live = ranked[i]; break; } }
-        if (live && live.subtotal !== undefined) vals.push(live.subtotal);
-        if (!vals.length) return null;
-        var sum = vals.reduce(function (a, b) { return a + b; }, 0);
-        return { name: name, score: Math.round(sum / vals.length) };
-      }).filter(function (r) { return r; });
-    } else {
-      var monthData = MONTHLY_TOTALS[monthKey] || {};
-      rows = Object.keys(monthData).map(function (name) { return { name: name, score: monthData[name] }; });
-    }
-    rows.sort(function (a, b) { return b.score - a.score; });
-    if (!rows.length) {
-      var emptyTr = document.createElement("tr");
-      emptyTr.innerHTML = '<td colspan="10" class="dt-empty">이 달의 데이터가 없습니다.</td>';
-      mainBody.appendChild(emptyTr);
-      return;
-    }
-    rows.forEach(function (r, idx) {
-      var tr = document.createElement("tr");
-      tr.innerHTML =
-        '<td>' + (idx + 1) + '</td>' +
-        '<td class="mk-name">' + r.name + '</td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num"><span class="cell-na">-</span></td>' +
-        '<td class="num subtotal-cell">' + r.score + '</td>';
-      mainBody.appendChild(tr);
+  /* 머리글 클릭 정렬 */
+  Array.prototype.forEach.call(document.querySelectorAll("#mainTable thead th[data-sort]"), function (th) {
+    th.addEventListener("click", function () {
+      var c = th.getAttribute("data-sort");
+      if (tblSort.col === c) tblSort.dir = -tblSort.dir; else { tblSort.col = c; tblSort.dir = c === "name" ? 1 : -1; }
+      renderMainRows();
     });
-  }
+  });
 
   /* 전체 제조업체 협력도 점수 */
   function renderAllTable() {
@@ -1452,80 +1492,77 @@
   filterDefs.push(["current", liveMonthNo + "월(현재·실시간)"]);
   filterDefs.push(["year", "2026년 전체"]);
   function noteFor(key) {
-    if (key === "current") return "";
+    if (key === "current" || key === "y2025") return "";
     if (MONTH_ARCHIVE[key]) return key + " 마감본 — " + MONTH_ARCHIVE[key].asOf + " 기준으로 보존한 세부 데이터입니다(읽기 전용). 행을 누르면 그 달의 성적서·관리품·클레임·회신률 근거가 펼쳐집니다.";
     if (OLD_MONTHS[key]) return key + "은 구 기준(엑셀 협력도 시트)으로 산정한 자료입니다 — 성적서·관리품 점수는 입고일 기준 영업일 구간 30/26/22/18/14점, 업체정보(제품표준서·위수탁계약서·PL보험증권·인증 각 5점 = 20점)와 회신(클레임회신 10 + 문의 회신률 10 = 20점)은 엑셀에 입력된 값입니다. 입고 5건 이상 업체만 집계했고(* = 정확히 5건), 관리품 미제출 건은 엑셀 오류(#VALUE!) 대신 14점으로 보았습니다. 9월부터의 신 기준(성적서30·관리품30·클레임20·회신률20)과 항목 구성이 달라 총점 직접 비교는 참고용입니다.";
-    if (key === "year") return "월별 총점 평균 — 1~8월(구 기준)·9월 마감본·이번 달 실시간 점수를 회사별로 평균 낸 값입니다. 8월까지와 9월부터는 평가 항목 구성이 달라 참고용입니다.";
-    return "이 달은 품목별 세부 데이터가 보존되지 않아 \"총점\"만 집계된 자료입니다 — 입고건수·성적서·관리품·클레임·회신률 세부 점수는 제공되지 않습니다.";
+    var ms = monthsFor(key);
+    var label = key === "year" ? "2026년 누적(" + ms[0] + "~" + ms[ms.length - 1] + "월)" : parseInt(key.slice(1), 10) + "분기(" + (ms.length ? ms[0] + "~" + ms[ms.length - 1] + "월" : "해당 월 없음") + ")";
+    return label + " — 회사별로 월별 점수를 평균한 값입니다(입고·선입고·정상입고는 합계, 'N개월'은 점수가 있는 달 수). 1~8월은 구 기준(업체정보·회신), 9월부터는 신 기준(클레임·회신률)이라 항목 구성이 달라 참고용입니다.";
   }
-  filterDefs.forEach(function (f) {
-    var b = document.createElement("button");
-    b.className = "mail-filter-btn" + (f[0] === "current" ? " active" : "");
-    b.textContent = f[1];
-    b.addEventListener("click", function () {
-      Array.prototype.forEach.call(monthFilterRow.children, function (c) { c.classList.remove("active"); });
-      b.classList.add("active");
-      currentMonthFilter = f[0];
-      var note = noteFor(f[0]);
+  (function () {
+    var yr = document.getElementById("tblYearRow"), qSel = document.getElementById("tblQuarter"), mSel = document.getElementById("tblMonth");
+    function apply() {
+      var key;
+      if (tblState.year === "2025") key = "y2025";
+      else if (tblState.month !== "all") key = tblState.month;
+      else if (tblState.quarter !== "all") key = "Q" + tblState.quarter;
+      else key = "year";
+      currentMonthFilter = key;
+      tblSort.col = null; // 보기를 바꾸면 정렬은 기본 순서로
+      var note = noteFor(key);
       monthFilterNote.textContent = note;
       monthFilterNote.style.display = note ? "block" : "none";
       expandedCompany = null;
       renderMainRows();
+    }
+    [["all", "전체"], ["2025", "2025년"], ["2026", "2026년"]].forEach(function (f, i) {
+      var b = document.createElement("button"); b.className = "pill-btn" + (i === 0 ? " active" : ""); b.textContent = f[1];
+      b.addEventListener("click", function () { Array.prototype.forEach.call(yr.children, function (c) { c.classList.remove("active"); }); b.classList.add("active"); tblState.year = f[0]; apply(); });
+      yr.appendChild(b);
     });
-    monthFilterRow.appendChild(b);
-  });
+    [["all", "전체"], ["1", "1분기"], ["2", "2분기"], ["3", "3분기"], ["4", "4분기"]].forEach(function (o) { var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1]; qSel.appendChild(op); });
+    var mo0 = document.createElement("option"); mo0.value = "all"; mo0.textContent = "전체(누적)"; mSel.appendChild(mo0);
+    filterDefs.forEach(function (f) { if (f[0] === "year") return; var op = document.createElement("option"); op.value = f[0]; op.textContent = f[1]; mSel.appendChild(op); });
+    mSel.value = "current";
+    qSel.addEventListener("change", function () { tblState.quarter = qSel.value; if (qSel.value !== "all") { tblState.month = "all"; mSel.value = "all"; } apply(); });
+    mSel.addEventListener("change", function () { tblState.month = mSel.value; if (mSel.value !== "all") { tblState.quarter = "all"; qSel.value = "all"; } apply(); });
+  })();
 
   /* 상단 KPI — 월별 항목 평균(성적서·관리품·클레임·회신률). 실시간은 ranked, 마감본이 있는 달은 그 달 마감본, 총점만 있는 달(1~6월)은 항목 점수가 없어 "-" */
   var currentKpiKey = "current";
   function kpiAvg(list, pick) { return list.reduce(function (s, r) { return s + pick(r); }, 0) / list.length; }
   var KPI_TARGET = 80, KPI_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
-  function renderKpiFor(key) {
-    currentKpiKey = key;
+  /* 상단 KPI — 26년 누적(월평균). 총 평균점수 + 성적서·관리품·업체정보(클레임)·회신(회신률) */
+  function renderKpiFor() {
     kpiRow.innerHTML = "";
-    var mo = key === "current" ? todayMidnight().getMonth() + 1 : parseInt(key, 10);
-    var all = avgMonthData(), d = all[mo - 1], prev = mo > 1 ? all[mo - 2] : null;
-    var isOld = !!OLD_MONTHS[mo + "월"];
-    function arrow(diff, unit) { return '<span class="' + (diff >= 0 ? "k-up" : "k-down") + '">' + (diff >= 0 ? "▲" : "▼") + " " + Math.abs(diff).toFixed(1) + (unit || "") + "</span>"; }
-    function card(title, color, val, max, k) {
+    var all = avgMonthData(), md = all.filter(function (d) { return d.v; });
+    var last = md.length ? md[md.length - 1] : null;
+    function mean(k) { return md.length ? md.reduce(function (s, d) { return s + d.v[k]; }, 0) / md.length : null; }
+    function arrow(diff) { return '<span class="' + (diff >= 0 ? "k-up" : "k-down") + '">' + (diff >= 0 ? "▲" : "▼") + " " + Math.abs(diff).toFixed(1) + "</span>"; }
+    function card(title, color, k, max) {
+      var val = mean(k);
       var c = document.createElement("div"); c.className = "kcard";
       var head = '<div class="k-title">' + (color ? '<span class="k-dot" style="background:' + color + '"></span>' : "") + title + "</div>";
-      var big = '<div class="k-val num">' + (val === null ? "-" : val.toFixed(1)) + "<small>점" + (max ? " / " + max : "") + "</small></div>";
+      var big = '<div class="k-val num">' + (val === null ? "-" : val.toFixed(1)) + "<small>점 / " + max + "</small></div>";
       var sub = "";
-      if (val === null) sub = "데이터 없음";
-      else if (k === "total") {
+      if (val !== null && k === 4) {
         var g = val - KPI_TARGET;
-        sub = '<span class="k-chip' + (g >= 0 ? "" : " bad") + '">목표 ' + KPI_TARGET + "점 대비 " + (g >= 0 ? "▲" : "▼") + " " + Math.abs(g).toFixed(1) + "</span>" + (prev && prev.v ? "<span>전월 " + prev.v[4].toFixed(1) + "점 " + arrow(val - prev.v[4]) + "</span>" : "");
-      } else {
-        sub = "<span>만점 " + max + "점 · 달성률 " + Math.round(val / max * 100) + "%</span>" + (prev && prev.v ? "<span>전월 " + prev.v[k].toFixed(1) + " " + arrow(val - prev.v[k]) + "</span>" : "");
-      }
+        sub = '<span class="k-chip' + (g >= 0 ? "" : " bad") + '">목표 ' + KPI_TARGET + "점 대비 " + (g >= 0 ? "▲" : "▼") + " " + Math.abs(g).toFixed(1) + "</span><span>" + md.length + "개월 월평균 · 최근 " + last.m + "월 " + last.v[4].toFixed(1) + "점</span>";
+      } else if (val !== null) {
+        sub = "<span>만점 " + max + "점 · 달성률 " + Math.round(val / max * 100) + "%</span><span>최근 " + last.m + "월 " + last.v[k].toFixed(1) + " " + arrow(last.v[k] - val) + "</span>";
+      } else sub = "데이터 없음";
       c.innerHTML = head + big + '<div class="k-sub">' + sub + "</div>";
       kpiRow.appendChild(c);
     }
-    var v = d && d.v ? d.v : null;
-    card("총 평균점수 (" + mo + "월)", null, v ? v[4] : null, 100, "total");
-    card("성적서 평균", KPI_COLORS[0], v ? v[0] : null, 30, 0);
-    card("관리품 평균", KPI_COLORS[1], v ? v[1] : null, 30, 1);
-    card("업체정보" + (isOld ? "" : " · 클레임"), KPI_COLORS[2], v ? v[2] : null, 20, 2);
-    card("회신" + (isOld ? "" : " · 회신률"), KPI_COLORS[3], v ? v[3] : null, 20, 3);
-    var note;
-    if (!v) note = mo + "월은 보존된 데이터가 없습니다.";
-    else if (isOld) note = mo + "월 — 구 기준(엑셀 협력도 시트), 입고 5건 이상 " + d.n + "개사의 단순 평균입니다. 구 기준에는 클레임 항목이 없고 업체정보 20점(제품표준서·위수탁계약서·PL보험증권·인증)이 들어 있으며, 회신은 클레임회신 10 + 문의 회신률 10점입니다.";
-    else note = (key === "current" ? "이번 달(실시간)" : mo + "월 마감본") + " — 신 기준, 입고 6건 이상 채점 대상 " + d.n + "개사의 단순 평균입니다. 업체정보 칸은 신 기준에서 클레임(발생 12 + 재발 8), 회신은 회신률(클레임회신속도 10 + 문의 10)입니다.";
-    document.getElementById("kpiNote").textContent = note;
+    card("26년 누적 평균점수", null, 4, 100);
+    card("성적서 평균", KPI_COLORS[0], 0, 30);
+    card("관리품 평균", KPI_COLORS[1], 1, 30);
+    card("업체정보 · 클레임", KPI_COLORS[2], 2, 20);
+    card("회신 · 회신률", KPI_COLORS[3], 3, 20);
+    document.getElementById("kpiNote").textContent = md.length
+      ? "26년 1~" + last.m + "월 누적 — 월별 업체 전체 평균을 다시 평균한 값입니다(" + md.length + "개월). 1~8월은 구 기준(업체정보 20점·회신 20점), 9월부터는 신 기준(클레임 20점·회신률 20점)이라 항목 구성이 다릅니다. 최근 월 값 옆 ▲▼는 누적 평균 대비입니다."
+      : "집계된 달이 없습니다.";
   }
-  var kpiFilterRow = document.getElementById("kpiFilterRow");
-  filterDefs.forEach(function (f) {
-    if (f[0] === "year") return;
-    var b = document.createElement("button");
-    b.className = "mail-filter-btn" + (f[0] === "current" ? " active" : "");
-    b.textContent = f[1];
-    b.addEventListener("click", function () {
-      Array.prototype.forEach.call(kpiFilterRow.children, function (c) { c.classList.remove("active"); });
-      b.classList.add("active");
-      renderKpiFor(f[0]);
-    });
-    kpiFilterRow.appendChild(b);
-  });
   renderKpiFor("current");
 
   /* "입고건수 1~5위" 차트 월 필터 — 실시간(이번 달)은 ranked, 마감본이 있는 달은 그 달 입고 1~5위, 총점만 있는 달(1~6월)은 입고건수가 없어 총점 상위 5개사 */
@@ -1838,7 +1875,7 @@
       var yt = el("text", { x: padL - 8, y: yOf(v) + 3, "text-anchor": "end" }, "axis-label"); yt.setAttribute("style", "font-size:10.5px"); yt.textContent = v; svg.appendChild(yt);
     });
     /* 구간(구 기준 | 신 기준) — 구간마다 머리말·목표선·월평균선을 따로 그린다. 월 보기가 아니면 한 구간 */
-    var secs = avgMode === "month" ? [{ a: 0, b: 8, t: "구 기준 (1~8월)" }, { a: 8, b: 12, t: "신 기준 (9월~)" }] : [{ a: 0, b: periods.length, t: "2026년" }];
+    var secs = [{ a: 0, b: periods.length, t: "2026년" }];
     secs.forEach(function (sec, si) {
       var xa = padL + groupW * sec.a, xb = padL + groupW * sec.b;
       var vals = periods.slice(sec.a, sec.b).filter(function (d) { return d.v; }).map(function (d) { return d.v[4]; });
@@ -1923,9 +1960,15 @@
     }
   }
   (function () {
+    var yr = document.getElementById("avgYearRow");
+    [["all", "전체"], ["2026", "2026년"]].forEach(function (f, i) {
+      var b = document.createElement("button"); b.className = "pill-btn" + (i === 0 ? " active" : ""); b.textContent = f[1];
+      b.addEventListener("click", function () { Array.prototype.forEach.call(yr.children, function (c) { c.classList.remove("active"); }); b.classList.add("active"); renderAvgChart(); });
+      yr.appendChild(b);
+    });
     var row = document.getElementById("avgModeRow");
     [["month", "월"], ["quarter", "분기"], ["half", "반기"], ["year", "년"]].forEach(function (f, i) {
-      var b = document.createElement("button"); b.className = "mail-filter-btn" + (i === 0 ? " active" : ""); b.textContent = f[1];
+      var b = document.createElement("button"); b.className = "pill-btn" + (i === 0 ? " active" : ""); b.textContent = f[1];
       b.addEventListener("click", function () { Array.prototype.forEach.call(row.children, function (c) { c.classList.remove("active"); }); b.classList.add("active"); avgMode = f[0]; renderAvgChart(); });
       row.appendChild(b);
     });
