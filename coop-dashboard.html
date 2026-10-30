@@ -2161,7 +2161,7 @@
     svg.innerHTML = "";
     var W = 860, H = 360, padL = 40, padR = 14, padT = 58, padB = 40;
     var plotW = W - padL - padR, plotH = H - padT - padB, groupW = plotW / periods.length;
-    var barW = Math.min(avgMode === "month" ? 22 : 64, groupW * 0.5), AVG_TREND = "#33415c";
+    var barW = Math.min(avgMode === "month" ? 22 : 64, groupW * 0.5), AVG_TREND = "#8e44ad";
     function yOf(v) { return padT + plotH * (1 - v / 100); }
     function mean(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
     [0, 20, 40, 60, 80, 100].forEach(function (v) {
@@ -2286,7 +2286,7 @@
       s.innerHTML = '<span class="lg-swatch" style="background:' + AVG_COLORS[x[1]] + '"></span>' + x[0]; lg.appendChild(s);
     });
     var s1 = document.createElement("span"); s1.className = "lg-item"; s1.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px dashed var(--crit)"></span>목표 ' + AVG_TARGET + '점'; lg.appendChild(s1);
-    var s0 = document.createElement("span"); s0.className = "lg-item"; s0.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid ' + AVG_TREND + '"></span>평균 총점 추이'; lg.appendChild(s0);
+    var s0 = document.createElement("span"); s0.className = "lg-item"; s0.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid ' + AVG_TREND + '"></span>월평균 추이선'; lg.appendChild(s0);
     var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>누적평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
     document.getElementById("avgThPeriod").textContent = avgMode === "month" ? "월" : avgMode === "quarter" ? "분기" : avgMode === "half" ? "반기" : "년";
     var body = document.getElementById("avgBody"); body.innerHTML = "";
