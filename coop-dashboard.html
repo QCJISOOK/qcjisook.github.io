@@ -2281,7 +2281,7 @@
     });
     var lg = document.getElementById("avgLegend");
     lg.innerHTML = "";
-    [["성적서", 0], ["관리품", 1], ["클레임 (구 기준: 업체정보)", 2], ["회신률 (구 기준: 회신)", 3]].forEach(function (x) {
+    [["성적서", 0], ["관리품", 1], ["클레임", 2], ["회신률", 3]].forEach(function (x) {
       var s = document.createElement("span"); s.className = "lg-item";
       s.innerHTML = '<span class="lg-swatch" style="background:' + AVG_COLORS[x[1]] + '"></span>' + x[0]; lg.appendChild(s);
     });
