@@ -329,7 +329,7 @@
       <h2>월별 평균 점수 추이</h2>
     </div>
     <div class="surface-card">
-      <div class="pill-row"><div class="pill-group" id="avgYearRow"></div><span class="pill-sep"></span><div class="pill-group" id="avgModeRow"></div></div>
+      <div class="pill-row"><div class="pill-group" id="avgYearRow"></div><span class="pill-sep"></span><div class="pill-group" id="avgModeRow"></div><button type="button" id="avgExportBtn" class="export-btn" style="margin-left:auto">⬇ 고해상도 이미지로 저장</button></div>
       <div class="legend-row" id="avgLegend"></div>
       <div class="avg-tip" id="avgTip" hidden></div>
       <svg class="chart-svg" id="avgChart" viewBox="0 0 860 360" role="img" aria-label="월별 평균 점수 추이"></svg>
@@ -2453,6 +2453,94 @@
     }
     await saveBlobAsFile(blob, "월별_협력도_점수_현황_" + ymd + ".png");
   }
+  /* "월별 평균 점수 추이" 차트를 고해상도 PNG로 — 화면의 SVG를 그대로 복제하되, 이미지로 읽힐 때는 CSS 변수(var(--…))와 웹폰트가 안 먹으므로
+     style 속성의 var()를 실제 색으로 바꿔 넣고, HTML 범례는 SVG 도형·글자로 다시 그려 차트 위에 붙인다. */
+  function buildAvgBlob() {
+    return new Promise(function (resolve, reject) {
+      var svgEl = document.getElementById("avgChart");
+      if (!svgEl || !svgEl.firstChild) { reject(new Error("no chart")); return; }
+      var cs = getComputedStyle(document.documentElement);
+      function cv(name) { return (cs.getPropertyValue(name) || "").trim(); }
+      function resolveVars(str) { return String(str).replace(/var\((--[\w-]+)\)/g, function (m, n) { return cv(n) || "#000"; }); }
+      var ink = cv("--ink") || "#111a24", inkSoft = cv("--ink-soft") || "#465262", inkFaint = cv("--ink-faint") || "#7c8794", line = cv("--line") || "#dfe3e9", paper = cv("--paper") || "#ffffff";
+      var W = 860, chartH = 360;
+      var clone = svgEl.cloneNode(true);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      Array.prototype.forEach.call(clone.querySelectorAll("[style]"), function (e) { e.setAttribute("style", resolveVars(e.getAttribute("style"))); });
+      /* 마우스 말풍선용 투명 선은 이미지에 필요 없다 */
+      Array.prototype.forEach.call(clone.querySelectorAll("line"), function (e) { if ((e.getAttribute("style") || "").indexOf("stroke:transparent") >= 0) e.parentNode.removeChild(e); });
+
+      /* 제목 + 범례를 차트 위에 */
+      var modeName = { month: "월별", quarter: "분기별", half: "반기별", year: "연도별" }[avgMode] || "";
+      var measure = document.createElement("canvas").getContext("2d");
+      measure.font = "11.5px 'IBM Plex Sans KR', sans-serif";
+      var items = [];
+      Array.prototype.forEach.call(document.querySelectorAll("#avgLegend .lg-item"), function (it) {
+        var mark = it.firstElementChild, txt = it.textContent.trim();
+        if (!mark || !txt) return;
+        var st = getComputedStyle(mark), sw = mark.classList.contains("lg-swatch");
+        items.push({ txt: txt, sw: sw, color: sw ? st.backgroundColor : st.borderTopColor, dashed: !sw && st.borderTopStyle === "dashed", w: measure.measureText(txt).width });
+      });
+      var padX = 22, rowH = 20, x = padX, y = 0, rows = 1, place = [];
+      items.forEach(function (it) {
+        var iw = 20 + 6 + it.w + 18;
+        if (x + iw > W - padX && x > padX) { x = padX; y += rowH; rows++; }
+        place.push({ it: it, x: x, y: y });
+        x += iw;
+      });
+      var titleH = 40, headH = titleH + rows * rowH + 6;
+      var body = svgNode("g", { transform: "translate(0," + headH + ")" });
+      while (clone.firstChild) body.appendChild(clone.firstChild);
+      clone.appendChild(body);
+      var title = svgNode("text", { x: padX, y: 26, "font-size": 16, "font-weight": 700, fill: ink });
+      title.textContent = "월별 평균 점수 추이 (" + modeName + ")";
+      clone.appendChild(title);
+      place.forEach(function (p) {
+        var cy = titleH + p.y + 10;
+        if (p.it.sw) clone.appendChild(svgNode("rect", { x: p.x, y: cy - 5, width: 10, height: 10, rx: 2, fill: p.it.color }));
+        else clone.appendChild(svgNode("line", { x1: p.x - 2, x2: p.x + 14, y1: cy, y2: cy, stroke: p.it.color, "stroke-width": 2, "stroke-dasharray": p.it.dashed ? "4 3" : "0" }));
+        var t = svgNode("text", { x: p.x + 20, y: cy + 4, "font-size": 11.5, fill: inkSoft });
+        t.textContent = p.it.txt;
+        clone.appendChild(t);
+      });
+      var totalH = headH + chartH + 8;
+      clone.setAttribute("viewBox", "0 0 " + W + " " + totalH);
+      clone.setAttribute("width", W); clone.setAttribute("height", totalH);
+      var styleEl = document.createElementNS("http://www.w3.org/2000/svg", "style");
+      styleEl.textContent =
+        "text{font-family:'IBM Plex Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;}" +
+        ".grid-line{stroke:" + line + ";stroke-width:1}" +
+        ".axis-label{fill:" + inkFaint + ";font-size:11px}" +
+        ".bar-value{fill:" + ink + ";font-weight:700;font-family:'IBM Plex Mono',monospace}" +
+        ".month-label{fill:" + inkFaint + ";font-weight:500}";
+      clone.insertBefore(styleEl, clone.firstChild);
+      clone.insertBefore(svgNode("rect", { x: 0, y: 0, width: W, height: totalH, fill: paper }), clone.firstChild);
+
+      var url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml;charset=utf-8" }));
+      var img = new Image();
+      img.onload = function () {
+        var scale = 3, canvas = document.createElement("canvas");
+        canvas.width = W * scale; canvas.height = totalH * scale;
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = paper; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) { if (blob) resolve(blob); else reject(new Error("canvas.toBlob returned null")); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error("svg image load failed")); };
+      img.src = url;
+    });
+  }
+  async function exportAvgPng() {
+    var today = todayMidnight();
+    var ymd = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
+    var blob;
+    try { blob = await buildAvgBlob(); }
+    catch (e) { window.alert("이미지 생성에 실패했습니다. 브라우저 설정(팝업/다운로드 차단)을 확인해주세요."); return; }
+    await saveBlobAsFile(blob, "월별_평균_점수_추이_" + ({ month: "월별", quarter: "분기별", half: "반기별", year: "연도별" }[avgMode] || "") + "_" + ymd + ".png");
+  }
+  var avgExportBtn = document.getElementById("avgExportBtn");
+  if (avgExportBtn) avgExportBtn.addEventListener("click", exportAvgPng);
   var histExportBtn = document.getElementById("histExportBtn");
   if (histExportBtn) histExportBtn.addEventListener("click", exportHistChartPng);
 
