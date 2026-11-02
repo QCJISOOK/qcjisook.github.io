@@ -2225,19 +2225,6 @@
       var tv = el("text", { x: cx, y: yOf(d.v[4]) - 12, "text-anchor": "middle" }, "bar-value"); tv.setAttribute("style", "font-size:10.5px"); tv.textContent = d.v[4].toFixed(0) + (d.partial ? "*" : "");
       svg.appendChild(tv);
     });
-    /* 월(기간)별 평균 총점 추이선 — 막대 위 합계를 이은 선에 흰 점 */
-    (function () {
-      var pts = [];
-      periods.forEach(function (d, gi) { if (d.v) pts.push([padL + groupW * gi + groupW / 2, yOf(d.v[4])]); });
-      if (pts.length > 1) {
-        var pl = el("polyline", { points: pts.map(function (p) { return p[0] + "," + p[1]; }).join(" "), fill: "none" });
-        pl.setAttribute("style", "stroke:" + AVG_TREND + ";stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;pointer-events:none"); svg.appendChild(pl);
-      }
-      pts.forEach(function (p) {
-        var c = el("circle", { cx: p[0], cy: p[1], r: 3.2 });
-        c.setAttribute("style", "fill:var(--paper);stroke:" + AVG_TREND + ";stroke-width:1.6;pointer-events:none"); svg.appendChild(c);
-      });
-    })();
     /* 구간별 목표선(빨간 점선)·누적평균선(검은 실선) */
     secs.forEach(function (sec) {
       var L = sec.lines;
@@ -2286,7 +2273,6 @@
       s.innerHTML = '<span class="lg-swatch" style="background:' + AVG_COLORS[x[1]] + '"></span>' + x[0]; lg.appendChild(s);
     });
     var s1 = document.createElement("span"); s1.className = "lg-item"; s1.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px dashed var(--crit)"></span>목표 ' + AVG_TARGET + '점'; lg.appendChild(s1);
-    var s0 = document.createElement("span"); s0.className = "lg-item"; s0.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid ' + AVG_TREND + '"></span>월평균 추이선'; lg.appendChild(s0);
     var s2 = document.createElement("span"); s2.className = "lg-item"; s2.innerHTML = '<span style="display:inline-block;width:20px;border-top:2px solid var(--ink)"></span>누적평균' + (avgAll === null ? "" : " (전체 " + avgAll.toFixed(1) + "점)"); lg.appendChild(s2);
     document.getElementById("avgThPeriod").textContent = avgMode === "month" ? "월" : avgMode === "quarter" ? "분기" : avgMode === "half" ? "반기" : "년";
     var body = document.getElementById("avgBody"); body.innerHTML = "";
