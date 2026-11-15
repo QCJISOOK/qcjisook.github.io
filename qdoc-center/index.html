@@ -532,7 +532,6 @@ function coaChecks(c) {
   add('필수', c.lots.length && c.lots.every(l => l.lot), '제조번호(LOT)', '구성품별 LOT 미기재');
   const nj = c.results.filter(r => !r.judge).length;
   add('필수', c.results.length && !nj, '항목별 판정 (적합/부적합)', nj ? `${nj}항목 미판정 — 제20조③` : '시험항목 없음');
-  add('필수', c.judgeDate, '판정일자');
   add('필수', c.sign.reviewer, '검토 서명', '제20조⑥ 시험기록 검토');
   add('필수', c.sign.approver, '승인 (품질관리 책임자)', '제19조② 품질부서 책임자 승인');
   add('권장', c.expiry, '사용기한');
@@ -1039,17 +1038,17 @@ function renderCoa(m) {
   A(subh('시험항목 · 판정 <span class="hint">항목·기준은 제품표준서 완제품시험기준서에서 가져옴</span>'));
   let rt;
   const bar = inl(button('표준서 기준 다시 불러오기', async () => {
-    if (!p) return; if (!await askConfirm('제품표준서 완제품시험기준서로 시험항목을 다시 맞춥니다. 같은 항목의 판정·시험일자는 유지됩니다.', { ok: '다시 맞추기' })) return;
+    if (!p) return; if (!await askConfirm('제품표준서 완제품시험기준서로 시험항목을 다시 맞춥니다. 같은 항목의 판정은 유지됩니다.', { ok: '다시 맞추기' })) return;
     c.results = (p.finishedSpecs || []).map(f => { const o = c.results.find(r => r.item === f.item && (r.sub || '') === (f.sub || '')) || {}, d = coaRowFrom(p, f); return { ...d, result: o.result || '', judge: o.judge || '', tester: o.tester || d.tester, note: o.note || d.note }; });
     c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
   }), button('판정 빈칸 모두 적합', () => { c.results.forEach(r => { if (!r.judge) r.judge = '적합'; }); changed(); rt.rerender(); }));
   A(bar);
-  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '18%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'judge', label: '판정', w: '9%', opts: ['', '적합', '부적합'] }, { k: 'date', label: '시험일자', w: '13%', type: 'date' }]);
+  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'judge', label: '판정', w: '10%', opts: ['', '적합', '부적합'] }]); // 시험일자 칸 없음 (사용자 요청)
   A(rt);
   A(subh('특이사항'));
   A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
   A(subh('판정 및 서명'));
-  A(form([['판정일자', inp(c, 'judgeDate', { type: 'date' })], ['작성', inp(c.sign, 'writer')], ['검토', inp(c.sign, 'reviewer')], ['승인 (품질관리 책임자)', inp(c.sign, 'approver')]]));
+  A(form([['작성', inp(c.sign, 'writer')], ['검토', inp(c.sign, 'reviewer')], ['승인 (품질관리 책임자)', inp(c.sign, 'approver')]]));
   refreshCoa();
 }
 function refreshCoa() {
@@ -1063,13 +1062,13 @@ function coaList(m) {
   const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 완제품시험기준서 기준</small></div></div>');
   tb.appendChild(button('빈 양식 보기', previewBlankCoa, 'btn'));
   tb.appendChild(button('+ 새 성적서', () => go('coa', { newCoa: true }), 'btn pri')); m.appendChild(tb);
-  const card = el(`<div class="card"><div class="filt"><select id="cf"><option value="">전체 상태</option><option>작성 중</option><option>승인 완료</option><option>부적합</option></select></div><table class="list"><thead><tr><th>관리 번호</th><th>제품코드</th><th>제품</th><th>LOT</th><th>판정일</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
+  const card = el(`<div class="card"><div class="filt"><select id="cf"><option value="">전체 상태</option><option>작성 중</option><option>승인 완료</option><option>부적합</option></select></div><table class="list"><thead><tr><th>관리 번호</th><th>제품코드</th><th>제품</th><th>LOT</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
   m.appendChild(card);
   const sel = card.querySelector('#cf'); sel.value = V.cf || '';
   const draw = () => {
     const tbd = card.querySelector('tbody'); tbd.innerHTML = '';
     const rows = [...S.coas].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).filter(c => !V.cf || coaStatus(c)[0] === V.cf);
-    rows.forEach(c => { const p = prod(c.productId), s = coaStatus(c); const tr = el(`<tr class="click"><td>${esc(c.testNo || '—')}</td><td>${esc(p?.code || '')}</td><td>${esc(p?.nameKo || '(삭제된 제품)')}</td><td>${esc(c.lots.map(l => l.lot).filter(Boolean).join(', '))}</td><td>${esc(c.judgeDate)}</td><td>${chip(s[0], s[1])}</td></tr>`); tr.onclick = () => go('coa', { cid: c.id }); tbd.appendChild(tr); });
+    rows.forEach(c => { const p = prod(c.productId), s = coaStatus(c); const tr = el(`<tr class="click"><td>${esc(c.testNo || '—')}</td><td>${esc(p?.code || '')}</td><td>${esc(p?.nameKo || '(삭제된 제품)')}</td><td>${esc(c.lots.map(l => l.lot).filter(Boolean).join(', '))}</td><td>${chip(s[0], s[1])}</td></tr>`); tr.onclick = () => go('coa', { cid: c.id }); tbd.appendChild(tr); });
     if (!rows.length) tbd.innerHTML = '<tr><td colspan="8" class="empty">해당하는 성적서가 없습니다.</td></tr>';
   };
   sel.onchange = () => { V.cf = sel.value; draw(); }; draw();
@@ -1412,7 +1411,7 @@ function coaDoc(c, pp) {
   const rows = c.results, dense = rows.length > 18, padN = Math.max(0, 16 - rows.length);
   const multi = rows.some(r => r.sub) || c.lots.length > 1; // 구성품이 여럿일 때만 「구분」 열
   const per = k => c.lots.map(l => `${c.lots.length > 1 ? esc(l.label) + ' : ' : ''}${esc(l[k])}`).join('<br>');
-  const cols = [['No.', 6], ['시험항목', 20], ...(multi ? [['구분', 7]] : []), ['시험기준', multi ? 24 : 27], ['시험방법', multi ? 24 : 27], ['판정', 8], ['시험일자', 0]];
+  const cols = [['No.', 6], ['시험항목', 22], ...(multi ? [['구분', 8]] : []), ['시험기준', multi ? 26 : 30], ['시험방법', multi ? 26 : 30], ['판정', 0]]; // 시험일자 열 없음 (사용자 요청)
   let b = 0; const B = s => `<div class="blk" data-id="c${++b}">${s}</div>`;
   return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
   ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
@@ -1422,11 +1421,11 @@ function coaDoc(c, pp) {
    <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
-   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.method)}</td><td>${esc(r.judge)}</td><td>${esc(r.date || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
+   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.method)}</td><td>${esc(r.judge)}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
-  ${B(`<table class="sign box mt"><colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col></colgroup>
-   <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th><th>판정일자</th></tr>
-   <tr><td>${esc(c.sign.writer)}</td><td>${esc(c.sign.reviewer)}</td><td>${esc(c.sign.approver)}</td><td>${esc(c.judgeDate)}</td></tr></table>`)}
+  ${B(`<table class="sign box mt"><colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
+   <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
+   <tr><td>${esc(c.sign.writer)}</td><td>${esc(c.sign.reviewer)}</td><td>${esc(c.sign.approver)}</td></tr></table>`)}
   </div><div class="foot"><span>완제품시험성적서</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
 }
 
