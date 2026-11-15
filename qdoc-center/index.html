@@ -784,12 +784,12 @@ function secEditor(p, sec, ed) {
       const t = tedit(comps, [{ k: 'label', label: '구분', w: '9%' }, { k: 'fullName', label: '구성품 제품명', w: '26%' }, { k: 'maker', label: '제조사', w: '15%' }, { k: 'batchSize', label: '제조단위', w: '9%' }, { k: 'batchUnit', label: '단위', w: '7%', opts: ['kg', 'L', 'ea', 'g'] }, { k: 'makerPsNo', label: '제조사 제품표준서 번호', w: '17%' }, { k: 'functional', label: '기능성', w: '8%', opts: ['아니오', '예'] }],
         { newRow: () => newComp('구성품 ' + '①②③④⑤⑥'[comps.length] || comps.length + 1) });
       A(t);
-      A(subh('1-2. 사용방법'));
-      A(inp(p, 'usage', { rows: 5 }));
-      A(subh('1-3. 표시사항'));
+      const LT1 = isLite(p);
+      A(subh(LT1 ? '1-2. 사용방법' : '1-3. 표시사항 <span class="hint">1쪽(표지)에 인쇄 · 사용할 때의 주의사항은 7장</span>'));
       const fi = inp(p.labeling, 'fullIng', { rows: 5 });
-      A(form([['화장품제조업자', inp(p.labeling, 'maker', { rows: 2 }), true], ['화장품책임판매업자', inp(p.labeling, 'seller'), true], ['기능성 표시', inp(p.labeling, 'functionalLabel'), true],
-        ['사용할 때의 주의사항', inp(p.labeling, 'cautions', { rows: 4 }), true], ['전성분', fi, true]]));
+      A(form([['용법·용량', inp(p, 'usage', { rows: 3 }), true], ['기능성 표시', inp(p.labeling, 'functionalLabel'), true], ['전성분', fi, true],
+        ['화장품제조업자 (상호 / 소재지)', inp(p.labeling, 'maker', { rows: 2, ph: '예) 아이큐어(주) / 전북 완주군 봉동읍 완주산단5로 248 — 1-2 주체 표에 소재지로 들어감' }), true],
+        ...(LT1 ? [['화장품책임판매업자', inp(p.labeling, 'seller'), true]] : [])]));
       A(inl(button('전성분표 자료로 채우기', () => { p.labeling.fullIng = comps.map(c => `[${c.label}] ${(c.fullIngredients || []).join(', ')}`).join('\n'); fi.value = p.labeling.fullIng; changed(); })));
       break;
     }
@@ -939,7 +939,7 @@ const secList = p => isLite(p) ? [['cover', '표지·승인'], ['rev', '개정�
 /* 목차 (콜마식 「항목 | 목차」) = CGMP 고시 제15조② 필수 기재사항만, 문서 순서.
    [p.toc 키(점검 참조용), 항목, 기본 목차(본문 위치)] — 목차 칸은 p.tocLoc[키] 로 고쳐 쓸 수 있음 (예: 별첨3. 제조지시 및 기록서) */
 const TOC15 = [
-  ['1', '제품명 · 작성연월일', '표지 · 1. 제품 개요 및 표시사항'],
+  ['1', '제품명 · 작성연월일', '1. 제품 개요 및 표시사항 (표지)'],
   ['rev', '변경이력', '개정내역'],
   ['2', '원료명, 분량 및 제조단위당 기준량', '2. 원료 성분 및 분량'],
   ['3', '공정별 상세 작업내용 및 제조공정흐름도', '3. 제조공정흐름도 · 4. 공정별 상세 작업내용'],
@@ -1121,8 +1121,9 @@ function psDoc(p, extra) {
   BID = 0;
   const comps = p.components || [], links = funcLinks(p), P = [];
   const ck = (on) => on ? '☑' : '☐';
-  // 표지
-  P.push(`<section class="page nosplit" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div>
+  const LITE = isLite(p);
+  // 표지 (간소본만 따로 — 전체본은 아래에서 1장과 합친 1쪽)
+  if (LITE) P.push(`<section class="page nosplit" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div>
   <div class="bar center">통합 제품표준서 (Integrated Product Standard)</div>
   <table class="h22" style="margin-top:6px"><colgroup><col style="width:42%"><col></colgroup><tr><th>제 품 명 (한글)</th><td>${esc(p.nameKo)}</td></tr><tr><th>제 품 명 (영문)</th><td>${esc(p.nameEn)}</td></tr></table>
   <table class="h22" style="margin-top:8px"><colgroup><col style="width:22%"><col style="width:20%"><col style="width:20%"><col></colgroup>
@@ -1139,10 +1140,37 @@ function psDoc(p, extra) {
   <table class="h34"><colgroup><col style="width:16%"><col style="width:22%"><col style="width:20%"><col style="width:24%"><col></colgroup><tr><th>구분</th><th>Job Title</th><th>Name</th><th>Signature</th><th>Date</th></tr>
    ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>
   ${foot(p)}</section>`);
+  if (!LITE) {
+    // 1쪽 = 표지 + 1장 (중복 없이): 1-1 기본정보 · 1-2 주체 · 1-3 표시사항 · 검토 및 승인
+    const fn = isFunctional(p);
+    const mkAddr = p.makers.length === 1 ? String(p.labeling.maker || '').split(' / ').slice(1).join(' / ').trim() : '';
+    const batch = comps.map(c => `${comps.length > 1 ? `[${esc(c.label)}] ` : ''}${esc(c.batchSize || '　　')} ${esc(c.batchUnit)} / batch`).join('　　');
+    P.push(`<section class="page" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div><div class="body">
+    <div class="blk"><div class="bar">1-1. 제품 기본정보</div><table class="h22"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col></colgroup>
+      <tr><th>제품명 (한글)</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
+      <tr><th>제품명 (영문)</th><td colspan="3">${esc(p.nameEn)}</td></tr>
+      <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
+      <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>문서정보</th><td class="c">${esc(p.docInfo)}</td></tr>
+      <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
+      <tr><th>유형구분</th><td class="c">${esc(p.typeDiv)}</td><th>유형분류</th><td class="c">${esc(p.typeClass)}</td></tr>
+      <tr><th>유형세분류</th><td class="c">${esc(p.typeSub)}</td><th>기능성 분류</th><td class="c">${esc(p.funcClass || (fn ? '' : '해당 없음'))}</td></tr>
+      ${fn ? `<tr><th>기능성 보고(심사) 번호</th><td class="c" style="font-size:7.5pt">${esc(p.efficacy.reviewNo || links.map(it => it.seq).join(', '))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (links[0] || {}).date || '')}</td></tr>` : ''}
+      <tr><th>제품 중량</th><td class="c">${nl(p.weight)}</td><th>포장단위</th><td class="c">${nl(p.packUnit)}</td></tr>
+      <tr><th>성상</th><td colspan="3">${nl(p.appearance)}</td></tr>
+      <tr><th>제조단위</th><td colspan="3">${batch}</td></tr></table></div>
+    <div class="blk"><div class="bar">1-2. 제조 및 책임판매 주체</div><table class="h26"><colgroup><col style="width:18%"><col style="width:40%"><col></colgroup><tr><th>구 분</th><th>업체명 (소재지)</th><th>역 할</th></tr>
+      ${p.makers.map(m => `<tr><td class="c">${esc(m.type)}</td><td>${esc(m.name)}${mkAddr ? `<br><span style="font-size:7.6pt">(${esc(mkAddr)})</span>` : ''}</td><td>${nl(m.role)}</td></tr>`).join('')}
+      <tr><td class="c">화장품책임판매업자</td><td>${esc(p.seller.name)}<br><span style="font-size:7.6pt">(${esc(p.seller.addr)})</span></td><td>${nl(p.seller.role)}</td></tr></table></div>
+    <div class="blk"><div class="bar">1-3. 표시사항</div><table><colgroup><col style="width:18%"><col></colgroup>
+      ${fn || p.labeling.functionalLabel ? `<tr><th style="height:24px">기능성 표시</th><td>${nl(p.labeling.functionalLabel)}</td></tr>` : ''}
+      <tr><th style="height:30px">용법·용량</th><td class="pre">${esc(p.usage)}</td></tr>
+      <tr><th style="height:70px">전성분</th><td style="font-size:7.6pt">${nl(p.labeling.fullIng)}</td></tr></table></div>
+    <div class="blk"><div class="bar">검토 및 승인 (Review &amp; Approval)</div><table class="h30"><colgroup><col style="width:16%"><col style="width:22%"><col style="width:20%"><col style="width:24%"><col></colgroup><tr><th>구분</th><th>Job Title</th><th>Name</th><th>Signature</th><th>Date</th></tr>
+      ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table></div>
+    </div>${foot(p)}</section>`);
+  }
   // 개정내역
   P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 5, padH: 26 }))));
-  // 작성 범위: 전체(CGMP 12개 항목, 양식 v2) / 간소(책임판매업자 6장)
-  const LITE = isLite(p);
   const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s1: 1, s2: 2, s3: 3, s4: 4, s6: 5, s7: 6, s8: 7, s11: 8, s12: 9, s13: 10 };
   const has = s => NO[s] != null;
   const refSrc = p.makerRef || [...new Set(comps.map(c => c.makerPsNo).filter(Boolean))].join(', ') || '제조업자 보관 문서';
@@ -1155,9 +1183,9 @@ function psDoc(p, extra) {
   } else {
     P.push(`<section class="page nosplit" data-key="toc"><div class="toc-title">목 차</div><div class="body"><table class="toc-t"><colgroup><col style="width:46%"><col></colgroup><tr><th>항 목</th><th>목 차</th></tr>${TOC15.map(([k, t, d], i) => `<tr><td>${i + 1}. ${esc(t)}</td><td>${esc((p.tocLoc || {})[k] || d)}</td></tr>`).join('')}</table></div>${foot(p)}</section>`);
   }
-  // 1 제품 개요
+  // 1 제품 개요 (간소본만 따로 — 전체본은 1쪽 표지에 합침)
   const mk0 = p.makers[0] || {};
-  P.push(page(p, 's1', `${NO.s1}. 제품 개요 및 표시사항 (Product Information &amp; Notation)`,
+  if (LITE) P.push(page(p, 's1', `${NO.s1}. 제품 개요 및 표시사항 (Product Information &amp; Notation)`,
     `<div class="blk"><div class="bar">${NO.s1}-1. 제품 기본정보</div><table class="h26"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:17%"><col></colgroup>
       <tr><th>제품명 (한글)</th><td>${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td><th>제품명 (영문)</th><td>${esc(p.nameEn)}</td></tr>
       <tr><th>제품표준서 번호</th><td>${esc(p.psNo)}</td><th>제정연월일</th><td>${esc(p.date)}</td></tr>
