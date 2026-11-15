@@ -290,7 +290,8 @@ const microOk = x => !/^(검출|양성)$/.test(x.result) && !(/^[\d,]+$/.test(x.
 
 /* ---------- 파일 처리 ---------- */
 function ing() { if (!S.ingest) S.ingest = { info: { nameKo: '', nameEn: '', code: '', type: '기초화장용 제품류', shelfMonths: '', packUnit: '', weights: {}, makerName: '' }, files: [] }; return S.ingest; }
-function kindByName(n) { return /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
+const MFGK = '제조지시 및 공정 기록서'; // 선택 자료: 있으면 제품표준서 별첨2로
+function kindByName(n) { return /제조지시|공정\s*기록|제조\s*기록|BMR/i.test(n) ? MFGK : /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
 async function processRec(rec, blob, forceKind) {
   rec.status = '읽는 중'; rec.err = ''; draw();
   if (/\.xlsx?$/i.test(rec.name)) {
@@ -309,8 +310,9 @@ async function processRec(rec, blob, forceKind) {
   if (window.Cloud && Cloud.art && Cloud.shared()) { rec.status = '쪽 그림 공유'; draw(); const ids = await Cloud.uploadImages(imgs); if (ids) rec.pageAssets = ids; }
   const tight = txt.replace(/\s+/g, '');
   const isMicro = /시험연구원|연구원장|KATRI|KTR|KCL/.test(tight) && /호기성생균수|미생물한도/.test(tight) && !/벌크/.test(tight);
-  let kind = forceKind || (/기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : isMicro || kindByName(rec.name) === '미생물시험성적서' ? '미생물시험성적서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
+  let kind = forceKind || (kindByName(rec.name) === MFGK || /제조지시/.test(tight) && /기록서/.test(tight) && !/시험성적서/.test(tight) ? MFGK : /기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : isMicro || kindByName(rec.name) === '미생물시험성적서' ? '미생물시험성적서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
   rec.kind = kind;
+  if (kind === MFGK) { rec.data = { pages: imgs.length }; rec.comp = rec.comp || compOf(rec.name) || '단품'; rec.status = '완료'; return; }
   if (kind === '미생물시험성적서') rec.data = parseMicroReport(pages);
   else if (kind === '기능성보고서') { rec.data = parseFuncReport(pages); if (!rec.data.productName && !rec.data.actives.length) throw new Error('보고서 글자를 읽지 못했습니다 (스캔본이면 의약품안전나라에서 받은 원본 PDF를 올려 주세요)'); }
   else {
@@ -339,7 +341,7 @@ window.ingestFromUrls = async urls => { const fs = []; for (const u of urls) { c
 /* ---------- 모으기 · 교차 점검 ---------- */
 function model() {
   const I = ing(), comps = {};
-  I.files.filter(f => f.status === '완료' && f.data).forEach(f => {
+  I.files.filter(f => f.status === '완료' && f.data && f.kind !== MFGK).forEach(f => {
     const k = f.comp || '단품'; const c = comps[k] = comps[k] || { key: k, report: null, single: null, comp: null, bulk: null, micro: null, files: [] };
     c.files.push(f);
     if (f.kind === '기능성보고서') c.report = f.data;
@@ -349,6 +351,9 @@ function model() {
   });
   return Object.values(comps).sort((a, b) => a.key.localeCompare(b.key, 'ko'));
 }
+const mfgFiles = () => ing().files.filter(f => f.kind === MFGK && f.status === '완료');
+/* 별첨2 넣기: 올린 원본이 있으면 기본으로 켬, 끄거나 문서명·번호만 적어 켤 수도 있음 — 자료가 하나도 없으면 빠짐 */
+const mfgOption = () => { const I = ing(); const on = I.info.mfgOn ?? mfgFiles().length > 0; return !!on && (mfgFiles().length > 0 || !!String(I.info.mfgDoc || '').trim()); };
 function maker() { const I = ing(); return MK.find(m => m.name === I.info.makerName) || null; }
 function autoInfo() {
   const I = ing(), M = model();
@@ -494,7 +499,9 @@ function build(withCoa) {
   const mo = num(info.shelfMonths); p.shelfLife = { life: mo ? `제조일로부터 ${mo}개월` : '', months: mo || '', basis: mo ? '벌크 제조일' : '', note: info.erp ? `ERP 품목 ${info.erp.code} 기준` : '' };
   const om = num(info.openMonths); if (om) p.openLife = { life: `개봉 후 ${om}개월`, basis: '개봉일', note: '' };
   // 별첨·근거
-  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single ? '' : f.comp, name: f.name, print: f.kind !== '전성분표', ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
+  const mfgOn = mfgOption();
+  p.mfgDoc = mfgOn ? (String(info.mfgDoc || '').trim() || mfgFiles().map(f => f.name.replace(/\.pdf$/i, '')).join(', ')) : '';
+  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single || f.kind === MFGK ? '' : f.comp, name: f.name, print: f.kind !== '전성분표' && (f.kind !== MFGK || mfgOn), ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
   p.attachments = [
     ...M.filter(c => c.report).map(c => ({ name: `기능성화장품 보고서 (심사제외)${single ? '' : ' — ' + c.key}`, no: `보고일련번호 ${c.report.seq}`, rev: c.report.reportDate, location: '본 문서 뒤 첨부 (원본)', note: `부서접수번호 ${c.report.receiptNo}` })),
     ...M.filter(c => c.single || c.comp).map(c => ({ name: `전성분표 (함량 포함)${single ? '' : ' — ' + c.key}`, no: '', rev: (c.single || c.comp).date, location: '자료로 작성 · 원본 파일', note: makerShort(mk) })),
@@ -556,11 +563,11 @@ function fileTable() {
     const d = f.data || {};
     const sum = f.status !== '완료' ? esc(f.err || '') : f.kind === '기능성보고서' ? `${esc(d.productName)} · 보고일련번호 ${esc(d.seq)} · ${esc(d.reportDate)} · pH ${esc(d.ph)} · ${esc((d.actives || []).map(a => a.name + ' ' + a.amount + a.unit).join(', '))}`
       : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
-      : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
+      : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
       : `${esc(d.productName)} · 제조번호 ${esc(d.lot)} · 제조일 ${esc(d.mfgDate)} · 제조량 ${esc(d.batch)} · ${esc(d.testNo)} · ${(d.rows || []).length}항목${d.ocr ? ' <span class="pill">글자 인식</span>' : ''}`;
     const st = f.status === '완료' ? chip('완료', 'good') : f.status === '오류' ? chip('오류', 'bad') : chip(f.status, 'warn');
     const tr = el(`<tr><td>${esc(f.name)}</td><td></td><td></td><td>${st}</td><td style="font-size:12px">${sum}</td><td></td></tr>`);
-    const ks = el(`<select>${['반제품성적서', '미생물시험성적서', '기능성보고서', '전성분표'].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
+    const ks = el(`<select>${['반제품성적서', '미생물시험성적서', '기능성보고서', '전성분표', MFGK].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
     ks.onchange = async () => { const r = await IDB.get(f.id); if (!r) return; try { await processRec(f, r.blob, ks.value); } catch (e) { f.status = '오류'; f.err = e.message; } save(); draw(); };
     tr.children[1].appendChild(ks);
     const cs = el(`<input value="${esc(f.comp)}" placeholder="1제·단품">`); cs.onchange = () => { f.comp = cs.value.trim() || '단품'; save(); draw(); }; tr.children[2].appendChild(cs);
@@ -582,12 +589,12 @@ function fileTable() {
 }
 function renderIngest(m) {
   const I = ing(), M = model(), mk = maker();
-  const tb = el('<div class="toolbar"><div class="ttl">자료로 작성<small>반제품성적서 · 미생물시험성적서(외부) · 기능성 보고서를 넣으면 제품표준서·완제품성적서 초안을 만듭니다 (전성분표는 있으면 성분표에)</small></div></div>');
+  const tb = el('<div class="toolbar"><div class="ttl">자료로 작성<small>반제품성적서 · 미생물시험성적서(외부) · 기능성 보고서를 넣으면 제품표준서·완제품성적서 초안을 만듭니다 (전성분표·제조지시 및 공정 기록서는 있을 때만)</small></div></div>');
   tb.appendChild(button('새로 시작', async () => { if (I.files.length && !await askConfirm('올린 자료와 입력값을 비우고 새로 시작할까요? 이미 만든 제품표준서는 남습니다.', { ok: '새로 시작' })) return; for (const f of I.files) await IDB.del(f.id); S.ingest = null; save(); draw(); }, 'btn'));
   m.appendChild(tb);
   // 1. 자료
   const c1 = el(`<div class="card"><h3>1. 자료 올리기 <span class="r hint">PDF · 엑셀 여러 개를 한 번에 · 파일 이름의 '1제/2제'로 구성품을 나눕니다</span></h3>
-    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">반제품성적서(PDF, 스캔본도 글자 인식) · 미생물시험성적서(외부 시험기관 PDF) · 기능성 보고서(의약품안전나라 PDF) · 전성분표(엑셀, 선택)</span></div>
+    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">반제품성적서(PDF, 스캔본도 글자 인식) · 미생물시험성적서(외부 시험기관 PDF) · 기능성 보고서(의약품안전나라 PDF) · 전성분표(엑셀, 선택) · 제조지시 및 공정 기록서(PDF, 선택)</span></div>
     <input type="file" id="ingIn" multiple accept=".pdf,.xlsx,.xls" hidden></div>`);
   const drop = c1.querySelector('#drop'), fi = c1.querySelector('#ingIn');
   drop.onclick = () => fi.click(); fi.onchange = () => { addFiles([...fi.files]); fi.value = ''; };
@@ -627,6 +634,14 @@ function renderIngest(m) {
   const b1 = button('제품표준서 + 완제품성적서 만들기', () => { const r = build(true); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn pri');
   const b2 = button('제품표준서만 만들기', () => { const r = build(false); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn');
   if (!ok) { b1.disabled = b2.disabled = true; }
+  // 선택: 별첨2 제조지시 및 공정 기록서 (자료 있을 때만)
+  { const mf = mfgFiles(), on = I.info.mfgOn ?? mf.length > 0;
+    const opt = el(`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fbfcfe"><label style="display:flex;align-items:center;gap:6px;font-weight:700;cursor:pointer"><input type="checkbox" ${on ? 'checked' : ''}> 별첨2 제조지시 및 공정 기록서 넣기</label><span class="mfst hint"></span></div>`);
+    const cb = opt.querySelector('input'), st = opt.querySelector('.mfst');
+    cb.onchange = () => { I.info.mfgOn = cb.checked; save(); draw(); };
+    if (on) { const d = inp(I.info, 'mfgDoc', { ph: mf.length ? mf.map(f => f.name.replace(/\.pdf$/i, '')).join(', ') : '문서명 · 문서번호' }); d.style.minWidth = '320px'; d.style.flex = '1'; opt.appendChild(d); }
+    st.textContent = !on ? '빼고 만듭니다' : mf.length ? `올린 원본 ${mf.length}개를 별첨2 뒤에 붙임` : String(I.info.mfgDoc || '').trim() ? '' : '자료가 없으면 빼고 만듭니다';
+    c4.appendChild(opt); }
   c4.appendChild(inl(b1, b2)); m.appendChild(c4);
   // 만든 문서: 고치거나 발행하러 열기 (발행본은 「발행 이력」)
   const made = S.products.filter(p => p.sourceIngest).sort((a, b) => String(b.sourceIngest.at).localeCompare(String(a.sourceIngest.at))).slice(0, 5);
