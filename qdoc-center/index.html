@@ -497,8 +497,7 @@ function coaChecks(c) {
   add('필수', c.verdict, '최종 판정 (적합/부적합/보류)', '제20조⑥');
   add('필수', c.sign.reviewer || c.sign.approver, '시험기록 검토 서명', '제20조⑥ 시험기록 검토 후 판정');
   if (c.verdict === '적합') add('필수', c.release.status === '출고 승인' && c.release.approver && c.release.date, '출고(시장출하) 승인', '제19조② 품질부서 책임자 출고 승인');
-  add('권장', c.testNo, '시험번호'); add('권장', c.requestDate, '시험의뢰일'); add('권장', c.samplingDate, '검체채취일');
-  add('권장', c.lots.every(l => l.mfgDate), '제조일(구성품별)'); add('권장', c.expiry, '사용기한');
+  add('권장', c.expiry, '사용기한');
   add('권장', c.results.every(r => r.tester), '항목별 시험자(자사/제조사)');
   add('권장', c.retain.qty, '보관용 검체 수량', '제21조③');
   const p = prod(c.productId);
@@ -995,13 +994,12 @@ function renderCoa(m) {
   m.appendChild(el('<div class="card"><h3>CGMP 점검 <span class="r hint">제19조·제20조·제21조 · 해설서 【시험성적서】</span></h3><div class="checks" id="coachecks"></div></div>'));
   const ed = el('<div class="card"></div>'); m.appendChild(ed);
   const A = n => ed.appendChild(n);
-  A(subh('검체 정보'));
+  A(subh('제품 정보'));
   const tn = inp(c, 'testNo');
   A(form([['제품', el(`<div><b>${esc(p?.nameKo || '')}</b> <span class="hint">${esc(p?.code || '')}</span></div>`), true],
-    ['시험번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['기준 근거', el(`<div>제품표준서 ${esc(c.psRef.no)} Rev.${esc(c.psRef.rev)} <span class="hint">별첨4 완제품시험기준서</span></div>`)],
-    ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['입고량 (EA)', inp(c, 'receiptQty')], ['표시용량', inp(c, 'labelQty')], ['샘플채취량 (EA)', inp(c, 'sampleQty')],
-    ['시험의뢰일', inp(c, 'requestDate', { type: 'date' })], ['검체채취일', inp(c, 'samplingDate', { type: 'date' })]]));
-  A(subh('구성품별 제조번호(LOT)·제조일'));
+    ['표시용량', inp(c, 'labelQty')], ['입고량 (EA)', inp(c, 'receiptQty')],
+    ['관리 번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['', el('<span class="hint">목록·파일 이름에만 쓰고 성적서에는 인쇄 안 됨</span>')]]));
+  A(subh('구성품별 제조번호(LOT) <span class="hint">제조일은 사용기한 자동 계산에만 쓰고 인쇄 안 됨</span>'));
   const ex = inp(c, 'expiry', { type: 'date' });
   A(tedit(c.lots, [{ k: 'label', label: '구성품', w: '14%' }, { k: 'lot', label: '제조번호(LOT)', w: '22%' }, { k: 'maker', label: '제조사', w: '24%' }, { k: 'mfgDate', label: '제조일', type: 'date' }], { numbered: false }));
   const autoExp = () => { const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); const mo = num(p?.shelfLife?.months) || (String(p?.shelfLife?.life || '').match(/(\d+)\s*개월/) || [])[1]; if (!ds.length || !mo) { notify('구성품 제조일과 제품표준서 12-2 사용기한(개월)이 있어야 계산됩니다.'); return; } c.expiry = addMonths(ds[0], mo); ex.value = c.expiry; changed(); };
@@ -1344,15 +1342,12 @@ function coaDoc(c) {
   const cols = [['No.', 5], ['시험항목', 15], ...(multi ? [['구분', 6]] : []), ['시험기준', multi ? 18 : 21], ['시험방법', multi ? 18 : 21], ['시험결과', 11], ['판정', 6], ['시험일자', 10], ['시험자', 0]];
   const testerCell = r => `${esc(r.tester)}${r.note && !/^벌크 시험자료 적용/.test(r.note) ? `<br><span style="font-size:6.8pt">${esc(r.note)}</span>` : ''}`;
   let b = 0; const B = s => `<div class="blk" data-id="c${++b}">${s}</div>`;
-  return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} · 시험번호 ${esc(c.testNo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
+  return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
   ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
   <table class="info box"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:20%"><col style="width:13%"><col></colgroup>
    <tr><th>제품명</th><td colspan="5" class="left" style="height:30px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
-   <tr><th>제품코드</th><td>${esc(p.code)}</td><th>표시용량</th><td>${esc(c.labelQty)}</td><th>시험번호</th><td>${esc(c.testNo)}</td></tr>
-   <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>제조일자</th><td>${per('mfgDate')}</td></tr>
-   <tr><th>입고일</th><td>${esc(c.receiptDate)}</td><th>입고량</th><td>${esc(c.receiptQty)} EA</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr>
-   <tr><th>시험의뢰일</th><td>${esc(c.requestDate)}</td><th>검체채취일</th><td>${esc(c.samplingDate)}</td><th>검체채취량</th><td>${esc(c.sampleQty)} EA</td></tr>
-   <tr><th>기준 근거</th><td colspan="5" class="left">제품표준서 ${esc(c.psRef.no)} (Rev.${esc(c.psRef.rev)}) 별첨4 완제품시험기준서와 시험항목·기준 동일</td></tr></table>`)}
+   <tr><th>제품코드</th><td>${esc(p.code)}</td><th>표시용량</th><td>${esc(c.labelQty)}</td><th>입고량</th><td>${esc(c.receiptQty)} EA</td></tr>
+   <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
    <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.method)}</td><td>${esc(r.result)}</td><td>${esc(r.judge)}</td><td>${esc(r.date || '')}</td><td>${testerCell(r)}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
@@ -1361,7 +1356,7 @@ function coaDoc(c) {
   ${B(`<table class="sign box mt"><colgroup><col style="width:21%"><col style="width:13%"><col style="width:17%"><col style="width:16%"><col style="width:16%"><col></colgroup>
    <tr><th>판정결과</th><th>판정일자</th><th>출고(시장출하)</th><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
    <tr><td>${c.verdict ? `<span class="big">${esc(c.verdict)}</span><br>` : ''}<span style="font-size:7.5pt">${['적합', '부적합', '보류'].map(t => (c.verdict === t ? '☑' : '☐') + ' ' + t).join('&nbsp; ')}</span></td><td>${esc(c.judgeDate)}</td><td><span style="font-size:7.5pt">${['출고 승인', '보류'].map(t => (c.release.status === t ? '☑' : '☐') + ' ' + t).join('<br>')}</span>${c.release.date ? `<br><span style="font-size:7pt">${esc(c.release.date)}</span>` : ''}</td><td>${esc(c.sign.writer)}</td><td>${esc(c.sign.reviewer)}</td><td>${esc(c.sign.approver || c.release.approver)}</td></tr></table>`)}
-  </div><div class="foot"><span>완제품시험성적서 ${esc(c.testNo)}</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
+  </div><div class="foot"><span>완제품시험성적서</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
 }
 
 /* ================= 미리보기 · 쪽 나누기 ================= */
