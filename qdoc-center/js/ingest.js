@@ -187,13 +187,13 @@ function fixItem(item, crit) {
 const fixJudge = s => /부\s*적/.test(s) ? '부적합' : /적|합/.test(s) ? '적합' : String(s || '').trim();
 function interpretGrid(T) {
   const hi = T.findIndex(r => r.some(c => /항목/.test(N(c))) && r.some(c => /결과/.test(N(c))));
-  const LBL = [[/^(제품명|품명|제품명칭)$/, 'productName'], [/^(시험번호|성적서번호|관리번호)$/, 'testNo'], [/^(제조번호|lotno\.?|lot|로트|로트번호|batchno\.?)$/i, 'lot'], [/^(제조일자|제조일|제조년월일)$/, 'mfgDate'], [/^(제조량|제조단위|배치량|batchsize)$/i, 'batch'], [/^(시험의뢰일자|의뢰일자|의뢰일|시험의뢰일)$/, 'requestDate'], [/^(시험일자|시험일|검사일자|검사일)$/, 'testDate'], [/^(시험담당자|검사자)$/, 'testerName'], [/^(판정일|판정일자)$/, 'judgeDate'], [/^(판정결과|종합판정|최종판정)$/, 'verdict']];
+  const LBL = [[/^(제품명|품명|품목명|제품명칭)$/, 'productName'], [/^(시험번호|성적서번호|관리번호)$/, 'testNo'], [/^(로트번호|lotno\.?|lot|로트)$/i, 'lotNo'], [/^(제조번호|batchno\.?)$/i, 'lot'], [/^(제조일자|제조일|제조년월일)$/, 'mfgDate'], [/^(제조량|제조단위|배치량|batchsize)$/i, 'batch'], [/^(시험의뢰일자|의뢰일자|의뢰일|시험의뢰일)$/, 'requestDate'], [/^(시험일자|시험일|검사일자|검사일)$/, 'testDate'], [/^(시험담당자|검사자)$/, 'testerName'], [/^(판정일|판정일자)$/, 'judgeDate'], [/^(판정결과|종합판정|최종판정|판정)$/, 'verdict']];
   const info = {};
   T.forEach((r, ri) => { if (ri === hi) return; r.forEach((c, j) => { const k = N(c); LBL.forEach(([re, key]) => { if (re.test(k) && info[key] == null && j + 1 < r.length) info[key] = r[j + 1]; }); }); });
   const rows = [];
   if (hi >= 0) {
     const H = T[hi].map(N), col = re => H.findIndex(h => re.test(h));
-    const ci = { no: col(/^(no\.?|번호|순번)$/i), item: col(/항목/), crit: col(/기준|규격/), method: col(/방법/), date: col(/일자|일시/), result: col(/결과/), judge: col(/판정/), tester: col(/시험자|검사자|담당/) };
+    const ci = { no: col(/^(no\.?|번호|순번)$/i), item: col(/항목/), crit: col(/기준|규격/), method: col(/방법/), date: col(/일자|일시/), result: col(/결과/), judge: col(/판정/), tester: col(/시험자|검사자|담당/), note: col(/비고/) };
     for (let r = hi + 1; r < T.length; r++) {
       const row = T[r]; if (row.length < Math.max(4, H.length - 1)) break;
       if (/담당자|판정일|특이사항/.test(N(row[0]))) break;
@@ -201,16 +201,21 @@ function interpretGrid(T) {
       if (!g('item') && !g('crit') && !g('result')) continue;
       let crit = fixCrit(g('crit')); const item = fixItem(g('item'), crit); let result = fixTypo(g('result')).replace(/\s+/g, ' ');
       if (item === 'pH') { crit = phDot(crit); result = phDot(result); }
-      rows.push({ no: g('no'), item, crit, method: fixTypo(g('method')).replace(/\s+/g, ' '), date: normDate(g('date')) || g('date'), result, judge: fixJudge(g('judge')), tester: g('tester').replace(/^[|\[]+/, '') });
+      rows.push({ no: g('no'), item, crit, method: fixTypo(g('method') || g('note')).replace(/\s+/g, ' '), date: normDate(g('date')) || g('date'), result, judge: ci.judge >= 0 ? fixJudge(g('judge')) : (/부\s*적/.test(result) ? '부적합' : /적합/.test(result) ? '적합' : ''), tester: g('tester').replace(/^[|\[]+/, '') });
     }
   }
   const tn = String(info.testNo || ''); const tnm = tn.match(/[A-Z]{2,}[A-Z0-9-]*\d{3,}/);
-  const bt = String(info.batch || ''), bn = bt.match(/([\d,.]+)\s*(kg|g|l|ml|ea|개|톤)?/i);
-  const v = String(info.verdict || ''), bNum = bn ? bn[1].replace(/,/g, '') : '', bUnit = bn && bn[2] ? bn[2].replace(/^l$/i, 'L') : 'kg';
+  const bt = String(info.batch || '').replace(/(\d)\s+(?=\d)/g, '$1'), bn = bt.match(/([\d,.]+)\s*(kg|g|l|ml|ea|개|톤)?/i);
+  const v = String(info.verdict || '');
+  let bNum = bn ? bn[1].replace(/,/g, '') : '', bUnit = bn && bn[2] ? (/^l$/i.test(bn[2]) ? 'L' : bn[2].toLowerCase()) : 'kg';
+  if (bUnit === 'g' && +bNum >= 1000) { bNum = String(+bNum / 1000); bUnit = 'kg'; } // 224000 G → 224 kg
+  const verdict = /부적/.test(v) ? '부적합' : /적합|적|합/.test(v) ? '적합' : '';
+  const td = normDate(info.testDate);
+  rows.forEach(r => { if (!r.judge && verdict === '적합' && String(r.result).trim()) r.judge = '적합'; if (!r.date && td) r.date = td; });
   return {
     productName: String(info.productName || '').replace(/\s+/g, ' ').trim(), testNo: tnm ? tnm[0] : tn.trim().split(/\s+/).pop() || '',
-    lot: String(info.lot || '').replace(/\s+/g, ''), mfgDate: normDate(info.mfgDate), batch: bNum ? `${Number(bNum).toLocaleString('ko-KR')} ${bUnit}` : bt.trim(), batchNum: bNum, batchUnit: bUnit,
-    requestDate: normDate(info.requestDate), testDate: String(info.testDate || '').trim(), judgeDate: normDate(info.judgeDate), verdict: /부적/.test(v) ? '부적합' : /적합|적|합/.test(v) ? '적합' : '',
+    lot: String(info.lotNo || info.lot || '').replace(/\s+/g, ''), mfgNo: String(info.lot || '').replace(/\s+/g, ''), mfgDate: normDate(info.mfgDate), batch: bNum ? `${Number(bNum).toLocaleString('ko-KR')} ${bUnit}` : bt.trim(), batchNum: bNum, batchUnit: bUnit,
+    requestDate: normDate(info.requestDate), testDate: String(info.testDate || '').trim(), judgeDate: normDate(info.judgeDate), verdict,
     rows, grid: T
   };
 }
@@ -219,7 +224,14 @@ async function parseBulkCoa(doc, onProg) {
   const cv = document.createElement('canvas'); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
   const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); await pg.render({ canvasContext: ctx, viewport: vp, intent: 'print' }).promise;
   const tc = await pg.getTextContent();
-  const items = tc.items.filter(t => t.str.trim()).map(t => { const [x, y] = vp.convertToViewportPoint(t.transform[4], t.transform[5]); return { s: t.str, x, y }; });
+  const items = tc.items.filter(t => t.str.trim()).map(t => { const [x, y] = vp.convertToViewportPoint(t.transform[4], t.transform[5]); return { s: t.str, x, y, w: (t.width || 0) * vp.scale }; });
+  // 칸 안 글자 잇기: 붙어 있는 조각은 띄우지 않고, 줄바꿈으로 끊긴 한글 낱말은 이어 붙임 (예: 나이아|신아마이드)
+  const joinCell = arr => {
+    const lines = []; arr.sort((a, b) => a.y - b.y || a.x - b.x).forEach(it => { const L = lines.find(l => Math.abs(l.y - it.y) < 6); if (L) L.i.push(it); else lines.push({ y: it.y, i: [it] }); });
+    const txt = lines.sort((a, b) => a.y - b.y).map(l => { l.i.sort((a, b) => a.x - b.x); let s = ''; l.i.forEach((it, k) => { if (k) { const p = l.i[k - 1]; s += it.x - (p.x + p.w) > 4 ? ' ' : ''; } s += it.s; }); return s.trim(); });
+    let out = ''; txt.forEach((t, k) => { out += k && /[가-힣]$/.test(out) && /^[가-힣]/.test(t) ? t : (k ? ' ' : '') + t; });
+    return out.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').replace(/\s+,/g, ',');
+  };
   const hasText = items.length > 25;
   if (!hasText && window.QDOC_ENV === 'artifact') {
     // 공유 페이지는 글자 인식기(OCR)를 못 띄움 → 빈 표를 주고 직접 입력
@@ -235,7 +247,7 @@ async function parseBulkCoa(doc, onProg) {
     const cells = [];
     for (const [x0, x1] of r.cells) {
       let t = '';
-      if (hasText) t = items.filter(it => it.x >= x0 - 3 && it.x <= x1 + 3 && it.y >= r.y0 - 3 && it.y <= r.y1 + 8).sort((a, b) => a.y - b.y || a.x - b.x).map(it => it.s).join(' ');
+      if (hasText) t = joinCell(items.filter(it => it.x >= x0 - 3 && it.x <= x1 + 3 && it.y >= r.y0 - 3 && it.y <= r.y1 + 8));
       else { const c = cropCell(cv, g, x0, x1, r.y0, r.y1); if (c) t = (await w.recognize(c)).data.text; }
       cells.push(t.replace(/\s+/g, ' ').trim()); done++;
       if (done % 6 === 0) onProg && onProg(`${hasText ? '읽는 중' : '글자 인식'} ${Math.round(done / total * 100)}%`);
@@ -245,9 +257,40 @@ async function parseBulkCoa(doc, onProg) {
   const out = interpretGrid(T); out.ocr = !hasText; return out;
 }
 
+/* ---------- 3) 미생물시험성적서 (외부 시험기관: KATRI·KTR·KCL 등) ---------- */
+function parseMicroReport(pages) {
+  const lines = pages.flat(), txt = lines.map(l => l.text).join('\n'), flat = txt.replace(/\s*\|\s*/g, ' ');
+  const m = re => (flat.match(re) || [])[1] || '';
+  const r = {
+    lab: m(/([가-힣A-Z]*(?:시험연구원|연구원|시험원|검사소|분석센터))장?/) || m(/\b(KATRI|KTR|KCL|KOTITI|FITI)\b/),
+    reportNo: m(/(?:KATRI\s*NO|KTR\s*NO|성적서\s*번호|접수\s*번호|문서\s*번호)\s*[:：]?\s*([A-Z]{2,}[A-Z0-9-]*\d{3,})/i),
+    issueDate: normDate(m(/발급\s*일자\s*[:：]?\s*(20\d\d[.\-/]\s*\d{1,2}[.\-/]\s*\d{1,2})/)),
+    receiptDate: normDate(m(/접수\s*일자\s*[:：]?\s*(20\d\d[.\-/]\s*\d{1,2}[.\-/]\s*\d{1,2})/)),
+    productName: m(/시료\s*1\s*[:：]\s*([^\[\n]+?)(?:\s*\[|\n|$)/).trim(),
+    lot: m(/제조번호[^:：\n]*[:：]\s*([A-Za-z0-9-]+)/), exp: normDate(m(/제조번호\s*\/\s*(?:유통|사용)기한\s*[:：]\s*[A-Za-z0-9-]+\s*\/\s*(20\d\d[.\-/]\d{1,2}[.\-/]\d{1,2})/)),
+    testerName: m(/시\s*험\s*자\s*[:：]\s*([가-힣]\s?[가-힣]\s?[가-힣]?)/).replace(/\s/g, ''),
+    rows: []
+  };
+  const seen = new Set();
+  lines.forEach(l => {
+    const cells = l.cells.map(c => String(c).trim()).filter(Boolean), t = cells.join(' ');
+    if (/미생물한도|희석배수/.test(t)) return;
+    const nm = (t.match(/(총\s*호기성\s*생균수(?:\s*\((?:세균|진균)\))?|대장균|녹농균|황색\s*포도상구균)/) || [])[1]; if (!nm) return;
+    const item = nm.replace(/\s+/g, ' ').replace('총 호기성 생균수', '총호기성생균수').replace(/\s*\(/, '(');
+    if (seen.has(item)) return; seen.add(item);
+    const rest = cells.filter(c => !c.includes(nm.split(/\s/)[0]) || c.length > nm.length + 2).join(' ').replace(nm, '').trim();
+    const crit = (rest.match(/(총\s*[\d,]+\s*이하|[\d,]+\s*(?:개|cfu)?[^\s]*\s*이하|불검출)/i) || [])[1] || (/균$/.test(item) ? '불검출' : '');
+    const result = (rest.replace(crit, '').match(/(불검출|검출|음성|양성|[<≤]?\s*[\d,]+)/) || [])[1] || '';
+    r.rows.push({ item, result: result.trim(), crit: crit.trim() });
+  });
+  if (!r.rows.length) throw new Error('미생물 시험 항목(총호기성생균수·특정세균)을 찾지 못했습니다');
+  return r;
+}
+const microOk = x => !/^(검출|양성)$/.test(x.result) && !(/^[\d,]+$/.test(x.result) && /([\d,]+)\s*이하/.test(x.crit) && +x.result.replace(/,/g, '') > +(x.crit.match(/([\d,]+)/)[1].replace(/,/g, '')));
+
 /* ---------- 파일 처리 ---------- */
 function ing() { if (!S.ingest) S.ingest = { info: { nameKo: '', nameEn: '', code: '', type: '기초화장용 제품류', shelfMonths: '', packUnit: '', weights: {}, makerName: '' }, files: [] }; return S.ingest; }
-function kindByName(n) { return /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
+function kindByName(n) { return /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
 async function processRec(rec, blob, forceKind) {
   rec.status = '읽는 중'; rec.err = ''; draw();
   if (/\.xlsx?$/i.test(rec.name)) {
@@ -264,11 +307,17 @@ async function processRec(rec, blob, forceKind) {
   await IDB.put({ id: rec.id, name: rec.name, blob, pages: imgs });
   // 공유 페이지: 별첨으로 찍힐 쪽 그림을 공동 저장소에 올려 다른 사람도 보게
   if (window.Cloud && Cloud.art && Cloud.shared()) { rec.status = '쪽 그림 공유'; draw(); const ids = await Cloud.uploadImages(imgs); if (ids) rec.pageAssets = ids; }
-  let kind = forceKind || (/기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
+  const tight = txt.replace(/\s+/g, '');
+  const isMicro = /시험연구원|연구원장|KATRI|KTR|KCL/.test(tight) && /호기성생균수|미생물한도/.test(tight) && !/벌크/.test(tight);
+  let kind = forceKind || (/기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : isMicro || kindByName(rec.name) === '미생물시험성적서' ? '미생물시험성적서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
   rec.kind = kind;
-  if (kind === '기능성보고서') { rec.data = parseFuncReport(pages); if (!rec.data.productName && !rec.data.actives.length) throw new Error('보고서 글자를 읽지 못했습니다 (스캔본이면 의약품안전나라에서 받은 원본 PDF를 올려 주세요)'); }
+  if (kind === '미생물시험성적서') rec.data = parseMicroReport(pages);
+  else if (kind === '기능성보고서') { rec.data = parseFuncReport(pages); if (!rec.data.productName && !rec.data.actives.length) throw new Error('보고서 글자를 읽지 못했습니다 (스캔본이면 의약품안전나라에서 받은 원본 PDF를 올려 주세요)'); }
   else {
     rec.data = await parseBulkCoa(doc, p => { rec.status = p; draw(true); });
+    // 반제품성적서에 찍힌 제조사 이름(예: 코스맥스(주))으로 제조업체 추정
+    const hint = MK.find(m => { const k = mkey(m.label || m.name); return k.length >= 2 && tight.includes(k); });
+    if (hint) rec.data.makerHint = hint.name;
     if (rec.data.manual) notify(`${rec.name}\n스캔본이라 이 화면에서는 글자를 읽을 수 없습니다. 「표 확인·수정」에서 제품명·제조번호·제조량과 시험 결과를 직접 입력해 주세요. PC의 발행센터에서 올리면 자동으로 읽습니다.`, 'warn', 14000);
   }
   rec.comp = rec.comp || compOf(rec.data.productName) || compOf(rec.name) || '단품';
@@ -291,11 +340,12 @@ window.ingestFromUrls = async urls => { const fs = []; for (const u of urls) { c
 function model() {
   const I = ing(), comps = {};
   I.files.filter(f => f.status === '완료' && f.data).forEach(f => {
-    const k = f.comp || '단품'; const c = comps[k] = comps[k] || { key: k, report: null, single: null, comp: null, bulk: null, files: [] };
+    const k = f.comp || '단품'; const c = comps[k] = comps[k] || { key: k, report: null, single: null, comp: null, bulk: null, micro: null, files: [] };
     c.files.push(f);
     if (f.kind === '기능성보고서') c.report = f.data;
     else if (f.kind === '전성분표') { if (f.data.single) c.single = f.data; if (f.data.rms) c.comp = f.data; }
     else if (f.kind === '반제품성적서') c.bulk = f.data;
+    else if (f.kind === '미생물시험성적서') c.micro = f.data;
   });
   return Object.values(comps).sort((a, b) => a.key.localeCompare(b.key, 'ko'));
 }
@@ -303,7 +353,7 @@ function maker() { const I = ing(); return MK.find(m => m.name === I.info.makerN
 function autoInfo() {
   const I = ing(), M = model();
   const r = M.find(c => c.report)?.report, b = M.find(c => c.bulk)?.bulk, x = M.find(c => c.single || c.comp);
-  if (!I.info.makerName) { const mk = findMaker(r?.makers?.[0]?.name || ''); if (mk) I.info.makerName = mk.name; }
+  if (!I.info.makerName) { const mk = (b?.makerHint && MK.find(m => m.name === b.makerHint)) || findMaker(r?.makers?.[0]?.name || ''); if (mk) I.info.makerName = mk.name; }
   if (!I.info.nameKo) { const n = (b?.productName || r?.productName || '').replace(/\s*\d\s*제\s*$/, '').trim(); if (n) I.info.nameKo = n; }
   if (!I.info.nameEn) { const e = ((x?.single || x?.comp)?.productName || '').replace(/\(\s*step\s*\d\s*\)/i, '').trim(); if (e) I.info.nameEn = e; }
 }
@@ -376,7 +426,7 @@ function build(withCoa) {
   p.appearance = M.map(c => { const x = c.bulk?.rows.find(r => /성상/.test(r.item)); return x ? `${single ? '' : `[${c.key}] `}${x.crit}` : ''; }).filter(Boolean).join('\n');
   p.packUnit = info.packUnit || '';
   p.makers = [{ type: '화장품제조업자', name: mkName, role: (mk?.scope || []).some(s => /포장/.test(s)) ? '내용물(벌크) 제조 및 충전·1차 포장' : '내용물(벌크) 제조' }];
-  p.revisions = [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: '신규 제정 (근거: 기능성 보고서·전성분표·반제품성적서·제조업 등록필증)', reason: '신규 제정', approver: '' }];
+  p.revisions = [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: `신규 제정 (근거: ${[...new Set(I.files.filter(f => f.status === '완료').map(f => f.kind))].join('·') || '자료'})`, reason: '신규 제정', approver: '' }];
   p.components = M.map(c => {
     const k = newComp(c.key); const r = c.report, b = c.bulk;
     k.fullName = b?.productName || r?.productName || c.key; k.maker = makerShort(mk) || mkName; k.functional = r ? '예' : '아니오';
@@ -426,7 +476,7 @@ function build(withCoa) {
     const push = (item, crit, method) => fs.push({ item, sub, criterion: crit, method, note: '' });
     const sx = pick(/성상/); push('성상', sx?.crit || '표준품과 동일', sx?.method || '표준품과 비교 및 육안확인');
     const hx = pick(/향/); push('향취', hx?.crit || '표준품과 동일', hx?.method || '표준품과 비교');
-    const px = pick(/^pH$/); push('pH', px?.crit || (r?.ph ? `${r.ph} ± 1.00` : ''), px?.method || '「기능성화장품 기준 및 시험방법」 pH 측정법');
+    const px = pick(/^pH\b/i); push('pH', px?.crit || (r?.ph ? `${r.ph} ± 1.00` : ''), px?.method || '「기능성화장품 기준 및 시험방법」 pH 측정법');
     const vx = pick(/점도/); if (vx) push('점도', vx.crit, vx.method);
     const gx = pick(/비중/); if (gx) push('비중', gx.crit, gx.method);
     (r?.actives || []).forEach(a => { const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4); push(`${a.name} 확인시험`, '주피크의 유지시간은 표준품과 같다', `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`); push(`${a.name} 함량시험`, `표시량의 90.0% 이상 (${pct}%)`, `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`); });
@@ -448,6 +498,7 @@ function build(withCoa) {
   p.attachments = [
     ...M.filter(c => c.report).map(c => ({ name: `기능성화장품 보고서 (심사제외)${single ? '' : ' — ' + c.key}`, no: `보고일련번호 ${c.report.seq}`, rev: c.report.reportDate, location: '본 문서 뒤 첨부 (원본)', note: `부서접수번호 ${c.report.receiptNo}` })),
     ...M.filter(c => c.single || c.comp).map(c => ({ name: `전성분표 (함량 포함)${single ? '' : ' — ' + c.key}`, no: '', rev: (c.single || c.comp).date, location: '자료로 작성 · 원본 파일', note: makerShort(mk) })),
+    ...M.filter(c => c.micro).map(c => ({ name: `미생물 시험성적서 (외부)${single ? '' : ' — ' + c.key}`, no: c.micro.reportNo, rev: c.micro.issueDate, location: '본 문서 뒤 첨부 (원본)', note: c.micro.lab })),
     ...M.filter(c => c.bulk).map(c => ({ name: `반제품(벌크) 시험성적서${single ? '' : ' — ' + c.key}`, no: c.bulk.testNo, rev: c.bulk.mfgDate, location: '본 문서 뒤 첨부 (원본)', note: `제조번호 ${c.bulk.lot}` })),
     ...(mk ? [{ name: `화장품 제조업 등록필증 — ${makerShort(mk)}`, no: mk.regNo || '', rev: mk.lastChange || mk.firstDate || '', location: '구글 드라이브 (제조사 관리)', note: (mk.scope || []).length ? '영업: ' + mk.scope.map(s => /직접/.test(s) ? '직접제조' : /위탁/.test(s) ? '위탁제조' : /포장/.test(s) ? '1차포장' : s).join('·') : '' }] : [])
   ];
@@ -464,11 +515,22 @@ function build(withCoa) {
     const KEYS = ['성상', '향', 'pH', '점도', '비중', '미생물', '이물'];
     c.results.forEach(r => {
       const comp = M.find(k => (single ? '' : k.key) === (r.sub || '')) || (single ? M[0] : null); const br = comp?.bulk?.rows || [];
-      const key = KEYS.find(k => r.item.includes(k)); let hit = key && !/특정세균/.test(r.item) ? br.find(x => x.item.includes(key)) : null;
+      const key = KEYS.find(k => r.item.includes(k)); let hit = key && !/특정세균|미생물/.test(r.item) ? br.find(x => x.item.includes(key)) : null;
       if (!hit) hit = br.find(x => N(x.item) === N(r.item));
+      const act = (r.item.match(/^(.+?)\s*(확인시험|함량시험)$/) || []);
+      if (!hit && act[1]) hit = br.find(x => N(x.item).includes(N(act[1])) && x.item.includes(act[2].replace('시험', '')));
+      if (!hit && /^미생물/.test(r.item)) hit = br.find(x => /총호기성|미생물1|미생물한도/.test(N(x.item)));
+      if (!hit && /특정세균/.test(r.item)) hit = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
+      // 외부 미생물시험성적서가 있으면 미생물·특정세균은 그것을 우선
+      const mic = comp?.micro || M.find(k => k.micro)?.micro;
+      const mrows = mic ? (/^미생물/.test(r.item) ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : /특정세균/.test(r.item) ? mic.rows.filter(x => /균$/.test(x.item) && !/생균수/.test(x.item)) : []) : [];
+      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
       if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
-    c.remarks = `반제품(벌크) 시험성적서 인용: ${M.filter(k => k.bulk).map(k => `${single ? '' : k.key + ' '}${k.bulk.testNo} (제조번호 ${k.bulk.lot}, ${makerShort(mk)})`).join(' / ')}\n충전·포장 후 항목(표시기재사항·외관·포장사양·내용량·이물)은 자사 입고검사, 특정세균·기능성 주성분 함량은 위탁시험 또는 제조사 성적서로 기재`;
+    const mics = M.filter(k => k.micro).map(k => k.micro);
+    c.remarks = [M.some(k => k.bulk) ? `반제품(벌크) 시험성적서 인용: ${M.filter(k => k.bulk).map(k => `${single ? '' : k.key + ' '}${k.bulk.testNo} (제조번호 ${k.bulk.lot}${k.bulk.verdict ? ', ' + k.bulk.verdict : ''})`).join(' / ')}` : '',
+      mics.length ? `미생물 시험(외부): ${mics.map(x => `${x.lab} ${x.reportNo} (발급 ${x.issueDate}${x.lot ? ', 시료 제조번호 ' + x.lot : ''})`).join(' / ')}` : '',
+      '충전·포장 후 항목(표시기재사항·외관·포장사양·내용량·이물)은 자사 입고검사'].filter(Boolean).join('\n');
     const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
     c.requestDate = ''; c.receiptDate = today();
     S.coas.push(c);
@@ -492,11 +554,12 @@ function fileTable() {
   I.files.forEach(f => {
     const d = f.data || {};
     const sum = f.status !== '완료' ? esc(f.err || '') : f.kind === '기능성보고서' ? `${esc(d.productName)} · 보고일련번호 ${esc(d.seq)} · ${esc(d.reportDate)} · pH ${esc(d.ph)} · ${esc((d.actives || []).map(a => a.name + ' ' + a.amount + a.unit).join(', '))}`
+      : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
       : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
       : `${esc(d.productName)} · 제조번호 ${esc(d.lot)} · 제조일 ${esc(d.mfgDate)} · 제조량 ${esc(d.batch)} · ${esc(d.testNo)} · ${(d.rows || []).length}항목${d.ocr ? ' <span class="pill">글자 인식</span>' : ''}`;
     const st = f.status === '완료' ? chip('완료', 'good') : f.status === '오류' ? chip('오류', 'bad') : chip(f.status, 'warn');
     const tr = el(`<tr><td>${esc(f.name)}</td><td></td><td></td><td>${st}</td><td style="font-size:12px">${sum}</td><td></td></tr>`);
-    const ks = el(`<select>${['기능성보고서', '전성분표', '반제품성적서'].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
+    const ks = el(`<select>${['반제품성적서', '미생물시험성적서', '기능성보고서', '전성분표'].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
     ks.onchange = async () => { const r = await IDB.get(f.id); if (!r) return; try { await processRec(f, r.blob, ks.value); } catch (e) { f.status = '오류'; f.err = e.message; } save(); draw(); };
     tr.children[1].appendChild(ks);
     const cs = el(`<input value="${esc(f.comp)}" placeholder="1제·단품">`); cs.onchange = () => { f.comp = cs.value.trim() || '단품'; save(); draw(); }; tr.children[2].appendChild(cs);
@@ -518,12 +581,12 @@ function fileTable() {
 }
 function renderIngest(m) {
   const I = ing(), M = model(), mk = maker();
-  const tb = el('<div class="toolbar"><div class="ttl">자료로 작성<small>기능성 보고서 · 전성분표(함량) · 반제품성적서 · 제조업체(필증)를 넣으면 제품표준서·완제품성적서 초안을 만듭니다</small></div></div>');
+  const tb = el('<div class="toolbar"><div class="ttl">자료로 작성<small>반제품성적서 · 미생물시험성적서(외부) · 기능성 보고서를 넣으면 제품표준서·완제품성적서 초안을 만듭니다 (전성분표는 있으면 성분표에)</small></div></div>');
   tb.appendChild(button('새로 시작', async () => { if (I.files.length && !await askConfirm('올린 자료와 입력값을 비우고 새로 시작할까요? 이미 만든 제품표준서는 남습니다.', { ok: '새로 시작' })) return; for (const f of I.files) await IDB.del(f.id); S.ingest = null; save(); draw(); }, 'btn'));
   m.appendChild(tb);
   // 1. 자료
   const c1 = el(`<div class="card"><h3>1. 자료 올리기 <span class="r hint">PDF · 엑셀 여러 개를 한 번에 · 파일 이름의 '1제/2제'로 구성품을 나눕니다</span></h3>
-    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">기능성 보고서(의약품안전나라 PDF) · 전성분표(함량 포함 엑셀, 단일/복합) · 반제품성적서(PDF, 스캔본도 글자 인식)</span></div>
+    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">반제품성적서(PDF, 스캔본도 글자 인식) · 미생물시험성적서(외부 시험기관 PDF) · 기능성 보고서(의약품안전나라 PDF) · 전성분표(엑셀, 선택)</span></div>
     <input type="file" id="ingIn" multiple accept=".pdf,.xlsx,.xls" hidden></div>`);
   const drop = c1.querySelector('#drop'), fi = c1.querySelector('#ingIn');
   drop.onclick = () => fi.click(); fi.onchange = () => { addFiles([...fi.files]); fi.value = ''; };
@@ -557,20 +620,26 @@ function renderIngest(m) {
   if (mk) c2.appendChild(el(`<div class="funcbox" style="margin-top:8px"><b>${esc(mk.company || mk.label)}</b> · 화장품 제조업 등록필증 ${esc(mk.regNo || '번호 판독 불가')} · 대표자 ${esc(mk.ceo || '-')} · ${esc(mk.issuer || '')}<br>소재지: ${esc((mk.sites || []).join(' / ') || '-')}<br>영업 범위: ${esc((mk.scope || []).join(' / ') || '-')} <span class="hint">· 판독 신뢰도 ${esc(mk.confidence || '-')}${mk.note ? ' · ' + esc(mk.note) : ''}</span>${mk.fileId ? ` · <a href="https://drive.google.com/file/d/${esc(mk.fileId)}/view" target="_blank" rel="noopener">필증 원본</a>` : ''}</div>`));
   if (M.length) { const w = el('<div class="form" style="margin-top:8px"></div>'); I.info.weights = I.info.weights || {}; M.forEach(c => { w.appendChild(el(`<label>표시용량 ${esc(c.key)}</label>`)); const d = document.createElement('div'); d.appendChild(inp(I.info.weights, c.key, { ph: '예) 30ml' })); w.appendChild(d); }); c2.appendChild(w); }
   m.appendChild(c2);
-  // 3. 검토
-  const c3 = el('<div class="card"><h3>3. 검토 — 이 자료로 작성할 수 있는가</h3><div class="grid2" style="grid-template-columns:1fr 1fr"><div><div class="sub" style="margin-top:0">교차 점검</div><div class="checks" id="ingChk"></div></div><div><div class="sub" style="margin-top:0">항목별 작성 가능 여부</div><table class="list" id="ingFeas"><thead><tr><th>문서</th><th>항목</th><th>채움</th><th>근거</th></tr></thead><tbody></tbody></table></div></div></div>');
-  const ck = c3.querySelector('#ingChk');
-  if (!M.length) ck.innerHTML = '<div class="empty">자료를 올리면 여기서 대조합니다.</div>';
-  else checks(M).forEach(x => ck.appendChild(el(`<div class="row">${x.ok ? chip('일치', 'good') : chip(x.lvl === '필수' ? '문제' : x.lvl === '권장' ? '보완' : '확인', x.lvl === '필수' ? 'bad' : 'warn')}<div><b>${esc(x.k)}</b> ${esc(x.t)} <span class="m">${esc(x.m)}</span></div></div>`)));
-  const ft = c3.querySelector('#ingFeas tbody'); FEAS(M).forEach(([d, it, st, src]) => ft.appendChild(el(`<tr><td>${d}</td><td>${esc(it)}</td><td>${chip(st, FCHIP[st])}</td><td class="hint">${esc(src)}</td></tr>`)));
-  m.appendChild(c3);
-  // 4. 만들기
-  const c4 = el(`<div class="card"><h3>4. 만들기</h3><div class="hint" style="margin-bottom:8px">초안을 만든 뒤 「제품표준서」 탭에서 CGMP 점검을 보며 빈칸(공정·설비 등 제조사 자료)을 채우고 발행하세요. 올린 기능성 보고서·반제품성적서 원본은 제품표준서 뒤 별첨으로 붙습니다.</div></div>`);
+  // 3. 만들기
+  const c4 = el(`<div class="card"><h3>3. 만들기</h3></div>`);
   const ok = M.length && M.every(c => c.bulk || c.single || c.comp || c.report);
   const b1 = button('제품표준서 + 완제품성적서 만들기', () => { const r = build(true); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn pri');
   const b2 = button('제품표준서만 만들기', () => { const r = build(false); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn');
   if (!ok) { b1.disabled = b2.disabled = true; }
   c4.appendChild(inl(b1, b2)); m.appendChild(c4);
+  // 만든 문서: 고치거나 발행하러 열기 (발행본은 「발행 이력」)
+  const made = S.products.filter(p => p.sourceIngest).sort((a, b) => String(b.sourceIngest.at).localeCompare(String(a.sourceIngest.at))).slice(0, 5);
+  if (made.length) {
+    const mb = el('<div style="margin-top:14px"><div style="font-weight:700;font-size:13px;margin-bottom:4px">만든 문서</div><table class="list"><tbody></tbody></table></div>');
+    made.forEach(p => {
+      const tr = el(`<tr><td style="width:150px">${esc(p.sourceIngest.at)}</td><td>${esc(p.nameKo || '(제품명 없음)')}</td><td>${esc(p.psNo)} Rev.${esc(p.rev)}</td><td style="text-align:right"></td></tr>`);
+      const td = tr.lastElementChild;
+      td.appendChild(button('제품표준서', () => go('ps', { pid: p.id, sec: 's1' }), 'btn sm'));
+      S.coas.filter(c => c.productId === p.id).forEach(c => { td.appendChild(document.createTextNode(' ')); td.appendChild(button(`완제품성적서 ${c.lots.map(l => l.lot).filter(Boolean).join(', ')}`.trim(), () => go('coa', { cid: c.id }), 'btn sm')); });
+      mb.querySelector('tbody').appendChild(tr);
+    });
+    c4.appendChild(mb);
+  }
 }
 RENDER.ingest = renderIngest;
 window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build };

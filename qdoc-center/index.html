@@ -35,6 +35,20 @@ table.list{width:100%;border-collapse:collapse}
 table.list th,table.list td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
 table.list th{font-size:12px;color:var(--ink2);font-weight:700;background:#f8fafc}
 table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:var(--sel)}
+.lg{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden}
+.lgh{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none}
+.lgh:hover{background:var(--sel)}
+.lgh .ar{width:14px;color:var(--ink2);font-size:11px;transition:transform .15s}
+.lg.open .lgh .ar{transform:rotate(90deg)}
+.lgh .nm{font-weight:700;font-size:14px}
+.lgh .sub{font-size:12px;color:var(--ink2)}
+.lgh .cnt{margin-left:auto;font-size:12px;color:var(--ink2);white-space:nowrap}
+.lgb{border-top:1px solid var(--line);padding:10px 14px 12px;background:#fbfcfe}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.seg button{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--navy);color:#fff;font-weight:700}
+.lgf{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink2)}
 .grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
 .split{display:grid;grid-template-columns:265px 1fr;gap:14px;align-items:start}
 .side{position:sticky;top:66px;max-height:calc(100vh - 80px);overflow:auto}
@@ -319,7 +333,7 @@ function cloudHooks() {
     }
   };
 }
-const V = { tab: 'ps', pid: null, sec: 's1', cid: null, fq: '', cf: '' };
+const V = { tab: 'ingest', pid: null, sec: 's1', cid: null, fq: '', cf: '' };
 function changed() { save(); if (V.tab === 'ps') refreshPS(); if (V.tab === 'coa') refreshCoa(); }
 const prod = id => S.products.find(p => p.id === id);
 
@@ -639,11 +653,12 @@ function tedit(rows, cols, { newRow, numbered = true, onchange, addLabel = '+ �
 }
 
 /* ================= 탭 ================= */
-const TABS = [['ingest', '자료로 작성'], ['ps', '제품표준서'], ['coa', '완제품성적서'], ['func', '기능성 자료'], ['log', '발행 이력'], ['cgmp', 'CGMP 기준']];
+const TABS = [['ingest', '자료로 작성'], ['log', '발행 이력'], ['func', '기능성 자료'], ['cgmp', 'CGMP 기준']]; // 제품표준서·성적서 편집 화면은 탭 없이 「자료로 작성」·「발행 이력」에서 엶
 const RENDER = window.RENDER = window.RENDER || {};
 function go(tab, opt = {}) { Object.assign(V, { tab }, opt); render(); window.scrollTo(0, 0); }
 function render() {
-  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="${V.tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
+  const onTab = V.tab === 'ps' || V.tab === 'coa' ? 'log' : V.tab;
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="${onTab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.t));
   const m = $('#main'); m.innerHTML = '';
   Object.assign(RENDER, { ps: renderPS, coa: renderCoa, func: renderFunc, log: renderLog });
@@ -1072,13 +1087,71 @@ function renderFunc(m) {
 
 /* ================= 발행 이력 ================= */
 function renderLog(m) {
-  m.appendChild(el('<div class="toolbar"><div class="ttl">발행 이력<small>미리보기에서 「발행 (인쇄 / PDF 저장)」을 누를 때 기록됩니다</small></div></div>'));
-  const card = el('<div class="card"><table class="list"><thead><tr><th>발행 일시</th><th>종류</th><th>문서번호</th><th>제품</th><th>판·LOT</th><th>상태</th></tr></thead><tbody></tbody></table></div>');
-  const tb = card.querySelector('tbody');
-  S.issues.forEach(x => tb.appendChild(el(`<tr><td>${esc(x.at)}</td><td>${esc(x.type)}</td><td>${esc(x.docNo)}</td><td>${esc(x.product)}</td><td>${esc(x.ref)}</td><td>${esc(x.state || '')}</td></tr>`)));
-  if (!S.issues.length) tb.innerHTML = '<tr><td colspan="6" class="empty">아직 발행한 문서가 없습니다.</td></tr>';
-  m.appendChild(card);
+  m.appendChild(el('<div class="toolbar"><div class="ttl">발행 이력<small>제품을 누르면 그 제품의 완제품성적서 · 제품표준서 발행본을 볼 수 있습니다</small></div></div>'));
+  const open = V.logOpen = V.logOpen || {};
+  // 제품별로 묶기 (예전 기록은 문서번호·제품명으로 제품을 찾음)
+  const G = new Map();
+  const keyOf = x => x.pid || (x.type === '제품표준서' && S.products.find(p => p.psNo === x.docNo) || S.products.find(p => p.nameKo === x.product))?.id || 'n:' + x.product;
+  const grp = k => { if (!G.has(k)) G.set(k, { k, ps: [], coa: [], last: '' }); return G.get(k); };
+  S.issues.forEach(x => { const g = grp(keyOf(x)); (x.type === '제품표준서' ? g.ps : g.coa).push(x); if (String(x.at) > g.last) g.last = String(x.at); g.name = g.name || x.product; });
+  S.products.forEach(p => { grp(p.id).p = p; });
+  const list = [...G.values()].sort((a, b) => b.last.localeCompare(a.last) || String(a.p?.nameKo || a.name).localeCompare(String(b.p?.nameKo || b.name), 'ko'));
+  if (!list.length) { m.appendChild(el('<div class="card empty">아직 만든 문서가 없습니다. 「자료로 작성」에서 만드세요.</div>')); return; }
+  const wrap = el('<div></div>'); m.appendChild(wrap);
+  list.forEach(g => {
+    const p = g.p, nm = p?.nameKo || g.name || '(제품명 없음)', n = g.ps.length + g.coa.length;
+    const box = el(`<div class="lg ${open[g.k] ? 'open' : ''}"><div class="lgh"><span class="ar">▶</span><div><div class="nm">${esc(nm)}</div><div class="sub">${esc([p?.code, p ? `${p.psNo} Rev.${p.rev}` : '(삭제된 제품)'].filter(Boolean).join(' · '))}</div></div><div class="cnt">${n ? `완제품성적서 ${g.coa.length} · 제품표준서 ${g.ps.length}<br>최근 발행 ${esc(g.last)}` : chip('아직 발행 안 함', 'mute')}</div></div></div>`);
+    box.querySelector('.lgh').onclick = () => { if (open[g.k]) delete open[g.k]; else open[g.k] = open[g.k] || (g.coa.length || !g.ps.length ? 'coa' : 'ps'); render(); };
+    if (open[g.k]) {
+      const kind = open[g.k], rows = kind === 'coa' ? g.coa : g.ps;
+      const body = el(`<div class="lgb"><div class="seg"><button data-k="coa" class="${kind === 'coa' ? 'on' : ''}">완제품성적서 (${g.coa.length})</button><button data-k="ps" class="${kind === 'ps' ? 'on' : ''}">제품표준서 (${g.ps.length})</button></div>
+        <table class="list"><thead><tr><th style="width:150px">발행 일시</th><th>문서번호</th><th>${kind === 'coa' ? '제조번호 (LOT)' : '개정'}</th><th>상태</th><th style="width:70px"></th></tr></thead><tbody></tbody></table><div class="lgf"></div></div>`);
+      body.querySelectorAll('.seg button').forEach(bt => bt.onclick = () => { open[g.k] = bt.dataset.k; render(); });
+      const tb = body.querySelector('tbody');
+      rows.forEach(x => {
+        const tr = el(`<tr class="click" title="발행한 문서 보기"><td>${esc(x.at)}</td><td>${esc(x.docNo || '—')}</td><td>${esc(x.ref || '')}</td><td>${esc(x.state || '')}</td><td></td></tr>`);
+        tr.lastElementChild.appendChild(button('보기', () => { }, 'btn sm'));
+        tr.onclick = () => viewIssue(x);
+        tb.appendChild(tr);
+      });
+      if (!rows.length) tb.innerHTML = `<tr><td colspan="5" class="empty">발행한 ${kind === 'coa' ? '완제품성적서' : '제품표준서'}가 없습니다.</td></tr>`;
+      // 지금 문서 (고치거나 새로 발행)
+      const f = body.querySelector('.lgf');
+      if (p) {
+        f.appendChild(document.createTextNode('지금 문서 열기:'));
+        if (kind === 'ps') f.appendChild(button(`제품표준서 ${p.psNo} Rev.${p.rev}`, () => go('ps', { pid: p.id, sec: 's1' }), 'btn sm'));
+        else {
+          const cs = S.coas.filter(c => c.productId === p.id);
+          cs.forEach(c => f.appendChild(button(`성적서 ${c.lots.map(l => l.lot).filter(Boolean).join(', ') || c.testNo || '(LOT 없음)'}`, () => go('coa', { cid: c.id }), 'btn sm')));
+          if (!cs.length) f.appendChild(el('<span>만든 완제품성적서 없음</span>'));
+        }
+      }
+      box.appendChild(body);
+    }
+    wrap.appendChild(box);
+  });
 }
+/* 발행본 보기: 발행할 때 남긴 내용 그대로 (예전 기록은 지금 문서로) */
+async function viewIssue(x) {
+  const ttl = `${x.type} ${x.docNo || ''} ${x.ref || ''} — ${x.product} (${x.at} 발행본)`;
+  const old = ' — 발행 당시 내용이 저장되지 않은 예전 기록이라 지금 문서로 보여줍니다';
+  if (x.type === '제품표준서') {
+    let p = x.snap ? JSON.parse(JSON.stringify(x.snap)) : null;
+    if (p) fixProduct(p);
+    const cur = p ? null : prod(x.pid) || S.products.find(q => q.psNo === x.docNo) || S.products.find(q => q.nameKo === x.product);
+    if (!p && !cur) { notify('이 발행본의 내용이 남아 있지 않습니다 (제품이 지워짐).', 'warn'); return; }
+    const d = p || cur;
+    preview(p ? ttl : ttl + old, psDoc(d, await uploadPages(d)), null);
+  } else {
+    let c = x.snap ? JSON.parse(JSON.stringify(x.snap)) : null;
+    if (c) fixCoa(c);
+    const cur = c ? null : S.coas.find(q => q.id === x.cid) || S.coas.find(q => q.testNo && q.testNo === x.docNo);
+    if (!c && !cur) { notify('이 발행본의 내용이 남아 있지 않습니다 (성적서가 지워짐).', 'warn'); return; }
+    const d = c || cur;
+    preview(c ? ttl : ttl + old, coaDoc(d, x.psnap || prod(d.productId)), null);
+  }
+}
+const snap = o => JSON.parse(JSON.stringify(o));
 function logIssue(o) { S.issues.unshift({ id: uid('i'), at: nowStr(), ...o }); save(); }
 
 /* ================= 인쇄 문서: 제품표준서 ================= */
@@ -1197,7 +1270,7 @@ function psDoc(p, extra) {
   }).join('') + '<div class="note">※ 제조단위당 기준량 = 제조단위 × 분량(%) ÷ 100</div>' + (() => {
     const nd = p.nondisclosure || {}; const on = nd.applies === '해당';
     return blk(`${SB('s2', comps.length + 1)}원료 함량 일부 미공개 확인 (해당 시)`, `<table class="h22"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:24%"><col></colgroup>
-      <tr><th>해당 여부</th><td colspan="3">${on ? '☑ 해당 — 품질·안전관리에 영향을 주는 성분만 함량 기재' : '☑ 해당 없음 — 처방 전체 확보'}</td></tr>
+      <tr><th>해당 여부</th><td colspan="3">${on ? '☑ 해당 — 품질·안전관리에 영향을 주는 성분만 함량 기재' : nd.applies === '해당 없음' || comps.some(c => (c.ingredients || []).length) ? '☑ 해당 없음 — 처방 전체 확보' : '☐ 해당　　☐ 해당 없음 — 처방 전체 확보'}</td></tr>
       ${on ? `<tr><th>영향을 주는 성분 수</th><td class="c">${esc(nd.affect)} 종</td><th>영향을 주지 않는 성분 수</th><td class="c">${esc(nd.nonAffect)} 종 (함량 비공개)</td></tr>
       <tr><th>제조업자 확인</th><td colspan="3">회사명 : ${esc(nd.company)}　　책임자 : ${esc(nd.person)} (인)　　일자 : ${esc(nd.date)}</td></tr>
       <tr><td colspan="4" style="font-size:7.4pt">비공개 원료 함량으로 인한 제품 품질·안정성의 책임은 화장품제조업자에게 있으며, 식약처 등 외부기관이 비공개 성분 함량 확인을 요청하면 책임판매업자에게 공개하거나 제조업자가 직접 대응한다 (시행규칙 제11조①6 나목).</td></tr>` : ''}</table>`);
@@ -1317,8 +1390,8 @@ async function uploadPages(p) {
 }
 
 /* ================= 인쇄 문서: 성적서 ================= */
-function coaDoc(c) {
-  const p = prod(c.productId) || { nameKo: '', code: '', nameSub: '' };
+function coaDoc(c, pp) {
+  const p = pp || prod(c.productId) || { nameKo: '', code: '', nameSub: '' };
   const rows = c.results, dense = rows.length > 18, padN = Math.max(0, 16 - rows.length);
   const multi = rows.some(r => r.sub) || c.lots.length > 1; // 구성품이 여럿일 때만 「구분」 열
   const per = k => c.lots.map(l => `${c.lots.length > 1 ? esc(l.label) + ' : ' : ''}${esc(l[k])}`).join('<br>');
@@ -1435,11 +1508,11 @@ function previewBlankCoa() {
 async function previewPS(p) {
   const req = psChecks(p).filter(x => x.lvl === '필수' && !x.ok).length;
   const extra = await uploadPages(p);
-  preview(`제품표준서 ${p.psNo} Rev.${p.rev} — ${p.nameKo}${req ? ` (CGMP 필수 ${req}건 미충족)` : ''}`, psDoc(p, extra), () => logIssue({ type: '제품표준서', docNo: p.psNo, product: p.nameKo, ref: 'Rev.' + p.rev, state: req ? `필수 ${req}건 미충족 상태로 발행` : 'CGMP 필수 충족' }));
+  preview(`제품표준서 ${p.psNo} Rev.${p.rev} — ${p.nameKo}${req ? ` (CGMP 필수 ${req}건 미충족)` : ''}`, psDoc(p, extra), () => logIssue({ type: '제품표준서', pid: p.id, docNo: p.psNo, product: p.nameKo, ref: 'Rev.' + p.rev, state: req ? `필수 ${req}건 미충족 상태로 발행` : 'CGMP 필수 충족', snap: snap(p) }));
 }
 function previewCoa(c) {
   const p = prod(c.productId), s = coaStatus(c);
-  preview(`완제품시험성적서 ${c.testNo} — ${p?.nameKo || ''} (${s[0]})`, coaDoc(c), () => logIssue({ type: '완제품성적서', docNo: c.testNo, product: p?.nameKo || '', ref: c.lots.map(l => l.lot).join(', '), state: s[0] }));
+  preview(`완제품시험성적서 ${c.testNo} — ${p?.nameKo || ''} (${s[0]})`, coaDoc(c), () => logIssue({ type: '완제품성적서', pid: c.productId, cid: c.id, docNo: c.testNo, product: p?.nameKo || '', ref: c.lots.map(l => l.lot).join(', '), state: s[0], snap: snap(c), psnap: p ? { nameKo: p.nameKo, nameSub: p.nameSub || '', code: p.code, psNo: p.psNo, rev: p.rev } : null }));
 }
 
 /* ================= 백업 ================= */
@@ -1451,7 +1524,7 @@ $('#bkFile').onchange = async e => {
   const msg = `백업(제품 ${d.products.length}개, 성적서 ${(d.coas || []).length}건)으로 지금 데이터(제품 ${S.products.length}개, 성적서 ${S.coas.length}건)를 덮어씁니다.` + (Cloud.shared() ? '\n공동 저장소 전체가 바뀌어 다른 사람이 만든 문서도 백업에 없으면 사라집니다.' : '');
   if (!await askConfirm(msg, { ok: '덮어쓰기', danger: true })) return;
   const ingest = S.ingest; S = d; if (Cloud.art) S.ingest = d.ingest || ingest;
-  S.products.forEach(fixProduct); S.coas = S.coas || []; S.coas.forEach(fixCoa); S.issues = S.issues || []; save(); go('ps', { pid: null });
+  S.products.forEach(fixProduct); S.coas = S.coas || []; S.coas.forEach(fixCoa); S.issues = S.issues || []; save(); go('log');
 };
 
 S = load();
