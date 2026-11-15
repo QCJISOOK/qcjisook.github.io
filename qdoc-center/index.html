@@ -746,8 +746,7 @@ function secEditor(p, sec, ed) {
       A(subh('표지 기본 정보'));
       const no = inp(p, 'psNo');
       A(form([['제품표준서 번호', inl(no, button('자동', () => { p.psNo = nextPsNo(); no.value = p.psNo; changed(); }))], ['개정번호', inp(p, 'rev')],
-        ['제·개정일', inp(p, 'date', { type: 'date' })], ['제품코드', inp(p, 'code')], ['문서정보', inp(p, 'docInfo')], ['문서 효력발생일', inp(p, 'effective')],
-        ['문서 차기검토일', inp(p, 'nextReview')], ['제·개정자', inp(p, 'author')]]));
+        ['제·개정일', inp(p, 'date', { type: 'date' })], ['제품코드', inp(p, 'code')], ['문서정보', inp(p, 'docInfo')]]));
       A(subh('제조 및 책임판매 주체'));
       A(tedit(p.makers, [{ k: 'type', label: '구분', w: '22%' }, { k: 'name', label: '업체명', w: '26%' }, { k: 'role', label: '역할' }], { numbered: false }));
       A(form([['책임판매업자', inp(p.seller, 'name')], ['주소', inp(p.seller, 'addr')], ['역할', inp(p.seller, 'role'), true]]));
@@ -1121,8 +1120,7 @@ function psDoc(p, extra) {
    <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
    <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>포장단위</th><td class="c">${nl(p.packUnit || p.weight)}</td></tr>
    ${isFunctional(p) ? `<tr><th>기능성 보고(심사) 번호</th><td class="c" style="font-size:7.5pt">${esc(p.efficacy.reviewNo || funcLinks(p).map(it => it.seq).join(', '))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (funcLinks(p)[0] || {}).date || '')}</td></tr>` : ''}
-   <tr><th>문서정보</th><td class="c">${esc(p.docInfo)}</td><th>문서 효력발생일</th><td class="c">${esc(p.effective)}</td></tr>
-   <tr><th>문서 차기검토일</th><td class="c">${esc(p.nextReview)}</td><th>제·개정자</th><td class="c">${esc(p.author)}</td></tr></table>
+   <tr><th>문서정보</th><td class="c" colspan="3">${esc(p.docInfo)}</td></tr></table>
   <div class="bar center" style="margin-top:12px">제조 및 책임판매 주체</div>
   <table class="h30"><colgroup><col style="width:22%"><col style="width:24%"><col></colgroup><tr><th>구 분</th><th>업체명</th><th>역 할</th></tr>
    ${p.makers.map(m => `<tr><td>${esc(m.type)}</td><td>${esc(m.name)}</td><td>${nl(m.role)}</td></tr>`).join('')}
