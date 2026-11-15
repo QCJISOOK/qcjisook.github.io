@@ -1137,7 +1137,7 @@ function psDoc(p, extra) {
    ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>
   ${foot(p)}</section>`);
   // 개정내역
-  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 17, padH: 26 }))));
+  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 5, padH: 26 }))));
   // 작성 범위: 전체(CGMP 12개 항목, 양식 v2) / 간소(책임판매업자 6장)
   const LITE = isLite(p);
   const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s1: 1, s2: 2, s3: 3, s4: 4, s6: 5, s7: 6, s8: 7, s11: 8, s12: 9, s13: 10 };
