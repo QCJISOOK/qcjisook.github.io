@@ -360,7 +360,7 @@ function nextTestNo() {
   const d = today().replace(/-/g, '').slice(2); const n = S.coas.filter(c => (c.testNo || '').startsWith('QC-' + d)).length + 1;
   return `QC-${d}-${pad2(n)}`;
 }
-/* 6장 완제품 기준 한 줄 → 성적서 한 줄 (결과 적용에 따라 시험자 미리 채움) */
+/* 별첨5 완제품 기준 한 줄 → 성적서 한 줄 (결과 적용에 따라 시험자 미리 채움) */
 function coaRowFrom(p, f) {
   const mk = ((p.components || []).find(k => k.label === f.sub) || (p.components || [])[0] || {}).maker || '제조사';
   const tester = f.apply === '입고검사' ? '자사 (입고검사)' : f.apply === '위탁시험 / 제조사' ? '위탁시험기관 / 제조사' : f.apply === '벌크 시험자료 적용' ? mk : f.apply === '완제품 시험' ? '자사' : '';
@@ -413,7 +413,7 @@ function keyCandidates(p) {
   };
   const out = p.keyIngredients = p.keyIngredients || []; let n = 0;
   const push = (c, name, cat, pct) => { const comp = single ? '' : c.label; if (out.some(r => r.comp === comp && norm(r.name) === norm(name))) return; out.push({ comp, name, pct: pct || pctOf(c, name), category: cat, note: '' }); n++; };
-  // 기능성 주성분: 7장 '기능성 주성분' 글에서 (예: [1제] 나이아신아마이드 2% / 아데노신 0.04%)
+  // 기능성 주성분: 별첨6 '기능성 주성분' 글에서 (예: [1제] 나이아신아마이드 2% / 아데노신 0.04%)
   String(p.efficacy.actives || '').split('\n').forEach(line => {
     const lab = (line.match(/^\[([^\]]+)\]/) || [])[1]; const c = comps.find(k => k.label === lab) || comps[0]; if (!c) return;
     [...line.matchAll(/([가-힣A-Za-z0-9\-\/]+)\s+([\d.]+)\s*%/g)].forEach(m => push(c, m[1], '기능성 주성분', m[2]));
@@ -514,7 +514,7 @@ function coaChecks(c) {
   if (p) {
     const fs = p.finishedSpecs || [];
     const diff = c.results.filter(r => { const f = fs.find(f => f.item === r.item && (f.sub || '') === (r.sub || '')); return !f || f.criterion !== r.criterion; }).length;
-    add('권장', !diff, '제품표준서 6장 완제품 기준과 일치', diff ? `${diff}항목이 표준서와 다름` : '');
+    add('권장', !diff, '제품표준서 별첨5 완제품 기준과 일치', diff ? `${diff}항목이 표준서와 다름` : '');
   }
   return R;
 }
@@ -668,7 +668,7 @@ function render() {
 }
 
 /* ================= 제품표준서 ================= */
-const SECS = [['cover', '표지·승인'], ['rev', '개정내역'], ['toc', '목차 (출처)'], ['s1', '1. 제품 개요'], ['s2', '2. 원료 성분 및 분량'], ['s3', '3. 제조공정흐름도'], ['s4', '4. 공정별 상세 작업'], ['s6', '5. 작업 중 주의사항'], ['s7', '6. 기준 및 시험방법'], ['s8', '7. 효능·효과·주의사항'], ['s11', '8. 시설 및 기구'], ['s12', '9. 보관조건·사용기한'], ['s13', '10. 별첨']];
+const SECS = [['cover', '표지·승인'], ['rev', '개정내역'], ['toc', '목차 (출처)'], ['s1', '제품 개요 (1쪽)'], ['s2', '별첨1. 성분표'], ['s3', '별첨2. 제조공정흐름도'], ['s4', '별첨3. 공정별 상세 작업'], ['s6', '별첨4. 작업 중 주의사항'], ['s7', '별첨5. 기준 및 시험방법'], ['s8', '별첨6. 효능·효과·주의사항'], ['s11', '별첨7. 시설 및 기구'], ['s12', '별첨8. 보관조건·사용기한'], ['s13', '별첨9. 첨부 서류 목록']];
 function renderPS(m) {
   if (!V.pid || !prod(V.pid)) V.pid = S.products[0]?.id || null;
   const sp = el(`<div class="split"><div class="side"><div class="card"><h3>제품 <span class="r"></span></h3><div class="plist" id="plist"></div></div><div class="card"><h3>항목</h3><div class="secnav" id="secnav"></div></div></div><div id="psmain"></div></div>`);
@@ -755,7 +755,7 @@ function secEditor(p, sec, ed) {
       A(tedit(p.revisions, [{ k: 'rev', label: '개정번호', w: '8%' }, { k: 'date', label: '개정일자', w: '12%', type: 'date' }, { k: 'effDate', label: '시행일자', w: '12%', type: 'date' }, { k: 'content', label: '개정 내용', ta: 2 }, { k: 'reason', label: '개정 사유', w: '16%', ta: 1 }, { k: 'author', label: '개정자', w: '10%' }, { k: 'approver', label: '승인자', w: '10%' }], { numbered: false }));
       break;
     case 'toc':
-      A(subh('목차 — 근거 문서 (문서명·번호) · 작성 방식 <span class="hint">해설서 p84: 나눠 작성한 항목은 그 문서의 번호를 목록으로 — 공정(3·4장)·설비(8장) 자료가 없으면 여기에 제조업자 문서 이름·번호를 적으면 점검에서 인정</span>'));
+      A(subh('목차 — 근거 문서 (문서명·번호) · 작성 방식 <span class="hint">해설서 p84: 나눠 작성한 항목은 그 문서의 번호를 목록으로 — 공정(별첨2·3)·설비(별첨7) 자료가 없으면 여기에 제조업자 문서 이름·번호를 적으면 점검에서 인정</span>'));
       if (isLite(p)) {
         const tl = LITE_TOC.map(([s, t], i) => [FULLNUM[s], `${i + 1}. ${t}`]);
         tl.forEach(([n]) => { p.toc[n] = p.toc[n] || ''; });
@@ -779,7 +779,7 @@ function secEditor(p, sec, ed) {
         ['제품코드', cdBox], ['벌크코드 (제조사)', inp(p, 'bulkCode')],
         ['유형분류', inp(p, 'typeClass', { ph: '예) 기초화장용 제품류' })], ['유형세분류', inp(p, 'typeSub', { ph: '예) 에센스·크림·로션' })],
         ['포장단위', inp(p, 'packUnit')], ['제품 중량', inp(p, 'weight', { rows: 2, ph: '표준서에는 안 나옴 · 완제품성적서 표시용량에 쓰임' })], ['성상', inp(p, 'appearance', { rows: 2 }), true]]));
-      A(subh('구성품 (제조사별) <span class="hint">2·4·6장이 구성품별로 나뉩니다 · 기능성 \'예\'면 의약품안전나라 보고 자료와 자동 연결</span>'));
+      A(subh('구성품 (제조사별) <span class="hint">별첨1·3·5가 구성품별로 나뉩니다 · 기능성 \'예\'면 의약품안전나라 보고 자료와 자동 연결</span>'));
       const t = tedit(comps, [{ k: 'label', label: '구분', w: '9%' }, { k: 'fullName', label: '구성품 제품명', w: '26%' }, { k: 'maker', label: '제조사', w: '15%' }, { k: 'batchSize', label: '제조단위', w: '9%' }, { k: 'batchUnit', label: '단위', w: '7%', opts: ['kg', 'L', 'ea', 'g'] }, { k: 'makerPsNo', label: '제조사 제품표준서 번호', w: '17%' }, { k: 'functional', label: '기능성', w: '8%', opts: ['아니오', '예'] }],
         { newRow: () => newComp('구성품 ' + '①②③④⑤⑥'[comps.length] || comps.length + 1) });
       A(t);
@@ -797,9 +797,9 @@ function secEditor(p, sec, ed) {
       break;
     }
     case 's2':
-      if (!comps.length) A(el('<div class="empty">1장에서 구성품을 먼저 추가하세요.</div>'));
+      if (!comps.length) A(el('<div class="empty">「제품 개요」에서 구성품을 먼저 추가하세요.</div>'));
       comps.forEach((c, i) => {
-        A(subh('2-' + compTitle(c, i)));
+        A(subh((isLite(p) ? '2-' : '') + compTitle(c, i)));
         const sum = el('<span class="hint"></span>');
         const upd = () => { const tp = c.ingredients.reduce((a, r) => a + (num(r.pct) || 0), 0), tq = c.ingredients.reduce((a, r) => a + (num(r.qty || calcQty(c, r)) || 0), 0); sum.textContent = `분량 합계 ${tp ? tp.toFixed(4) : '-'} % · 기준량 합계 ${tq ? tq.toFixed(4) : '-'} ${c.batchUnit}`; };
         let t;
@@ -812,7 +812,7 @@ function secEditor(p, sec, ed) {
       {
         p.nondisclosure = p.nondisclosure || { applies: '해당 없음', affect: '', nonAffect: '', company: '', person: '', date: '' };
         const nd = p.nondisclosure;
-        A(subh(`2-${comps.length + 1}. 원료 함량 일부 미공개 확인 <span class="hint">코스맥스 보증서 방식 · 제조업자가 처방 전체를 주지 않을 때 (시행규칙 제11조①6 나목)</span>`));
+        A(subh(`${isLite(p) ? `2-${comps.length + 1}. ` : ''}원료 함량 일부 미공개 확인 <span class="hint">코스맥스 보증서 방식 · 제조업자가 처방 전체를 주지 않을 때 (시행규칙 제11조①6 나목)</span>`));
         A(form([['해당 여부', inp(nd, 'applies', { opts: ['해당 없음', '해당'], onch: () => render() })],
           ...(nd.applies === '해당' ? [['영향을 주는 성분 수', inp(nd, 'affect', { ph: '품질·안전관리 영향 성분 수' })], ['영향을 주지 않는 성분 수', inp(nd, 'nonAffect', { ph: '함량 비공개 성분 수' })], ['제조업자 회사명', inp(nd, 'company')], ['확인 책임자', inp(nd, 'person')], ['확인 일자', inp(nd, 'date', { type: 'date' })]] : [])]));
       }
@@ -823,7 +823,7 @@ function secEditor(p, sec, ed) {
       A(el('<div class="hint" style="margin-top:6px">자료가 없으면 「목차」 공정 줄에 제조업자 제조지시 및 기록서 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
       break;
     case 's4':
-      comps.forEach((c, i) => { A(subh('4-' + compTitle(c, i))); A(tedit(c.process, [{ k: 'stage', label: '공정 구분', w: '12%', opts: ['', ...STAGE] }, { k: 'name', label: '공정명', w: '14%' }, { k: 'work', label: '작업내용', ta: 2 }, { k: 'criteria', label: '관리기준', w: '22%', ta: 2 }])); });
+      comps.forEach((c, i) => { A(subh((isLite(p) ? '4-' : '') + compTitle(c, i))); A(tedit(c.process, [{ k: 'stage', label: '공정 구분', w: '12%', opts: ['', ...STAGE] }, { k: 'name', label: '공정명', w: '14%' }, { k: 'work', label: '작업내용', ta: 2 }, { k: 'criteria', label: '관리기준', w: '22%', ta: 2 }])); });
       break;
     case 's5':
       A(subh('공정별 이론 생산량 및 수율관리기준 <span class="hint">고시 6호는 삭제됐지만 공정관리 근거로 유지 — 빈칸 대신 기준 또는 \'해당 없음\'</span>'));
@@ -837,28 +837,28 @@ function secEditor(p, sec, ed) {
       const L7 = isLite(p), n7 = L7 ? 4 : 6; let k7 = 1;
       if (L7) A(el(`<div class="funcbox">원료·자재 기준 및 시험방법은 제조업자 기준(별책)을 따르므로 인쇄본에는 '제조업자 기준 참조'로만 나갑니다. (참조 문서: ${esc(p.makerRef || '표지에서 입력')})</div>`));
       else {
-        A(subh(`${n7}-${k7++}. 원자재 (원료·자재)`));
+        A(subh(`${L7 ? `${n7}-${k7++}. ` : ''}원자재 (원료·자재)`));
         A(tedit(p.rawSpecs, [{ k: 'type', label: '구분', w: '12%' }, { k: 'item', label: '시험항목', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'doc', label: '별도관리 문서 (규격서 번호)', w: '20%' }], { numbered: false }));
-        A(subh(`${n7}-${k7++}. 반제품 기준 및 시험방법`));
+        A(subh(`${L7 ? `${n7}-${k7++}. ` : ''}반제품 기준 및 시험방법`));
         const na = el(`<label class="inl" style="font-size:12.5px"><input type="checkbox" ${p.semiNA ? 'checked' : ''}> 해당 없음 (충전 전 제조를 마친 내용물은 벌크제품으로 관리)</label>`);
         na.querySelector('input').onchange = e => { p.semiNA = e.target.checked; changed(); };
         A(na); A(tedit(p.semiSpecs, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'note', label: '비고', w: '14%' }]));
       }
       if (L7) k7 = 2;
-      comps.forEach(c => { A(subh(`${n7}-${k7++}. 벌크제품 기준 및 시험방법 — [${esc(c.label)}] ${esc(c.fullName)} <span class="hint">제조사 : ${esc(c.maker || '—')}</span>`)); A(tedit(c.bulkSpecs, L7 ? [{ k: 'item', label: '시험항목', w: '18%' }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'note', label: '비고', w: '18%', ta: 1 }]
+      comps.forEach(c => { A(subh(`${L7 ? `${n7}-${k7++}. ` : ''}벌크제품 기준 및 시험방법 — [${esc(c.label)}] ${esc(c.fullName)} <span class="hint">제조사 : ${esc(c.maker || '—')}</span>`)); A(tedit(c.bulkSpecs, L7 ? [{ k: 'item', label: '시험항목', w: '18%' }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'note', label: '비고', w: '18%', ta: 1 }]
         : [{ k: 'item', label: '시험항목', w: '14%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법 (요약)', ta: 1 }, { k: 'basis', label: '시험 근거', w: '14%', ta: 1 }, { k: 'specType', label: '규격 유형', w: '9%', opts: ['', '자가 규격', '허가 규격'] }, { k: 'freq', label: '적용 주기', w: '10%', opts: ['', '매 배치', '초도 생산', '초도 3배치'] }, { k: 'note', label: '비고', w: '10%' }], { newRow: () => ({ item: '', criterion: '', method: '', basis: '', specType: '자가 규격', freq: '매 배치', note: '' }) })); });
-      A(subh(`${n7}-${k7++}. 완제품 기준 및 시험방법 <span class="hint">완제품성적서의 시험항목·기준은 이 표에서 가져옵니다</span>`));
+      A(subh(`${L7 ? `${n7}-${k7++}. ` : ''}완제품 기준 및 시험방법 <span class="hint">완제품성적서의 시험항목·기준은 이 표에서 가져옵니다</span>`));
       A(tedit(p.finishedSpecs, L7 ? [{ k: 'item', label: '시험항목', w: '22%' }, { k: 'sub', label: '구분', w: '8%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'note', label: '비고', w: '10%' }]
         : [{ k: 'item', label: '시험항목', w: '15%' }, { k: 'sub', label: '구성품', w: '7%' }, { k: 'stage', label: '구분', w: '8%', opts: ['', '충전품', '완제품'] }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'basis', label: '시험 근거', w: '12%' }, { k: 'apply', label: '결과 적용', w: '13%', opts: ['', ...APPLY] }], { newRow: () => ({ item: '', sub: '', stage: '충전품', criterion: '', method: '', basis: '', apply: '입고검사', note: '' }) }));
       if (!L7) A(el('<div class="hint" style="margin-top:6px">결과 적용: 벌크 시험자료 적용 = 반제품성적서 결과 인용 (한국화장품 방식) · 입고검사 = 자사 · 위탁시험 / 제조사 = 특정세균·기능성 함량 등. 완제품성적서를 만들 때 이 값으로 시험자 칸이 미리 채워집니다.</div>'));
       break;
     }
     case 's8': {
-      A(subh(`${isLite(p) ? 2 : 7}-1. 효능·효과 (기능성화장품)`));
+      A(subh(`${isLite(p) ? '2-1. ' : ''}효능·효과 (기능성화장품)`));
       const ef = inp(p.efficacy, 'effect', { rows: 3 });
       A(form([['효능·효과', ef, true], ['기능성 주성분', inp(p.efficacy, 'actives'), true], ['기능성 보고(심사) 번호', inp(p.efficacy, 'reviewNo', { ph: '비우면 의약품안전나라 보고일련번호를 자동으로 씀' })], ['보고(심사) 일자', inp(p.efficacy, 'reviewDate', { type: 'date' })]]));
       A(funcBox(p, ef));
-      A(subh(`${isLite(p) ? 2 : 7}-2. 사용할 때의 주의사항`));
+      A(subh(`${isLite(p) ? '2-2. ' : ''}사용할 때의 주의사항`));
       A(form([['공통 (시행규칙 [별표 3])', inp(p, 'cautionsCommon', { rows: 5 }), true], ['제품 특성상 추가', inp(p, 'cautionsExtra', { rows: 4 }), true]]));
       break;
     }
@@ -910,21 +910,21 @@ function secEditor(p, sec, ed) {
         { newRow: () => ({ group: '제조', maker: '', mgmtNo: '', name: '', spec: '', qty: '1', have: '예', use: '', note: '' }) }));
       break;
     case 's12':
-      A(subh((isLite(p) ? 5 : 9) + '-1. 단계별 보관조건 <span class="hint">벌크제품은 최대 보관기간을 정하고, 가까워지면 완제품 제조 전 재평가 (제17조③)</span>'));
+      A(subh((isLite(p) ? '5-1. ' : '') + '단계별 보관조건 <span class="hint">벌크제품은 최대 보관기간을 정하고, 가까워지면 완제품 제조 전 재평가 (제17조③)</span>'));
       A(tedit(p.storage, [{ k: 'type', label: '구분', w: '12%' }, { k: 'target', label: '대상', w: '20%', ta: 1 }, { k: 'condition', label: '보관조건', ta: 2 }, { k: 'maxStorage', label: '최대 보관기간', w: '13%' }, { k: 'note', label: '비고', w: '14%' }], { numbered: false }));
-      A(subh((isLite(p) ? 5 : 9) + '-2. 사용기한 또는 개봉 후 사용기간'));
+      A(subh((isLite(p) ? '5-2. ' : '') + '사용기한 또는 개봉 후 사용기간'));
       A(form([['사용기한', inp(p.shelfLife, 'life', { ph: '예) 제조일로부터 36개월' })], ['개월 수 (자동 계산용)', inp(p.shelfLife, 'months', { type: 'number', ph: '36' })], ['기산점', inp(p.shelfLife, 'basis', { ph: '예) 세럼 벌크 제조일' })], ['비고', inp(p.shelfLife, 'note')],
         ['개봉 후 사용기간', inp(p.openLife, 'life')], ['기산점', inp(p.openLife, 'basis')], ['비고', inp(p.openLife, 'note'), true]]));
       break;
     case 's13': {
       const links = funcLinks(p);
       A(subh('의약품안전나라에서 자동으로 붙는 별첨'));
-      A(el(`<div class="funcbox">${links.length ? links.map(it => `<div class="fi">기능성화장품 보고서 — <b>${esc(it.name)}</b> · 보고일련번호 ${esc(it.seq)} · 보고완료 ${esc(it.date || '')} · ${pdfPages(it) ? `보고서 PDF ${pdfPages(it)}쪽 첨부` : '공개 정보 1쪽 (보고서 PDF 없음)'}</div>`).join('') : '연결된 기능성 자료가 없습니다. (7장에서 연결)'}</div>`));
+      A(el(`<div class="funcbox">${links.length ? links.map(it => `<div class="fi">기능성화장품 보고서 — <b>${esc(it.name)}</b> · 보고일련번호 ${esc(it.seq)} · 보고완료 ${esc(it.date || '')} · ${pdfPages(it) ? `보고서 PDF ${pdfPages(it)}쪽 첨부` : '공개 정보 1쪽 (보고서 PDF 없음)'}</div>`).join('') : '연결된 기능성 자료가 없습니다. (별첨6에서 연결)'}</div>`));
       A(subh('별첨 목록 <span class="hint">해설서: 기능성 심사결과통지서(또는 보고서) 사본·근거자료 첨부 권장</span>'));
       const t = tedit(p.attachments, [{ k: 'name', label: '문서명', w: '34%' }, { k: 'no', label: '문서번호', w: '16%' }, { k: 'rev', label: '개정번호·일자', w: '13%' }, { k: 'location', label: '보관 위치', w: '15%' }, { k: 'note', label: '비고' }]);
       A(t);
       A(inl(button('기본 목록 넣기', () => {
-        ['원료 규격서 (6-1 원료 기준)', '포장재 규격서 (6-1 자재 기준)', '표준견본 관리 기록 (성상·색상·향취·표시사항 비교 기준)', '제조사 제품표준서 (처방·제조단위 원본)', '제조지시 및 기록서 양식 (칭량·제조·충전·포장)', '완제품 시험성적서 양식', '안정성 시험 자료 (보관조건·사용기한 설정 근거)']
+        ['원료 규격서 (별첨5 원료 기준)', '포장재 규격서 (별첨5 자재 기준)', '표준견본 관리 기록 (성상·색상·향취·표시사항 비교 기준)', '제조사 제품표준서 (처방·제조단위 원본)', '제조지시 및 기록서 양식 (칭량·제조·충전·포장)', '완제품 시험성적서 양식', '안정성 시험 자료 (보관조건·사용기한 설정 근거)']
           .forEach(n => { if (!p.attachments.some(a => a.name === n)) p.attachments.push({ name: n, no: '', rev: '', location: '', note: '' }); });
         changed(); t.rerender();
       })));
@@ -942,16 +942,15 @@ const secList = p => isLite(p) ? [['cover', '표지·승인'], ['rev', '개정�
 /* 목차 (콜마식 「항목 | 목차」) = CGMP 고시 제15조② 필수 기재사항만, 문서 순서.
    [p.toc 키(점검 참조용), 항목, 기본 목차(본문 위치)] — 목차 칸은 p.tocLoc[키] 로 고쳐 쓸 수 있음 (예: 별첨3. 제조지시 및 기록서) */
 const TOC15 = [
-  ['1', '제품명 · 작성연월일', '1. 제품 개요 (표지)'],
-  ['rev', '변경이력', '개정내역'],
-  ['2', '원료명, 분량 및 제조단위당 기준량', '2. 원료 성분 및 분량'],
-  ['3', '공정별 상세 작업내용 및 제조공정흐름도', '3. 제조공정흐름도 · 4. 공정별 상세 작업내용'],
-  ['6', '작업 중 주의사항', '5. 작업 중 주의사항'],
-  ['7', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법', '6. 기준 및 시험방법'],
-  ['8', '효능·효과(기능성화장품의 경우) 및 사용할 때의 주의사항', '7. 효능·효과 및 사용할 때의 주의사항'],
-  ['11', '제조 및 품질관리에 필요한 시설 및 기기', '8. 제조 및 품질관리 시설·기구'],
-  ['12', '보관조건 · 사용기한 또는 개봉 후 사용기간', '9. 보관조건 및 사용기한'],
-  ['13', '그 밖에 필요한 사항', '10. 별첨 목록']
+  ['2', '성분 및 함량', '별첨1. 성분표'],
+  ['2u', '제조 단위', '별첨1. 성분표 (제조단위)'],
+  ['3', '공정별 상세 작업내용 및 제조공정흐름도', '별첨2. 제조공정흐름도 · 별첨3. 공정별 상세 작업내용'],
+  ['6', '작업 중 주의사항', '별첨4. 작업 중 주의사항'],
+  ['7', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법', '별첨5. 기준 및 시험방법'],
+  ['8', '효능·효과(기능성화장품의 경우) 및 사용할 때의 주의사항', '별첨6. 효능·효과 및 사용할 때의 주의사항'],
+  ['11', '제조 및 품질관리에 필요한 시설 및 기기', '별첨7. 제조 및 품질관리 시설·기구'],
+  ['12', '보관조건 · 사용기한 또는 개봉 후 사용기간', '별첨8. 보관조건 및 사용기한'],
+  ['13', '그 밖에 필요한 사항', '별첨9. 첨부 서류 목록']
 ];
 const TOC_DEF = Object.fromEntries(TOC15.map(([k, , d]) => [k, d]));
 /* 목차 칸을 기본값과 다르게 적었거나(예: 별첨3. 제조지시 및 기록서) 예전 근거 문서가 있으면 → 참조로 인정 */
@@ -964,7 +963,7 @@ function funcBox(p, effInput) {
   function draw() {
     const links = funcLinks(p), auto = new Set(funcAuto(p));
     box.innerHTML = `<b>의약품안전나라 기능성 보고 자료</b> <span class="hint">${FD.missing ? '자료 파일 없음 — 기능성자료_갱신.bat 실행' : `공개 보고 ${FD.items.length}건 · 갱신 ${esc(FD.updatedAt)}`}</span>`;
-    if (!links.length) box.appendChild(el(`<div class="fi hint">${isFunctional(p) ? '제품명이 같은 보고 품목을 찾지 못했습니다. 아래에서 골라 연결하세요.' : '기능성 구성품이 없습니다 (1장 구성품의 \'기능성\'을 \'예\'로).'}</div>`));
+    if (!links.length) box.appendChild(el(`<div class="fi hint">${isFunctional(p) ? '제품명이 같은 보고 품목을 찾지 못했습니다. 아래에서 골라 연결하세요.' : '기능성 구성품이 없습니다 (「제품 개요」 구성품의 \'기능성\'을 \'예\'로).'}</div>`));
     links.forEach(it => {
       const r = el(`<div class="fi">✓ <b>${esc(it.name)}</b>${auto.has(it.seq) ? '<span class="pill">이름 자동 연결</span>' : ''} · 보고일련번호 ${esc(it.seq)} · 부서접수번호 ${esc(it.receiptNo || '')} · 보고완료 ${esc(it.date || '')} · ${pdfPages(it) ? `보고서 PDF ${pdfPages(it)}쪽` : '<span style="color:var(--warn)">보고서 PDF 없음</span>'}
         ${it.effect ? `<div class="hint">효능·효과: ${esc(it.effect)}</div>` : ''}<div class="inl" style="margin-top:3px"></div></div>`);
@@ -1005,7 +1004,7 @@ function renderCoa(m) {
   A(subh('검체 정보'));
   const tn = inp(c, 'testNo');
   A(form([['제품', el(`<div><b>${esc(p?.nameKo || '')}</b> <span class="hint">${esc(p?.code || '')}</span></div>`), true],
-    ['시험번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['기준 근거', el(`<div>제품표준서 ${esc(c.psRef.no)} Rev.${esc(c.psRef.rev)} <span class="hint">6장 완제품 기준</span></div>`)],
+    ['시험번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['기준 근거', el(`<div>제품표준서 ${esc(c.psRef.no)} Rev.${esc(c.psRef.rev)} <span class="hint">별첨5 완제품 기준</span></div>`)],
     ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['입고량 (EA)', inp(c, 'receiptQty')], ['표시용량', inp(c, 'labelQty')], ['샘플채취량 (EA)', inp(c, 'sampleQty')],
     ['시험의뢰일', inp(c, 'requestDate', { type: 'date' })], ['검체채취일', inp(c, 'samplingDate', { type: 'date' })]]));
   A(subh('구성품별 제조번호(LOT)·제조일'));
@@ -1013,10 +1012,10 @@ function renderCoa(m) {
   A(tedit(c.lots, [{ k: 'label', label: '구성품', w: '14%' }, { k: 'lot', label: '제조번호(LOT)', w: '22%' }, { k: 'maker', label: '제조사', w: '24%' }, { k: 'mfgDate', label: '제조일', type: 'date' }], { numbered: false }));
   const autoExp = () => { const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); const mo = num(p?.shelfLife?.months) || (String(p?.shelfLife?.life || '').match(/(\d+)\s*개월/) || [])[1]; if (!ds.length || !mo) { notify('구성품 제조일과 제품표준서 12-2 사용기한(개월)이 있어야 계산됩니다.'); return; } c.expiry = addMonths(ds[0], mo); ex.value = c.expiry; changed(); };
   A(form([['사용기한', inl(ex, button('자동 계산', autoExp))], ['', el(`<span class="hint">가장 이른 제조일 + 표준서 사용기한(${esc(p?.shelfLife?.life || '미설정')})</span>`)]]));
-  A(subh('시험 결과 <span class="hint">항목·기준은 제품표준서 6장에서 가져옴</span>'));
+  A(subh('시험 결과 <span class="hint">항목·기준은 제품표준서 별첨5에서 가져옴</span>'));
   let rt;
   const bar = inl(button('표준서 기준 다시 불러오기', async () => {
-    if (!p) return; if (!await askConfirm('제품표준서 6장 완제품 기준으로 시험항목을 다시 맞춥니다. 같은 항목의 결과는 유지됩니다.', { ok: '다시 맞추기' })) return;
+    if (!p) return; if (!await askConfirm('제품표준서 별첨5 완제품 기준으로 시험항목을 다시 맞춥니다. 같은 항목의 결과는 유지됩니다.', { ok: '다시 맞추기' })) return;
     c.results = (p.finishedSpecs || []).map(f => { const o = c.results.find(r => r.item === f.item && (r.sub || '') === (f.sub || '')) || {}, d = coaRowFrom(p, f); return { ...d, result: o.result || '', judge: o.judge || '', tester: o.tester || d.tester, note: o.note || d.note }; });
     c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
   }), button('결과 있는 항목 모두 적합', () => { c.results.forEach(r => { if (String(r.result).trim() && !r.judge) r.judge = '적합'; }); changed(); rt.rerender(); }),
@@ -1046,7 +1045,7 @@ function refreshCoa() {
   const sv = suggestVerdict(c), vs = $('#vsug'); if (vs) vs.textContent = sv && sv !== c.verdict ? `항목 판정으로 보면 「${sv}」` : '';
 }
 function coaList(m) {
-  const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 6장 기준</small></div></div>');
+  const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 별첨5 기준</small></div></div>');
   tb.appendChild(button('+ 새 성적서', () => go('coa', { newCoa: true }), 'btn pri')); m.appendChild(tb);
   const card = el(`<div class="card"><div class="filt"><select id="cf"><option value="">전체 상태</option><option>작성 중</option><option>출고 승인 대기</option><option>출고 승인</option><option>부적합</option><option>보류</option></select></div><table class="list"><thead><tr><th>시험번호</th><th>제품코드</th><th>제품</th><th>LOT</th><th>입고일</th><th>판정일</th><th>판정</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
   m.appendChild(card);
@@ -1061,7 +1060,7 @@ function coaList(m) {
 }
 function newCoaDialog(m) {
   if (!S.products.length) { m.appendChild(el('<div class="card empty">제품표준서를 먼저 만드세요.</div>')); return; }
-  const card = el(`<div class="card" style="max-width:640px"><h3>새 완제품시험성적서</h3><div class="hint" style="margin-bottom:8px">제품을 고르면 제품표준서 6장 완제품 기준이 시험항목으로 들어갑니다.</div><select id="np">${S.products.map(p => `<option value="${p.id}">${esc(p.code)} · ${esc(p.nameKo)} (${esc(p.psNo)} Rev.${esc(p.rev)})</option>`).join('')}</select><div class="toolbar" style="margin:12px 0 0;justify-content:flex-end"></div></div>`);
+  const card = el(`<div class="card" style="max-width:640px"><h3>새 완제품시험성적서</h3><div class="hint" style="margin-bottom:8px">제품을 고르면 제품표준서 별첨5 완제품 기준이 시험항목으로 들어갑니다.</div><select id="np">${S.products.map(p => `<option value="${p.id}">${esc(p.code)} · ${esc(p.nameKo)} (${esc(p.psNo)} Rev.${esc(p.rev)})</option>`).join('')}</select><div class="toolbar" style="margin:12px 0 0;justify-content:flex-end"></div></div>`);
   m.appendChild(card);
   const t = card.querySelector('.toolbar');
   t.appendChild(button('취소', () => go('coa', { cid: null }), 'btn'));
@@ -1075,7 +1074,7 @@ function renderFunc(m) {
   m.appendChild(el(`<div class="card"><h3>받는 방법</h3><div style="line-height:1.75">
     ① <b>공개 정보 (자동)</b> — 보고일련번호·보고완료일자·부서접수번호·효능·효과·용법·용량·사용상의 주의사항. <code>기능성자료\\기능성자료_갱신.bat</code>을 실행하면 로그인 없이 새로 받습니다.<br>
     ② <b>보고서 원본 PDF (로그인 필요)</b> — 의약품안전나라에 로그인해 받은 기능성화장품 보고서(또는 심사결과통지서) PDF를 <code>기능성자료\\보고서</code> 폴더에 넣고 ①을 다시 실행하면, 파일 이름의 보고일련번호(10자리) 또는 제품명으로 품목에 붙습니다.<br>
-    ③ 제품표준서 1장 구성품의 <b>기능성 = 예</b>, 구성품 제품명이 보고 품목명과 같으면 자동 연결 → 7-1 보고번호, 10장 별첨, 인쇄본 뒤쪽 별첨 쪽으로 들어갑니다.</div></div>`));
+    ③ 제품표준서 「제품 개요」 구성품의 <b>기능성 = 예</b>, 구성품 제품명이 보고 품목명과 같으면 자동 연결 → 별첨6 보고번호, 별첨9 첨부 목록, 인쇄본 뒤쪽 별첨 쪽으로 들어갑니다.</div></div>`));
   const card = el(`<div class="card"><div class="filt"><input id="fq" placeholder="제품명·보고일련번호 검색"><label class="inl hint"><input type="checkbox" id="fl"> 제품표준서에 연결된 것만</label><span class="hint" id="fcnt"></span></div><table class="list"><thead><tr><th>보고완료일자</th><th>제품명 (보고 품목명)</th><th>보고일련번호</th><th>부서접수번호</th><th>보고서 PDF</th><th>연결된 제품표준서</th><th></th></tr></thead><tbody></tbody></table></div>`);
   m.appendChild(card);
   const q = card.querySelector('#fq'), fl = card.querySelector('#fl'); q.value = V.fq || '';
@@ -1169,7 +1168,9 @@ function psDoc(p, extra) {
   }
   // 개정내역
   P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 5, padH: 26 }))));
-  const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s1: 1, s2: 2, s3: 3, s4: 4, s6: 5, s7: 6, s8: 7, s11: 8, s12: 9, s13: 10 };
+  const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s2: 1, s3: 2, s4: 3, s6: 4, s7: 5, s8: 6, s11: 7, s12: 8, s13: 9 };
+  const H = s => LITE ? `${NO[s]}. ` : `별첨${NO[s]}. `; // 쪽 제목 앞머리 (전체본 = 별첨N)
+  const SB = (s, k) => LITE ? `${NO[s]}-${k}. ` : ''; // 하위 블록 번호 (전체본은 없음)
   const has = s => NO[s] != null;
   const refSrc = p.makerRef || [...new Set(comps.map(c => c.makerPsNo).filter(Boolean))].join(', ') || '제조업자 보관 문서';
   // 목차
@@ -1204,29 +1205,29 @@ function psDoc(p, extra) {
       <tr><th style="height:26px">기능성 표시</th><td>${nl(p.labeling.functionalLabel)}</td></tr>
       ${LITE ? '' : `<tr><th style="height:70px">사용할 때의 주의사항</th><td>${nl(p.labeling.cautions)}</td></tr><tr><th style="height:110px">전성분</th><td>${nl(p.labeling.fullIng)}</td></tr>`}</table></div>`));
   // 2 원료 성분 및 분량 (제조업자 수준만)
-  if (has('s2')) P.push(page(p, 's2', '2. 원료 성분 및 분량 (Material Component Criteria and Amount)', comps.map((c, i) => {
+  if (has('s2')) P.push(page(p, 's2', `${H('s2')}성분표 (원료 성분 및 분량 · 제조단위)`, comps.map((c, i) => {
     const ings = c.ingredients || [], tp = ings.reduce((a, r) => a + (num(r.pct) || 0), 0), tq = ings.reduce((a, r) => a + (num(r.qty || calcQty(c, r)) || 0), 0);
     const info = `<table class="h22"><colgroup><col style="width:14%"><col style="width:18%"><col style="width:14%"><col style="width:18%"><col style="width:16%"><col></colgroup><tr><th>제조단위</th><td class="c">${esc(c.batchSize)} ${esc(c.batchUnit)} / batch</td><th>함량 기준</th><td class="c">본품 100 g 중 (% w/w)</td><th>제조사 표준서</th><td>${esc(c.makerPsNo)}</td></tr></table>`;
     const tot = `<tr class="tot"><td colspan="6" class="c"><b>합 계</b></td><td class="c">${tp ? tp.toFixed(4) : '-'}</td><td class="c">${tq ? tq.toFixed(4) : '-'}</td><td></td></tr>`;
-    return blk(`2-${i + 1}. ${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, info + dtable([{ label: '구분', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '원료코드', w: '9%', k: 'code', c: 1 }, { label: '원료명', w: '13%', k: 'name' }, { label: '성분명', k: 'inci' }, { label: '배합목적', w: '10%', k: 'purpose', c: 1 }, { label: '규격', w: '7%', k: 'spec', c: 1 }, { label: '분량(%)', w: '9%', k: 'pct', c: 1 }, { label: '제조단위당<br>기준량', w: '10%', c: 1, f: r => esc(r.qty || calcQty(c, r)) }, { label: '비고', w: '8%', k: 'note' }], ings, { pad: 6, extra: tot }));
+    return blk(`${SB('s2', i + 1)}${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, info + dtable([{ label: '구분', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '원료코드', w: '9%', k: 'code', c: 1 }, { label: '원료명', w: '13%', k: 'name' }, { label: '성분명', k: 'inci' }, { label: '배합목적', w: '10%', k: 'purpose', c: 1 }, { label: '규격', w: '7%', k: 'spec', c: 1 }, { label: '분량(%)', w: '9%', k: 'pct', c: 1 }, { label: '제조단위당<br>기준량', w: '10%', c: 1, f: r => esc(r.qty || calcQty(c, r)) }, { label: '비고', w: '8%', k: 'note' }], ings, { pad: 6, extra: tot }));
   }).join('') + '<div class="note">※ 제조단위당 기준량 = 제조단위 × 분량(%) ÷ 100</div>' + (() => {
     const nd = p.nondisclosure || {}; const on = nd.applies === '해당';
-    return blk(`2-${comps.length + 1}. 원료 함량 일부 미공개 확인 (해당 시)`, `<table class="h22"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:24%"><col></colgroup>
+    return blk(`${SB('s2', comps.length + 1)}원료 함량 일부 미공개 확인 (해당 시)`, `<table class="h22"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:24%"><col></colgroup>
       <tr><th>해당 여부</th><td colspan="3">${on ? '☑ 해당 — 품질·안전관리에 영향을 주는 성분만 함량 기재' : '☑ 해당 없음 — 처방 전체 확보'}</td></tr>
       ${on ? `<tr><th>영향을 주는 성분 수</th><td class="c">${esc(nd.affect)} 종</td><th>영향을 주지 않는 성분 수</th><td class="c">${esc(nd.nonAffect)} 종 (함량 비공개)</td></tr>
       <tr><th>제조업자 확인</th><td colspan="3">회사명 : ${esc(nd.company)}　　책임자 : ${esc(nd.person)} (인)　　일자 : ${esc(nd.date)}</td></tr>
       <tr><td colspan="4" style="font-size:7.4pt">비공개 원료 함량으로 인한 제품 품질·안정성의 책임은 화장품제조업자에게 있으며, 식약처 등 외부기관이 비공개 성분 함량 확인을 요청하면 책임판매업자에게 공개하거나 제조업자가 직접 대응한다 (시행규칙 제11조①6 나목).</td></tr>` : ''}</table>`);
   })()));
   const stg = { label: '공정 구분', w: '11%', k: 'stage', c: 1 };
-  if (has('s3')) P.push(page(p, 's3', '3. 제조공정흐름도 및 공정검사 (Manufacturing Process Flow &amp; In-process Control)', blk('', dtable([{ label: '구분(제조원)', w: '13%', k: 'maker', c: 1 }, stg, { label: '공 정', w: '28%', k: 'process' }, { label: '공정검사 / 관리항목 (Q.C)', k: 'qc' }, { label: '공정검사 기록서', w: '16%', k: 'record', c: 1 }], p.flow, { pad: 12, padH: 40 })) + (p.flow.length ? '' : `<div class="note">※ 제조공정흐름도: ${esc(tocRef(p, '3') || '근거 문서(제조업자 제조지시 및 기록서 등) 이름·번호를 목차에 기재')}</div>`)));
-  if (has('s4')) P.push(page(p, 's4', '4. 공정별 상세 작업내용 (Detailed Process Description)', comps.map((c, i) => blk(`4-${i + 1}. ${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, stg, { label: '공정명', w: '14%', k: 'name', c: 1 }, { label: '작업내용', k: 'work' }, { label: '관리기준', w: '22%', k: 'criteria' }], c.process, { pad: 7, padH: 30 }))).join('')));
+  if (has('s3')) P.push(page(p, 's3', `${H('s3')}제조공정흐름도 및 공정검사 (Manufacturing Process Flow &amp; In-process Control)`, blk('', dtable([{ label: '구분(제조원)', w: '13%', k: 'maker', c: 1 }, stg, { label: '공 정', w: '28%', k: 'process' }, { label: '공정검사 / 관리항목 (Q.C)', k: 'qc' }, { label: '공정검사 기록서', w: '16%', k: 'record', c: 1 }], p.flow, { pad: 12, padH: 40 })) + (p.flow.length ? '' : `<div class="note">※ 제조공정흐름도: ${esc(tocRef(p, '3') || '근거 문서(제조업자 제조지시 및 기록서 등) 이름·번호를 목차에 기재')}</div>`)));
+  if (has('s4')) P.push(page(p, 's4', `${H('s4')}공정별 상세 작업내용 (Detailed Process Description)`, comps.map((c, i) => blk(`${SB('s4', i + 1)}${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, stg, { label: '공정명', w: '14%', k: 'name', c: 1 }, { label: '작업내용', k: 'work' }, { label: '관리기준', w: '22%', k: 'criteria' }], c.process, { pad: 7, padH: 30 }))).join('')));
   if (has('s5')) P.push(page(p, 's5', '5. 공정별 이론 생산량 및 수율관리기준 (Theoretical Yield &amp; Yield Control)', blk('', dtable([{ label: '구분', w: '12%', k: 'part', c: 1 }, { label: '공정', w: '24%', k: 'process' }, { label: '이론 생산량', w: '26%', k: 'theory' }, { label: '수율관리기준', w: '18%', k: 'criteria', c: 1 }, { label: '비고', k: 'note' }], p.yields, { pad: 4, padH: 50 }))));
-  if (has('s6')) P.push(page(p, 's6', `${NO.s6}. 작업 중 주의사항 (Precautions during Operation)`, blk('', dtable([{ label: 'No.', w: '8%', c: 1, f: (r, j) => j + 1 }, { label: '공정 구분', w: '19%', k: 'name', c: 1 }, { label: '주의사항', k: 'content' }], p.precautions, { pad: 5, padH: 50 }))));
+  if (has('s6')) P.push(page(p, 's6', `${H('s6')}작업 중 주의사항 (Precautions during Operation)`, blk('', dtable([{ label: 'No.', w: '8%', c: 1, f: (r, j) => j + 1 }, { label: '공정 구분', w: '19%', k: 'name', c: 1 }, { label: '주의사항', k: 'content' }], p.precautions, { pad: 5, padH: 50 }))));
   // 효능·효과 (책임판매업자용은 2장)
   const rno = p.efficacy.reviewNo ? `${esc(p.efficacy.reviewNo)}${p.efficacy.reviewDate ? ' / ' + esc(p.efficacy.reviewDate) : ''}` : links.map(it => `기능성화장품 보고 · 보고일련번호 ${esc(it.seq)} · 부서접수번호 ${esc(it.receiptNo || '')} · 보고완료 ${esc(it.date || '')}`).join('<br>');
-  const s8page = page(p, 's8', `${NO.s8}. 효능·효과 및 사용할 때의 주의사항`,
-    `<div class="blk"><div class="bar">${NO.s8}-1. 효능·효과${isFunctional(p) ? ' (기능성화장품)' : ''}</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:46px">효능·효과</th><td>${nl(p.efficacy.effect)}</td></tr><tr><th style="height:28px">기능성 주성분</th><td>${nl(p.efficacy.actives)}</td></tr><tr><th style="height:34px">기능성 보고(심사)<br>번호·일자</th><td>${rno}${links.length ? `<br><span style="font-size:7.5pt;color:#444">(보고서 사본 → ${NO.s13}장 별첨)</span>` : ''}</td></tr></table></div>
-     <div class="blk"><div class="bar">${NO.s8}-2. 사용할 때의 주의사항</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:110px">공통<br>(화장품법 시행규칙<br>[별표 3])</th><td class="pre">${esc(p.cautionsCommon)}</td></tr><tr><th style="height:90px">제품 특성상<br>추가 주의사항</th><td class="pre">${esc(p.cautionsExtra)}</td></tr></table></div>`);
+  const s8page = page(p, 's8', `${H('s8')}효능·효과 및 사용할 때의 주의사항`,
+    `<div class="blk"><div class="bar">${SB('s8', 1)}효능·효과${isFunctional(p) ? ' (기능성화장품)' : ''}</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:46px">효능·효과</th><td>${nl(p.efficacy.effect)}</td></tr><tr><th style="height:28px">기능성 주성분</th><td>${nl(p.efficacy.actives)}</td></tr><tr><th style="height:34px">기능성 보고(심사)<br>번호·일자</th><td>${rno}${links.length ? `<br><span style="font-size:7.5pt;color:#444">(보고서 사본 → ${LITE ? NO.s13 + '장 별첨' : '첨부'})</span>` : ''}</td></tr></table></div>
+     <div class="blk"><div class="bar">${SB('s8', 2)}사용할 때의 주의사항</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:110px">공통<br>(화장품법 시행규칙<br>[별표 3])</th><td class="pre">${esc(p.cautionsCommon)}</td></tr><tr><th style="height:90px">제품 특성상<br>추가 주의사항</th><td class="pre">${esc(p.cautionsExtra)}</td></tr></table></div>`);
   if (LITE) P.push(s8page);
   // 성분 (책임판매업자용 3장: 전성분 + 품질·안전관리에 영향을 주는 성분)
   const fullBlocks = comps.map((c, i) => {
@@ -1251,43 +1252,43 @@ function psDoc(p, extra) {
   // 기준 및 시험방법
   const specCols = [{ label: '시험항목', w: '18%', k: 'item' }, { label: '시험방법', w: '30%', k: 'method' }, { label: '시험기준', k: 'criterion' }, { label: '비고', w: '20%', k: 'note' }];
   const n7 = NO.s7; let k7 = 1, s7 = '';
-  if (LITE) s7 += blk(`${n7}-${k7++}. 원료·자재 기준 및 시험방법`, `<table><tr><td style="height:24px">제조업자 기준(별책)에 따름 — ${esc(refSrc)}</td></tr></table>`);
+  if (LITE) s7 += blk(`${SB('s7', k7++)}원료·자재 기준 및 시험방법`, `<table><tr><td style="height:24px">제조업자 기준(별책)에 따름 — ${esc(refSrc)}</td></tr></table>`);
   else {
-    s7 += blk(`${n7}-${k7++}. 원자재 (원료·자재)`, dtable([{ label: '구분', w: '11%', k: 'type', c: 1 }, { label: '시험항목', w: '20%', k: 'item' }, { label: '시험방법', w: '22%', k: 'method' }, { label: '시험기준', w: '20%', k: 'criterion' }, { label: '별도관리 문서 (규격서 번호)', k: 'doc' }], p.rawSpecs));
-    s7 += blk(`${n7}-${k7++}. 반제품 기준 및 시험방법`, p.semiNA ? `<table><tr><td style="height:24px">☑ 해당 없음 — 충전 전 제조를 마친 내용물은 벌크제품으로 관리하며, 공정 중 검사는 3장 공정검사 참조</td></tr></table>` : dtable(specCols, p.semiSpecs));
+    s7 += blk(`${SB('s7', k7++)}원자재 (원료·자재)`, dtable([{ label: '구분', w: '11%', k: 'type', c: 1 }, { label: '시험항목', w: '20%', k: 'item' }, { label: '시험방법', w: '22%', k: 'method' }, { label: '시험기준', w: '20%', k: 'criterion' }, { label: '별도관리 문서 (규격서 번호)', k: 'doc' }], p.rawSpecs));
+    s7 += blk(`${SB('s7', k7++)}반제품 기준 및 시험방법`, p.semiNA ? `<table><tr><td style="height:24px">☑ 해당 없음 — 충전 전 제조를 마친 내용물은 벌크제품으로 관리하며, 공정 중 검사는 별첨2 공정검사 참조</td></tr></table>` : dtable(specCols, p.semiSpecs));
   }
   const bulkCols = LITE ? specCols : [{ label: 'No.', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '14%', k: 'item' }, { label: '시험기준', w: '19%', k: 'criterion' }, { label: '시험방법 (요약)', w: '19%', k: 'method' }, { label: '시험 근거', w: '15%', k: 'basis' }, { label: '규격 유형', w: '9%', k: 'specType', c: 1 }, { label: '적용 주기', w: '9%', k: 'freq', c: 1 }, { label: '비고', k: 'note' }];
-  comps.forEach(c => { s7 += blk(`${n7}-${k7++}. 벌크제품 기준 및 시험방법 (${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)})`, dtable(bulkCols, c.bulkSpecs, { pad: 3 })); });
+  comps.forEach(c => { s7 += blk(`${SB('s7', k7++)}벌크제품 기준 및 시험방법 (${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)})`, dtable(bulkCols, c.bulkSpecs, { pad: 3 })); });
   if (!LITE) s7 += '<div class="note">규격 유형 = 허가 규격(기능성 보고·심사 기준) / 자가 규격 · 적용 주기 = 매 배치 / 초도 생산 / 초도 3배치</div>';
   const finCols = LITE ? [{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '20%', k: 'item' }, { label: '구분', w: '8%', k: 'sub', c: 1 }, { label: '시험기준', w: '26%', k: 'criterion' }, { label: '시험방법', k: 'method' }, { label: '비고', w: '10%', k: 'note' }]
     : [{ label: 'No.', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '16%', k: 'item' }, { label: '구성품', w: '7%', k: 'sub', c: 1 }, { label: '구분', w: '8%', k: 'stage', c: 1 }, { label: '시험기준', w: '19%', k: 'criterion' }, { label: '시험방법 (요약)', k: 'method' }, { label: '시험 근거', w: '13%', k: 'basis' }, { label: '결과 적용', w: '12%', k: 'apply', c: 1 }];
-  s7 += blk(`${n7}-${k7++}. 완제품 (충전품·완제품) 기준 및 시험방법 [${esc([...new Set(comps.map(c => c.maker).filter(Boolean))].join(', '))} → ${esc(p.seller.name)} 확인]`, dtable(finCols, p.finishedSpecs, { pad: 5 }) + `<div class="note">※ 완제품 시험성적서의 시험항목·시험기준은 이 표와 같다. 제조번호별 품질검사 후 유통한다(시행규칙 제12조5).${LITE ? '' : ' 결과 적용 = 벌크 시험자료 적용(반제품성적서 결과 인용) / 입고검사(자사) / 위탁시험·제조사 / 완제품 시험.'}</div>`);
-  P.push(page(p, 's7', `${n7}. ${LITE ? '기준 및 시험방법 (벌크제품 · 완제품)' : '원자재·반제품·벌크제품·완제품의 기준 및 시험방법'} (Specifications &amp; Test Methods)`, s7));
+  s7 += blk(`${SB('s7', k7++)}완제품 (충전품·완제품) 기준 및 시험방법 [${esc([...new Set(comps.map(c => c.maker).filter(Boolean))].join(', '))} → ${esc(p.seller.name)} 확인]`, dtable(finCols, p.finishedSpecs, { pad: 5 }) + `<div class="note">※ 완제품 시험성적서의 시험항목·시험기준은 이 표와 같다. 제조번호별 품질검사 후 유통한다(시행규칙 제12조5).${LITE ? '' : ' 결과 적용 = 벌크 시험자료 적용(반제품성적서 결과 인용) / 입고검사(자사) / 위탁시험·제조사 / 완제품 시험.'}</div>`);
+  P.push(page(p, 's7', `${H('s7')}${LITE ? '기준 및 시험방법 (벌크제품 · 완제품)' : '원자재·반제품·벌크제품·완제품의 기준 및 시험방법'} (Specifications &amp; Test Methods)`, s7));
   if (!LITE) { P.push(s8page); if (s9page) P.push(s9page); }
   if (has('s10')) { const pm = p.packMethod || {}; P.push(page(p, 's10', '10. 포장 기준 (Packaging Standard)', blk('10-1. 구성품 및 포장재 규격', dtable([N, { label: '1차/2차', w: '7%', k: 'grade', c: 1 }, { label: '구성품명', w: '20%', k: 'name' }, { label: '구성품 코드', w: '12%', k: 'code', c: 1 }, { label: '재질', w: '12%', k: 'material' }, { label: '규격(치수·용량)', w: '14%', k: 'spec' }, { label: '공급사', w: '11%', k: 'supplier' }, { label: '수량', w: '6%', k: 'unit', c: 1 }, { label: '비고', k: 'note' }], p.packaging, { pad: 8, padH: 26 })) +
     blk('10-2. 포장 방법', `<table class="h30"><colgroup><col style="width:20%"><col></colgroup><tr><th>LOT·사용기한 표시</th><td class="pre">${esc(pm.lotExp || 'LOT ○○○ / EXP YYYYMMDD까지 (위치 : 　　　)')}</td></tr><tr><th>1차 포장 (용기)</th><td class="pre">${esc(pm.primary)}</td></tr><tr><th>2차 포장 (단상자)</th><td class="pre">${esc(pm.secondary)}</td></tr><tr><th>아웃박스 · 라벨</th><td class="pre">${esc(pm.outbox)}</td></tr></table>`))); }
   if (has('s11')) {
     const groups = []; (p.equipment || []).forEach(e => { const k = (e.group || '제조') + '|' + (e.maker || ''); let g = groups.find(x => x.k === k); if (!g) groups.push(g = { k, group: e.group || '제조', maker: e.maker || '', rows: [] }); g.rows.push(e); });
     const order = { '제조': 0, '충전·포장': 1, '품질관리': 2 }; groups.sort((a, b) => (order[a.group] ?? 9) - (order[b.group] ?? 9));
-    P.push(page(p, 's11', `${NO.s11}. 제조 및 품질관리에 필요한 시설 및 기구 (Facilities &amp; Equipment)`, (groups.length ? groups : [{ group: '제조', maker: '', rows: [] }]).map((g, i) => {
+    P.push(page(p, 's11', `${H('s11')}제조 및 품질관리에 필요한 시설 및 기구 (Facilities &amp; Equipment)`, (groups.length ? groups : [{ group: '제조', maker: '', rows: [] }]).map((g, i) => {
       const qc = g.group === '품질관리';
-      return blk(`${NO.s11}-${i + 1}. ${qc ? '품질관리(시험)' : g.group} 시설 및 기구${g.maker ? ` — ${qc ? '시험 수행처' : '제조사'} : ${esc(g.maker)}` : ''}`, dtable([{ label: '연번', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '설비 관리번호', w: '11%', k: 'mgmtNo', c: 1 }, { label: '시설 및 기구', w: '23%', k: 'name' }, { label: '규격', w: '16%', k: 'spec', c: 1 }, { label: '수량', w: '6%', k: 'qty', c: 1 }, { label: '구비', w: '6%', c: 1, f: r => r.have === '아니오' ? '✕' : '○' }, { label: qc ? '사용 시험항목' : '용도 / 사용 공정', w: '17%', k: 'use' }, { label: '비고', k: 'note' }], g.rows));
+      return blk(`${SB('s11', i + 1)}${qc ? '품질관리(시험)' : g.group} 시설 및 기구${g.maker ? ` — ${qc ? '시험 수행처' : '제조사'} : ${esc(g.maker)}` : ''}`, dtable([{ label: '연번', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '설비 관리번호', w: '11%', k: 'mgmtNo', c: 1 }, { label: '시설 및 기구', w: '23%', k: 'name' }, { label: '규격', w: '16%', k: 'spec', c: 1 }, { label: '수량', w: '6%', k: 'qty', c: 1 }, { label: '구비', w: '6%', c: 1, f: r => r.have === '아니오' ? '✕' : '○' }, { label: qc ? '사용 시험항목' : '용도 / 사용 공정', w: '17%', k: 'use' }, { label: '비고', k: 'note' }], g.rows));
     }).join('') + ((p.equipment || []).length ? '' : `<div class="note">※ 시설·기기: ${esc(tocRef(p, '11') || '근거 문서(제조업자 설비 목록 등) 이름·번호를 목차에 기재')}</div>`)));
   }
   // 보관조건·사용기한
-  P.push(page(p, 's12', `${NO.s12}. 보관조건 및 사용기한 (Storage Condition &amp; Shelf Life)`,
-    blk(`${NO.s12}-1. 보관조건`, dtable([{ label: '구분', w: '13%', k: 'type', c: 1 }, { label: '대상', w: '20%', k: 'target', c: 1 }, { label: '보관조건', k: 'condition', c: 1 }, { label: '최대 보관기간', w: '14%', k: 'maxStorage', c: 1 }, { label: '비고', w: '17%', k: 'note', c: 1 }], LITE ? p.storage.filter(s => !/원자재/.test(s.type)) : p.storage)) +
+  P.push(page(p, 's12', `${H('s12')}보관조건 및 사용기한 (Storage Condition &amp; Shelf Life)`,
+    blk(`${SB('s12', 1)}보관조건`, dtable([{ label: '구분', w: '13%', k: 'type', c: 1 }, { label: '대상', w: '20%', k: 'target', c: 1 }, { label: '보관조건', k: 'condition', c: 1 }, { label: '최대 보관기간', w: '14%', k: 'maxStorage', c: 1 }, { label: '비고', w: '17%', k: 'note', c: 1 }], LITE ? p.storage.filter(s => !/원자재/.test(s.type)) : p.storage)) +
     (LITE ? '' : '<div class="note">※ 벌크제품은 최대 보관기간을 정하고, 기간이 가까워지면 완제품 제조 전에 재평가한다(제17조③).</div>') +
-    blk(`${NO.s12}-2. 사용기한 또는 개봉 후 사용기간`, `<table class="h30"><colgroup><col style="width:16%"><col style="width:26%"><col style="width:28%"><col></colgroup><tr><th>구분</th><th>사용기한</th><th>기산점</th><th>비고</th></tr><tr><td class="c">완제품</td><td class="c">${esc(p.shelfLife.life)}</td><td class="c">${esc(p.shelfLife.basis)}</td><td>${nl(p.shelfLife.note)}</td></tr><tr><td class="c">개봉 후<br>사용기간</td><td class="c">${esc(p.openLife.life)}</td><td class="c">${esc(p.openLife.basis)}</td><td>${nl(p.openLife.note)}</td></tr></table>`)));
+    blk(`${SB('s12', 2)}사용기한 또는 개봉 후 사용기간`, `<table class="h30"><colgroup><col style="width:16%"><col style="width:26%"><col style="width:28%"><col></colgroup><tr><th>구분</th><th>사용기한</th><th>기산점</th><th>비고</th></tr><tr><td class="c">완제품</td><td class="c">${esc(p.shelfLife.life)}</td><td class="c">${esc(p.shelfLife.basis)}</td><td>${nl(p.shelfLife.note)}</td></tr><tr><td class="c">개봉 후<br>사용기간</td><td class="c">${esc(p.openLife.life)}</td><td class="c">${esc(p.openLife.basis)}</td><td>${nl(p.openLife.note)}</td></tr></table>`)));
   // 별첨 목록
   // 올린 기능성 보고서 원본이 있으면 의약품안전나라 요약 쪽은 겹치므로 뺀다
   const upReport = (extra || []).some(u => u.kind === '기능성보고서');
   const infoLinks = upReport ? [] : links;
   const att = [...infoLinks.map(it => ({ name: `기능성화장품 보고서 (심사제외품목) — ${it.name}`, no: `보고일련번호 ${it.seq}`, rev: it.date || '', location: pdfPages(it) ? `본 문서 뒤 별첨 (${pdfPages(it)}쪽)` : '의약품안전나라 / 본 문서 뒤 별첨', note: `부서접수번호 ${it.receiptNo || ''}` })), ...p.attachments];
-  P.push(page(p, 's13', `${NO.s13}. 별첨 목록 (Attachments)`, blk('', dtable([N, { label: '문서명', w: '34%', k: 'name' }, { label: '문서번호', w: '17%', k: 'no', c: 1 }, { label: '개정번호·일자', w: '13%', k: 'rev', c: 1 }, { label: '보관 위치', w: '15%', k: 'location', c: 1 }, { label: '비고', k: 'note' }], att, { pad: 10, padH: 28 }))));
+  P.push(page(p, 's13', `${H('s13')}${LITE ? '별첨 목록' : '첨부 서류 목록'} (Attachments)`, blk('', dtable([N, { label: '문서명', w: '34%', k: 'name' }, { label: '문서번호', w: '17%', k: 'no', c: 1 }, { label: '개정번호·일자', w: '13%', k: 'rev', c: 1 }, { label: '보관 위치', w: '15%', k: 'location', c: 1 }, { label: '비고', k: 'note' }], att, { pad: 10, padH: 28 }))));
   // 별첨: 기능성 보고 자료
   infoLinks.forEach((it, i) => {
-    P.push(page(p, 'f' + i, `별첨 ${i + 1}. 기능성화장품 보고 정보 (의약품안전나라)`, `<div class="blk"><table class="h26" style="margin-top:8px"><colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col></colgroup>
+    P.push(page(p, 'f' + i, `첨부 ${i + 1}. 기능성화장품 보고 정보 (의약품안전나라)`, `<div class="blk"><table class="h26" style="margin-top:8px"><colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col></colgroup>
       <tr><th>제품명 (보고 품목명)</th><td colspan="3">${esc(it.name)}</td></tr>
       <tr><th>구분</th><td>기능성화장품 심사제외품목 (보고)</td><th>보고완료일자</th><td>${esc(it.date || '')}</td></tr>
       <tr><th>보고일련번호</th><td>${esc(it.seq)}</td><th>부서접수번호</th><td>${esc(it.receiptNo || '')}</td></tr>
@@ -1297,10 +1298,10 @@ function psDoc(p, extra) {
       <tr><th style="height:120px">사용상의 주의사항</th><td colspan="3">${nl(it.cautions || '')}</td></tr></table>
       <div class="note">출처: 의약품안전나라 › 의약품등 정보 › 기능성화장품제품정보(보고) · ${esc(it.url || '')} · 자료 갱신 ${esc(FD.updatedAt || '')}</div>
       ${pdfPages(it) ? `<div class="note">※ 보고서 원본 ${pdfPages(it)}쪽을 다음 쪽부터 붙임</div>` : '<div class="note">※ 보고서 원본 PDF는 의약품안전나라 로그인 후 받아 기능성자료\\보고서 폴더에 넣으면 이 뒤에 붙습니다.</div>'}</div>`));
-    (it.pdfs || []).forEach(f => f.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="fa${i}-${k}"><div class="cap"><span>별첨 ${i + 1}. 기능성화장품 보고서 — ${esc(it.name)} (${esc(f.file)})</span><span>${k + 1} / ${f.pages.length}</span></div><img src="${esc(src)}" alt="보고서 ${k + 1}쪽">${foot(p)}</section>`)));
+    (it.pdfs || []).forEach(f => f.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="fa${i}-${k}"><div class="cap"><span>첨부 ${i + 1}. 기능성화장품 보고서 — ${esc(it.name)} (${esc(f.file)})</span><span>${k + 1} / ${f.pages.length}</span></div><img src="${esc(src)}" alt="보고서 ${k + 1}쪽">${foot(p)}</section>`)));
   });
   // 별첨: 올린 근거 서류 (기능성 보고서·반제품성적서 등) 원본 쪽
-  (extra || []).forEach((u, i) => u.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="up${i}-${k}"><div class="cap"><span>별첨 ${infoLinks.length + i + 1}. ${esc(u.kind)}${u.comp ? ' (' + esc(u.comp) + ')' : ''} — ${esc(u.name)}</span><span>${k + 1} / ${u.pages.length}</span></div><img src="${src}" alt="${esc(u.kind)} ${k + 1}쪽">${foot(p)}</section>`)));
+  (extra || []).forEach((u, i) => u.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="up${i}-${k}"><div class="cap"><span>첨부 ${infoLinks.length + i + 1}. ${esc(u.kind)}${u.comp ? ' (' + esc(u.comp) + ')' : ''} — ${esc(u.name)}</span><span>${k + 1} / ${u.pages.length}</span></div><img src="${src}" alt="${esc(u.kind)} ${k + 1}쪽">${foot(p)}</section>`)));
   return P.join('');
 }
 async function uploadPages(p) {
