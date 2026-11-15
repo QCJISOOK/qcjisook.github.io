@@ -1098,12 +1098,9 @@ function logIssue(o) { S.issues.unshift({ id: uid('i'), at: nowStr(), ...o }); s
 
 /* ================= 인쇄 문서: 제품표준서 ================= */
 let BID = 0;
-const hdr = (p, title, sub = '') => {
-  // 쪽 머리: 제목 크게, 제품명 크게. 부제·메타(번호·코드·포장단위)는 있을 때만 줄을 만든다 (유형은 넣지 않음)
-  const pu = String(p.packUnit || p.weight || '').split('\n').map(s => s.trim()).filter(s => s && !/^\[[^\]]*\]$/.test(s)).join(' / ');
-  const meta = [['표준서 번호', p.psNo], ['제품코드', p.code], ['벌크코드', p.bulkCode], ['포장단위', pu]].filter(([, v]) => v).map(([k, v]) => k + ' ' + esc(v)).join(' · ');
-  return `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td rowspan="${meta ? 3 : 2}" class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr><tr><td class="phe">${esc(p.nameEn)}</td></tr>${meta ? `<tr><td class="phm">${meta}</td></tr>` : ''}</table>`;
-};
+const hdr = (p, title, sub = '') =>
+  // 쪽 머리: 제목 크게, 제품명은 한 줄(한글명). 영문명·번호는 표지와 쪽 아래에 있음. 부제는 있을 때만
+  `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr></table>`;
 const foot = p => `<div class="foot"><span>${esc(p.psNo)} (Rev.${esc(p.rev)})</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div>`;
 const page = (p, key, title, body, sub = '') => `<section class="page" data-key="${key}">${hdr(p, title, sub)}<div class="body">${body}</div>${foot(p)}</section>`;
 const blk = (bar, inner) => `<div class="blk" data-id="b${++BID}">${bar ? `<div class="bar">${bar}</div>` : ''}${inner}</div>`;
