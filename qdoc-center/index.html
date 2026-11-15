@@ -139,6 +139,7 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .note{font-size:7.6pt;color:#333;margin-top:3px}
 .doc tbody.data td{height:19px}
 .doc .h22 td,.doc .h22 th{height:22px}.doc .h26 td,.doc .h26 th{height:26px}.doc .h30 td,.doc .h30 th{height:30px}.doc .h34 td{height:34px}
+.doc table.sign-ps th{height:24px}.doc table.sign-ps td{height:50px;font-size:9.5pt}
 .doc .logo .l1{font-family:"Arial Black",Arial,sans-serif;font-weight:900;font-size:25pt;letter-spacing:6px;line-height:1}
 .doc .logo .l2{font-size:7.5pt;letter-spacing:4.5px;margin-top:2px}
 .doc .cov-top{display:flex;align-items:center;justify-content:space-between;margin:2mm 0 4mm}
@@ -238,6 +239,8 @@ function fixProduct(p) {
   funcLinks(p).forEach(it => { if (!it.missing) p.funcCache[it.seq] = it; });
   if (needUp) upgradeV2(p);
   if (p.toc) for (const k in p.toc) if (p.toc[k] === '제조사 자료 필요') p.toc[k] = ''; // 예전 자동 작성 문구는 참조 문서가 아님
+  // 처음 제정 줄: 개정 내용 '신규 제정'만 (자동으로 넣던 근거 문구·개정 사유·개정자는 빈칸 — 사용자 요청 2026-11-16)
+  (p.revisions || []).forEach(r => { if (/^신규 제정 \(근거: [^)]*\)$/.test(r.content || '')) r.content = '신규 제정'; if (String(r.rev) === '0' && r.content === '신규 제정') { if (r.reason === '신규 제정') r.reason = ''; if (r.author === '품질관리팀') r.author = ''; } });
 }
 /* ---------- 양식 v2 (한국콜마·코스맥스·한국화장품제조 비교 반영) ---------- */
 const STAGE = ['칭량·제조', '충전', '포장'];
@@ -259,7 +262,7 @@ function upgradeV2(p) {
   if (!p.typeClass) p.typeClass = lines.find(l => /제품류/.test(l)) || '';
   if (!p.typeDiv) p.typeDiv = isFunctional(p) || /기능성/.test(p.type) ? '기능성화장품' : '화장품';
   if (!p.funcClass) { const fl = lines.find(l => /기능성/.test(l)) || ''; p.funcClass = /미백/.test(fl) && /주름/.test(fl) ? '미백 + 주름개선' : /미백/.test(fl) ? '미백' : /주름/.test(fl) ? '주름개선' : /자외선/.test(fl) ? '자외선 차단' : ''; }
-  (p.revisions || []).forEach(r => { if (r.effDate === undefined) r.effDate = r.date; if (r.reason === undefined) r.reason = /신규|제정/.test(r.content) ? '신규 제정' : ''; });
+  (p.revisions || []).forEach(r => { if (r.effDate === undefined) r.effDate = r.date; if (r.reason === undefined) r.reason = ''; });
   (p.finishedSpecs || []).forEach(deriveFinished);
   (p.components || []).forEach(c => (c.bulkSpecs || []).forEach(b => { if (!b.specType) b.specType = /함량|확인|기능성/.test(b.item + b.method) ? '허가 규격' : '자가 규격'; if (!b.freq) b.freq = '매 배치'; if (b.basis === undefined) b.basis = (String(b.method).match(/「[^」]+」/) || [''])[0]; }));
   if (p.scope === '책임판매' || p.scope === '제조업자' || !p.scope) p.scope = '전체';
@@ -346,7 +349,7 @@ function newProduct() {
     makers: [{ type: '화장품제조업자 ①', name: '', role: '' }],
     seller: { name: '올리브인터내셔널(주)', addr: '서울특별시 서초구 서초대로 398, 14F', role: '품질·안전관리, 시장 출하 및 유통' },
     approvals: { writer: { name: '', date: '' }, reviewer: { name: '', date: '' }, approver: { name: '', date: '' } },
-    control: '관리본', distribution: [], revisions: [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: '신규 제정', reason: '신규 제정', approver: '' }], toc: {}, tocMode: {}, tocLoc: {}, mfgDoc: '', mfgNote: '',
+    control: '관리본', distribution: [], revisions: [{ rev: '0', date: today(), effDate: today(), author: '', content: '신규 제정', reason: '', approver: '' }], toc: {}, tocMode: {}, tocLoc: {}, mfgDoc: '', mfgNote: '',
     bulkCode: '', typeDiv: '', typeClass: '기초화장용 제품류', typeSub: '', funcClass: '', rinseOff: '아니오',
     nondisclosure: { applies: '해당 없음', affect: '', nonAffect: '', company: '', person: '', date: '' },
     packMethod: { lotExp: '', primary: '', secondary: '', outbox: '' },
@@ -680,7 +683,7 @@ function renderPS(m) {
   const tb = el(`<div class="toolbar"><div class="ttl">${esc(p.nameKo || '(제품명 없음)')}<small>${esc(p.code)} · ${esc(p.psNo)} · Rev.${esc(p.rev)} · ${esc(p.date)}</small></div></div>`);
   tb.appendChild(button('미리보기 · 발행', () => previewPS(p), 'btn pri'));
   tb.appendChild(button('개정 (Rev +1)', () => revise(p), 'btn'));
-  tb.appendChild(button('복제', () => { const q = JSON.parse(JSON.stringify(p)); q.id = uid('p'); q.psNo = nextPsNo(); q.nameKo += ' (복제)'; q.rev = '0'; q.revisions = [{ rev: '0', date: today(), author: '품질관리팀', content: '신규 제정', approver: '' }]; S.products.push(q); save(); go('ps', { pid: q.id }); }, 'btn'));
+  tb.appendChild(button('복제', () => { const q = JSON.parse(JSON.stringify(p)); q.id = uid('p'); q.psNo = nextPsNo(); q.nameKo += ' (복제)'; q.rev = '0'; q.revisions = [{ rev: '0', date: today(), effDate: today(), author: '', content: '신규 제정', reason: '', approver: '' }]; S.products.push(q); save(); go('ps', { pid: q.id }); }, 'btn'));
   tb.appendChild(button('삭제', async () => { if (await askConfirm(`「${p.nameKo}」 제품표준서를 지울까요? 성적서는 남습니다.${Cloud.shared() ? '\n공동 저장소에서도 지워져 다른 사람에게서도 사라집니다.' : ''}`, { ok: '지우기', danger: true })) { S.products = S.products.filter(x => x !== p); save(); go('ps', { pid: null }); } }, 'btn danger'));
   pm.appendChild(tb);
   pm.appendChild(el(`<div class="card"><h3>필수 항목 점검 <span class="r hint">${isLite(p) ? '책임판매업자용 — 시행규칙 제12조 · 한국콜마 발송본 구성 기준 (표지에서 범위 변경)' : '제조업자 수준 — CGMP 고시 제15조② · 해설서 권장'}</span></h3><div class="checks" id="pschecks"></div></div>`));
@@ -1159,6 +1162,9 @@ let BID = 0;
 const hdr = (p, title, sub = '') =>
   // 쪽 머리: 제목 크게, 제품명은 한 줄(한글명). 영문명·번호는 표지와 쪽 아래에 있음. 부제는 있을 때만
   `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr></table>`;
+// 검토 및 승인: 한글 머리, 이름·서명·날짜는 손으로 쓸 수 있게 넉넉히
+const signTable = p => `<table class="sign-ps"><colgroup><col style="width:11%"><col style="width:19%"><col style="width:22%"><col style="width:28%"><col></colgroup><tr><th>구분</th><th>직책</th><th>이름</th><th>서명</th><th>날짜</th></tr>
+  ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>`;
 const foot = p => `<div class="foot"><span>${esc(p.psNo)} (Rev.${esc(p.rev)})</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div>`;
 const page = (p, key, title, body, sub = '') => `<section class="page" data-key="${key}">${hdr(p, title, sub)}<div class="body">${body}</div>${foot(p)}</section>`;
 const blk = (bar, inner) => `<div class="blk" data-id="b${++BID}">${bar ? `<div class="bar">${bar}</div>` : ''}${inner}</div>`;
@@ -1189,8 +1195,7 @@ function psDoc(p, extra) {
    ${p.makers.map(m => `<tr><td>${esc(m.type)}</td><td>${esc(m.name)}</td><td>${nl(m.role)}</td></tr>`).join('')}
    <tr><td>화장품책임판매업자</td><td>${esc(p.seller.name)}<br>(${esc(p.seller.addr)})</td><td>${nl(p.seller.role)}</td></tr></table>
   <div class="bar center" style="margin-top:12px">검토 및 승인 (Review &amp; Approval)</div>
-  <table class="h34"><colgroup><col style="width:16%"><col style="width:22%"><col style="width:20%"><col style="width:24%"><col></colgroup><tr><th>구분</th><th>Job Title</th><th>Name</th><th>Signature</th><th>Date</th></tr>
-   ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>
+  ${signTable(p)}
   ${foot(p)}</section>`);
   if (!LITE) {
     // 1쪽 = 표지 + 1장 (중복 없이): 1-1 기본정보 · 1-2 주체 · 1-3 효능·효과 및 사용방법 · 검토 및 승인
@@ -1218,8 +1223,7 @@ function psDoc(p, extra) {
       <tr><th style="height:44px">사용할 때의<br>주의사항</th><td class="pre" style="font-size:7.8pt">${esc([p.cautionsCommon, p.cautionsExtra].filter(v => String(v || '').trim()).join('\n'))}</td></tr>
       <tr><th style="height:22px">저장방법</th><td>${esc((p.storage.find(s => /완제품/.test(s.type)) || {}).condition || '')}</td></tr>
       <tr><th style="height:22px">사용기한</th><td>${esc(p.shelfLife.life)}${p.openLife.life ? `　·　개봉 후 사용기간 ${esc(String(p.openLife.life).replace(/^개봉 후\s*/, ''))}` : ''}</td></tr></table></div>
-    <div class="blk"><div class="bar">검토 및 승인 (Review &amp; Approval)</div><table class="h26"><colgroup><col style="width:16%"><col style="width:22%"><col style="width:20%"><col style="width:24%"><col></colgroup><tr><th>구분</th><th>Job Title</th><th>Name</th><th>Signature</th><th>Date</th></tr>
-      ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table></div>
+    <div class="blk"><div class="bar">검토 및 승인 (Review &amp; Approval)</div>${signTable(p)}</div>
     </div>${foot(p)}</section>`);
   }
   // 개정내역

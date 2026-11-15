@@ -426,7 +426,7 @@ function build(withCoa) {
   p.appearance = M.map(c => { const x = c.bulk?.rows.find(r => /성상/.test(r.item)); return x ? `${single ? '' : `[${c.key}] `}${x.crit}` : ''; }).filter(Boolean).join('\n');
   p.packUnit = info.packUnit || '';
   p.makers = [{ type: '화장품제조업자', name: mkName, role: (mk?.scope || []).some(s => /포장/.test(s)) ? '내용물(벌크) 제조 및 충전·1차 포장' : '내용물(벌크) 제조' }];
-  p.revisions = [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: `신규 제정 (근거: ${[...new Set(I.files.filter(f => f.status === '완료').map(f => f.kind))].join('·') || '자료'})`, reason: '신규 제정', approver: '' }];
+  p.revisions = [{ rev: '0', date: today(), effDate: today(), author: '', content: '신규 제정', reason: '', approver: '' }];
   p.components = M.map(c => {
     const k = newComp(c.key); const r = c.report, b = c.bulk;
     k.fullName = b?.productName || r?.productName || c.key; k.maker = makerShort(mk) || mkName; k.functional = r ? '예' : '아니오';
