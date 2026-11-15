@@ -12982,56 +12982,37 @@ showPage("issue");
 })();
 </script>
 
-<!-- ===== 허브 겉모습 (2026-11-16) ===== -->
+<!-- ===== 허브 구성 v2 (2026-11-16) ===== -->
 <style>
-  /* 참고: 품질팀 입/출고 기록 종합 관리 화면의 색·간격을 그대로 따랐다 */
   :root{
-    --hub-plane:#f9f9f7; --hub-surface:#fcfcfb;
-    --hub-ink:#0b0b0b; --hub-ink2:#52514e; --hub-muted:#898781;
-    --hub-grid:#e1e0d9; --hub-line:#c3c2b7;
-    --cat-audit:#1f4e8c; --cat-claim:#2a78d6; --cat-sum:#1baf7a;
+    --hub-plane:#f9f9f7; --hub-surface:#fcfcfb; --hub-ink:#0b0b0b;
+    --hub-ink2:#52514e; --hub-muted:#898781; --hub-grid:#e1e0d9; --hub-line:#c3c2b7;
   }
-  body.ix-hub{ background:var(--hub-plane); }
+  body.hub{ background:var(--hub-plane); }
+  body.hub .topbar{ display:none; }
+  body.hub .page-head{ display:none; }
+  body.hub .page{ max-width:1680px; margin:0 auto; padding:16px 18px 64px; }
 
-  /* ── 머리 ───────────────────────────────── */
-  body.ix-hub .topbar{ display:none; }
-  .hub-head{
-    max-width:1680px; margin:0 auto; padding:22px 18px 0;
-    display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;
-  }
+  .hub-head{ max-width:1680px; margin:0 auto; padding:22px 18px 0; display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; }
   .hub-badge{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:46px; height:46px; border-radius:13px; flex:none;
-    background:linear-gradient(135deg,#2f5fa0,#3f96c8);
+    display:inline-flex; align-items:center; justify-content:center; width:46px; height:46px;
+    border-radius:13px; flex:none; background:linear-gradient(135deg,#2f5fa0,#3f96c8);
     color:#fff; font-weight:800; font-size:15px; letter-spacing:-.02em;
   }
-  .hub-head .hub-t{ flex:1 1 320px; min-width:260px; }
-  .hub-head h1{
-    margin:0; font-size:25px; font-weight:800; letter-spacing:-.02em; color:var(--hub-ink); line-height:1.25;
-  }
+  .hub-head .hub-t{ flex:1 1 320px; min-width:240px; }
+  .hub-head h1{ margin:0; font-size:25px; font-weight:800; letter-spacing:-.02em; line-height:1.25; color:var(--hub-ink); }
   .hub-sub{ margin-top:5px; font-size:13px; color:var(--hub-ink2); display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
-  .hub-chip{
-    display:inline-block; padding:2px 9px; border-radius:7px;
-    background:var(--hub-surface); border:1px solid var(--hub-grid);
-    font-size:12.5px; color:var(--hub-ink2); white-space:nowrap;
-  }
+  .hub-chip{ display:inline-block; padding:2px 9px; border-radius:7px; background:var(--hub-surface);
+             border:1px solid var(--hub-grid); font-size:12.5px; color:var(--hub-ink2); white-space:nowrap; }
   .hub-acts{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-left:auto; }
 
-  /* ── 범주 탭 ─────────────────────────────── */
-  .hub-tabs{
-    max-width:1680px; margin:16px auto 0; padding:0 18px;
-    display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end;
-    border-bottom:1px solid var(--hub-line);
-  }
-  .hub-tabs a{
-    text-decoration:none; font:inherit; font-size:14px; color:var(--hub-ink2);
-    padding:8px 15px; border-radius:9px 9px 0 0; border:0; cursor:pointer;
-    display:inline-flex; align-items:center; gap:7px; margin-bottom:-1px;
-  }
-  .hub-tabs a .cnt{
-    font-size:12px; font-weight:700; letter-spacing:-.01em;
-    padding:1px 7px; border-radius:999px; background:rgba(11,11,11,.09); color:var(--hub-ink2);
-  }
+  .hub-tabs{ max-width:1680px; margin:16px auto 0; padding:0 18px; display:flex; gap:6px;
+             flex-wrap:wrap; align-items:flex-end; border-bottom:1px solid var(--hub-line); }
+  .hub-tabs a{ text-decoration:none; font:inherit; font-size:14px; color:var(--hub-ink2);
+               padding:8px 15px; border-radius:9px 9px 0 0; display:inline-flex; align-items:center;
+               gap:7px; margin-bottom:-1px; cursor:pointer; }
+  .hub-tabs a .cnt{ font-size:12px; font-weight:700; padding:1px 7px; border-radius:999px;
+                    background:rgba(11,11,11,.09); color:var(--hub-ink2); }
   .hub-tabs a[aria-selected="true"]{ color:var(--hub-ink); font-weight:700; }
   .hub-tabs a[aria-selected="true"] .cnt{ background:rgba(255,255,255,.75); color:var(--hub-ink); }
   .hub-tabs a.t-audit{ background:rgba(31,78,140,.15); }
@@ -13041,87 +13022,139 @@ showPage("issue");
   .hub-tabs a.t-claim[aria-selected="true"]{ background:rgba(42,120,214,.26); }
   .hub-tabs a.t-sum[aria-selected="true"]  { background:rgba(27,175,122,.26); }
 
-  /* ── 본문 폭·카드 ────────────────────────── */
-  body.ix-hub .page{ max-width:1680px; margin:0 auto; padding:18px 18px 64px; }
-  body.ix-hub .page-head{ display:none; }
-  body.ix-hub .panel{
-    background:var(--hub-surface); border:1px solid var(--hub-grid); border-radius:14px;
-  }
+  /* 섹션 — 주제마다 번호 붙은 제목 */
+  .hub-sec{ display:flex; align-items:baseline; gap:10px; margin:24px 0 10px; }
+  .hub-sec h2{ margin:0; font-size:16.5px; font-weight:800; letter-spacing:-.01em; color:var(--hub-ink); }
+  .hub-sec .s-sub{ font-size:12.5px; color:var(--hub-muted); }
+  .hub-sec .s-no{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+                  border-radius:7px; background:#2a78d6; color:#fff; font-size:12px; font-weight:800; flex:none; }
+  .hub-sec .s-tools{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .hub-go{ font:inherit; font-size:11.5px; color:var(--hub-muted); background:transparent;
+           border:1px solid var(--hub-grid); border-radius:999px; padding:3px 10px; cursor:pointer; white-space:nowrap; }
+  .hub-go:hover{ border-color:var(--hub-line); color:var(--hub-ink); }
 
-  /* ── 세그먼트·범례 (참고 화면과 같은 모양) ── */
-  body.ix-hub .seg{
-    display:inline-flex; background:var(--hub-plane); border:1px solid var(--hub-line);
-    border-radius:9px; padding:2px; gap:2px;
-  }
-  body.ix-hub .seg .seg-b{
-    background:none; border:0; color:var(--hub-ink2); border-radius:7px;
-    padding:6px 13px; font-size:13px; font-family:inherit; cursor:pointer; white-space:nowrap;
-  }
-  body.ix-hub .seg .seg-b.on{
-    background:var(--hub-surface); color:var(--hub-ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.1);
-  }
-  body.ix-hub .ix-sec h2{ font-size:16.5px; }
+  /* 그림마다 달려 있던 필터는 접어 둔다 */
+  body.hub .pfilter{ display:none; }
+  body.hub .pfilter.hub-open{ display:flex; }
+  body.hub .panel{ background:var(--hub-surface); border:1px solid var(--hub-grid); border-radius:14px; }
+  body.hub .panel > .panel-head .panel-title{ font-size:14.5px; }
+
+  /* 도구 모음 */
+  .hub-tools{ position:relative; display:inline-block; }
+  .hub-tools > summary{ list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    font-size:12.5px; font-weight:700; color:var(--hub-ink2); border:1px solid var(--hub-grid);
+    border-radius:999px; padding:5px 12px; background:var(--hub-surface); }
+  .hub-tools > summary::-webkit-details-marker{ display:none; }
+  .hub-tools[open] > summary{ border-color:#2a78d6; color:#1b5fb0; }
+  .hub-tools .box{ position:absolute; right:0; top:calc(100% + 6px); z-index:40; min-width:230px;
+    display:flex; flex-direction:column; gap:6px; background:var(--hub-surface);
+    border:1px solid var(--hub-line); border-radius:12px; padding:10px; box-shadow:0 10px 28px rgba(11,11,11,.14); }
+  .hub-tools .box > *{ margin:0 !important; }
+  .hub-tools .box button{ width:100%; justify-content:center; }
 </style>
 <script>
 (function(){
   function 준비(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
   준비(function(){
-    if(document.body.dataset.ixHub) return;
-    document.body.dataset.ixHub = '1';
-    document.body.classList.add('ix-hub');
+    if(document.body.dataset.hub) return;
 
+    var 쪽 = document.getElementById('page-audit') || document.getElementById('page-issue');
+    if(!쪽) return;
+    var 감사쪽 = 쪽.id === 'page-audit';
+    document.body.dataset.hub = '1';
+    document.body.classList.add('hub');
+
+    function el(t, c, x){ var e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e; }
+    function 섹션(n, 제목, 설명){
+      var d = el('div','hub-sec');
+      d.appendChild(el('span','s-no', n));
+      d.appendChild(el('h2', null, 제목));
+      if(설명) d.appendChild(el('span','s-sub', 설명));
+      return d;
+    }
+
+    /* ── 머리 ── */
     var 판 = (document.querySelector('.build-stamp')||{}).textContent || '';
     var 부제 = (document.querySelector('.topbar .sub')||{}).textContent || '';
     var 기준 = (부제.match(/기준\s*([0-9.]+\s*[–~-]\s*[0-9.]+)/)||[])[1] || '';
-
-    /* ── 머리 ── */
-    var head = document.createElement('div');
-    head.className = 'hub-head';
+    var head = el('div','hub-head');
     head.innerHTML =
-      '<div class="hub-badge">QC</div>' +
-      '<div class="hub-t">' +
-        '<h1>제조사 AUDIT · 클레임 종합 관리</h1>' +
-        '<div class="hub-sub">' +
-          '<span>제조업체 클레임 접수 현황</span>' +
-          (기준 ? '<span class="hub-chip">기준 ' + 기준 + '</span>' : '') +
-          (판 ? '<span class="hub-chip">' + 판 + '</span>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="hub-acts" id="hub-acts"></div>';
+      '<div class="hub-badge">QC</div><div class="hub-t">' +
+      '<h1>제조사 AUDIT · 클레임 종합 관리</h1><div class="hub-sub">' +
+      '<span>' + (감사쪽 ? '협력업체 감사 이력' : '제조업체 클레임 접수 현황') + '</span>' +
+      (기준 ? '<span class="hub-chip">기준 ' + 기준 + '</span>' : '') +
+      (판 ? '<span class="hub-chip">' + 판 + '</span>' : '') +
+      '</div></div><div class="hub-acts" id="hub-acts"></div>';
 
-    /* ── 범주 탭 (건수 배지) ── */
-    var 셈 = (typeof issueData !== 'undefined' && issueData.length) ? issueData.length : null;
-    var tabs = document.createElement('nav');
-    tabs.className = 'hub-tabs';
+    var 미리 = /_%EC%83%88|_새구성|-new/.test(decodeURIComponent(location.pathname) + location.pathname);
+    var L = function(base, prev){ return 미리 ? prev : base; };
+    var tabs = el('nav','hub-tabs');
     tabs.innerHTML =
-      '<a class="t-audit" href="index.html">AUDIT 이력<span class="cnt" id="hub-n-audit">20</span></a>' +
-      '<a class="t-claim" href="issue.html" aria-selected="true">클레임 접수 현황<span class="cnt" id="hub-n-claim">' + (셈 ? 셈.toLocaleString() : '—') + '</span></a>' +
+      '<a class="t-audit" href="' + L('index.html','index-new.html') + '"' + (감사쪽 ? ' aria-selected="true"' : '') + '>AUDIT 이력<span class="cnt" id="n-audit">—</span></a>' +
+      '<a class="t-claim" href="' + L('issue.html','issue-new.html') + '"' + (감사쪽 ? '' : ' aria-selected="true"') + '>클레임 접수 현황<span class="cnt" id="n-claim">—</span></a>' +
       '<a class="t-sum" href="summary.html">요약</a>';
+    document.body.insertBefore(tabs, document.body.firstChild);
+    document.body.insertBefore(head, tabs);
 
-    var body = document.body;
-    body.insertBefore(tabs, body.firstChild);
-    body.insertBefore(head, tabs);
-
-    /* 제목 옆에 있던 단추(등록·도구)를 머리 오른쪽으로 */
+    /* 제목 옆 단추들을 머리 오른쪽으로 */
     var acts = document.getElementById('hub-acts');
-    var 등록 = document.getElementById('nc-open');
-    if(등록 && acts) acts.appendChild(등록);
-    var 도구 = document.querySelector('.ix-tools');
-    if(도구 && acts) acts.appendChild(도구);
+    ['ar-open','nc-open'].forEach(function(id){ var b=document.getElementById(id); if(b&&acts) acts.appendChild(b); });
+    var det = document.createElement('details'); det.className='hub-tools';
+    var sum = document.createElement('summary'); sum.textContent='도구 ▾'; det.appendChild(sum);
+    var box = el('div','box'); det.appendChild(box);
+    ['nc-share','nc-load','ix-xl-export','cx-export'].forEach(function(id){ var b=document.getElementById(id); if(b) box.appendChild(b); });
+    var asv = document.getElementById('asv-bar'); if(asv) box.appendChild(asv);
+    if(box.children.length && acts){ acts.appendChild(det); }
+    document.addEventListener('click', function(e){ if(det.open && !det.contains(e.target)) det.open=false; });
 
-    /* 건수는 표가 다 그려진 뒤 다시 한 번 맞춘다 */
+    /* ── 그림별 필터 접기 ── */
+    쪽.querySelectorAll('.panel').forEach(function(p){
+      var pf = p.querySelector('.pfilter'), hd = p.querySelector('.panel-head');
+      if(!pf || !hd) return;
+      var b = el('button','hub-go','이 그림만 따로 거르기'); b.type='button';
+      b.addEventListener('click', function(){
+        var o = pf.classList.toggle('hub-open');
+        b.textContent = o ? '따로 거르기 닫기' : '이 그림만 따로 거르기';
+      });
+      var sp = el('span','s-tools'); sp.appendChild(b); hd.appendChild(sp);
+    });
+
+    /* ── 섹션 제목 붙이기 (앞 블록이 만든 것은 걷어낸다) ── */
+    document.querySelectorAll('.ix-sec').forEach(function(x){
+      var t = x.querySelector('.ix-sec-tools');           /* 「열 더 보기」 같은 단추는 살린다 */
+      if(t) x.parentNode.insertBefore(t, x);
+      x.remove();
+    });
+    var n = 1;
+    var kpi = 쪽.querySelector('.kpi-row');
+    if(kpi) kpi.parentNode.insertBefore(섹션(n++, '한눈에', '지금 걸린 조건 기준'), kpi);
+    var grid = 쪽.querySelector('.chart-grid');
+    if(grid) grid.parentNode.insertBefore(섹션(n++, 감사쪽 ? '숫자로 보기' : '어디서 · 무엇이',
+      감사쪽 ? '연도별 · 업체별' : '제조사별 · 유형별'), grid);
+    [].slice.call(쪽.children).forEach(function(c){
+      if(c.className && c.className.indexOf('panel') === 0){
+        var t = c.querySelector('.panel-title');
+        var s = c.querySelector('.panel-sub');
+        쪽.insertBefore(섹션(n++, t ? t.textContent.trim() : '자세히', s ? s.textContent.trim() : ''), c);
+        if(t) t.closest('.panel-head').style.display = 'none';
+      }
+    });
+
+    /* ── 탭 건수 ── */
     setTimeout(function(){
       try{
-        /* 씨앗 변수는 바깥에서 안 보이므로 화면에 찍힌 숫자를 읽는다 */
-        var src = (document.getElementById('issue-count')||{}).textContent || '';
-        var m = src.match(/([\d,]+)\s*건/) || src.match(/\/\s*([\d,]+)/);
-        var n = document.getElementById('hub-n-claim');
-        if(n && m) n.textContent = m[1];
-        var tot = (document.getElementById('if-count')||{}).textContent || '';
-        var m2 = tot.match(/전체\s*([\d,]+)/);
-        if(n && m2) n.textContent = m2[1];
+        var a = document.getElementById('n-audit');
+        var ga = (document.getElementById('gf-count')||{}).textContent || '';
+        var ma = ga.match(/전체\s*([\d,]+)/) || ga.match(/([\d,]+)\s*건/);
+        if(a) a.textContent = ma ? ma[1] : '20';
+        var c = document.getElementById('n-claim');
+        var gi = (document.getElementById('if-count')||{}).textContent
+               || (document.getElementById('issue-count')||{}).textContent || '';
+        var mi = gi.match(/전체\s*([\d,]+)/) || gi.match(/([\d,]+)\s*건/);
+        if(c && mi) c.textContent = mi[1];
+        [a,c].forEach(function(x){ if(x && (x.textContent==='—'||!x.textContent.trim())) x.style.display='none'; });
       }catch(e){}
-    }, 1200);
+    }, 1500);
   });
 })();
 </script>
