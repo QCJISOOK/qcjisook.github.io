@@ -12799,3 +12799,130 @@ showPage("audit");
   });
 })();
 </script>
+
+<!-- ===== 보기 좋게 (2026-11-16) ===== -->
+<style>
+  /* ── 1) 맨 위 큰 숫자 띠 ─────────────────────────── */
+  .hub-kpi{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:18px 0 4px; }
+  .hub-kpi .k{
+    background:#fff; border:1px solid var(--hub-grid); border-radius:16px; padding:18px 20px;
+    box-shadow:0 1px 2px rgba(11,11,11,.04), 0 8px 20px rgba(11,11,11,.035);
+  }
+  .hub-kpi .k .lab{ font-size:12.5px; font-weight:600; color:var(--hub-muted); letter-spacing:.01em; }
+  .hub-kpi .k .num{
+    margin-top:6px; font-size:34px; font-weight:800; line-height:1.05; letter-spacing:-.03em; color:var(--hub-ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .hub-kpi .k .num .u{ font-size:15px; font-weight:700; color:var(--hub-muted); margin-left:3px; letter-spacing:0; }
+  .hub-kpi .k .sub{ margin-top:4px; font-size:12px; color:var(--hub-muted); }
+  .hub-kpi .k.accent .num{ color:#1b5fb0; }
+  .hub-kpi .k.good .num{ color:#0ca30c; }
+  .hub-kpi .k.warn .num{ color:#c07a06; }
+
+  /* ── 2) 필터는 가볍게 — 큰 회색 상자를 걷어낸다 ──── */
+  body.hub .gfilter{
+    background:transparent !important; border:0 !important; box-shadow:none !important;
+    padding:10px 0 2px !important; margin:0 !important;
+  }
+  body.hub .gfilter .gf-row{ gap:8px; }
+  body.hub .gfilter .gf-sel,
+  body.hub .gfilter .gf-search{
+    background:#fff; border:1px solid var(--hub-grid); border-radius:10px;
+    box-shadow:0 1px 1px rgba(11,11,11,.03);
+  }
+  body.hub .gfilter .seg{ background:#fff; }
+  body.hub .gf-count{ font-weight:700; color:var(--hub-ink); }
+  body.hub .gfilter .gf-row2{ padding-top:4px; }
+
+  /* ── 3) 카드는 넉넉하게 ───────────────────────────── */
+  body.hub .panel{
+    padding:20px 22px !important; border-radius:16px !important;
+    box-shadow:0 1px 2px rgba(11,11,11,.04), 0 8px 20px rgba(11,11,11,.035);
+  }
+  body.hub .panel + .panel{ margin-top:14px; }
+  body.hub .panel-title{ font-size:15.5px !important; font-weight:800 !important; letter-spacing:-.01em; }
+  body.hub .panel-sub{ font-size:12.5px !important; }
+
+  /* ── 4) 막대·순위를 굵고 또렷하게 ─────────────────── */
+  body.hub .barchart .col .v,
+  body.hub .barchart .col .val,
+  body.hub .barchart .col b{ font-size:17px !important; font-weight:800 !important; letter-spacing:-.02em; }
+  body.hub .barchart .bar,
+  body.hub .barchart .col i{ border-radius:7px 7px 0 0 !important; }
+  body.hub .rank-row{ padding:5px 0 !important; }
+  body.hub .rank-row .rk-name,
+  body.hub .rank-row > span:first-child{ font-weight:700 !important; }
+  body.hub .rank-row .rk-val,
+  body.hub .rank-row > span:last-child{ font-weight:800 !important; font-variant-numeric:tabular-nums; }
+  body.hub .rank-bar, body.hub .rank-row i{ border-radius:999px !important; }
+
+  /* ── 5) 감사 카드 ─────────────────────────────────── */
+  body.hub .acard{
+    border-radius:14px !important; border:1px solid var(--hub-grid) !important;
+    transition:box-shadow .15s, transform .15s;
+  }
+  body.hub .acard:hover{ box-shadow:0 6px 18px rgba(11,11,11,.08); transform:translateY(-1px); }
+
+  /* ── 6) 섹션 제목 또렷하게 ────────────────────────── */
+  .hub-sec h2{ font-size:18px !important; }
+  .hub-sec{ margin:28px 0 12px !important; }
+  .hub-sec .s-no{ width:24px; height:24px; border-radius:8px; }
+
+  /* ── 7) 표도 숨 쉬게 ──────────────────────────────── */
+  body.hub #issue-table thead th{ font-size:12.5px; letter-spacing:-.01em; }
+  body.hub #issue-table tbody td{ padding-top:9px !important; padding-bottom:9px !important; }
+  body.hub #issue-table tbody tr.irow:hover > *{ background:rgba(42,120,214,.05); }
+</style>
+<script>
+(function(){
+  function 준비(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  준비(function(){
+    setTimeout(function(){
+      try{
+        var 쪽 = document.getElementById('page-audit') || document.getElementById('page-issue');
+        if(!쪽 || 쪽.dataset.kpiDone) return;
+        if(쪽.querySelector('.kpi-row')) return;          /* 이미 KPI 가 있는 화면은 그대로 둔다 */
+        쪽.dataset.kpiDone = '1';
+
+        function 수(s){ var m = String(s||'').match(/([\d,]+)/); return m ? m[1] : null; }
+        var 총 = null, 올해 = null, 업체 = null, 최근 = null;
+
+        var gc = (document.getElementById('gf-count')||{}).textContent || '';
+        var m = gc.match(/전체\s*([\d,]+)/); 총 = m ? m[1] : 수(gc);
+
+        /* 연도별 막대에서 올해 값 */
+        var 올 = String(new Date().getFullYear());
+        쪽.querySelectorAll('.barchart .col').forEach(function(c){
+          var t = (c.textContent||'').replace(/\s+/g,' ');
+          if(t.indexOf(올) >= 0){ var n = t.match(/([\d,]+)/); if(n) 올해 = n[1]; }
+        });
+
+        var rr = 쪽.querySelectorAll('.rank-list .rank-row');
+        if(rr.length) 업체 = String(rr.length);
+
+        var 날 = (쪽.textContent||'').match(/20\d\d[.\-]\d\d?[.\-]\d\d?/g);
+        if(날 && 날.length) 최근 = 날.sort().pop();
+
+        var 칸 = [];
+        if(총)   칸.push(['전체 AUDIT', 총, '건', '2023 – 오늘', 'accent']);
+        if(올해) 칸.push([올 + '년', 올해, '건', '올해 진행', '']);
+        if(업체) 칸.push(['감사받은 제조사', 업체, '곳', '누적', '']);
+        if(최근) 칸.push(['가장 최근 감사', 최근, '', '', 'good']);
+        if(!칸.length) return;
+
+        var box = document.createElement('div');
+        box.className = 'hub-kpi';
+        box.innerHTML = 칸.map(function(k){
+          return '<div class="k ' + k[4] + '"><div class="lab">' + k[0] + '</div>'
+               + '<div class="num">' + k[1] + (k[2] ? '<span class="u">' + k[2] + '</span>' : '') + '</div>'
+               + (k[3] ? '<div class="sub">' + k[3] + '</div>' : '') + '</div>';
+        }).join('');
+
+        var 첫섹 = 쪽.querySelector('.hub-sec');
+        if(첫섹) 첫섹.parentNode.insertBefore(box, 첫섹);
+        else 쪽.insertBefore(box, 쪽.firstChild);
+      }catch(e){}
+    }, 900);
+  });
+})();
+</script>
