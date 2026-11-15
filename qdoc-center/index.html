@@ -754,7 +754,7 @@ function secEditor(p, sec, ed) {
     }
     case 'rev':
       A(subh('통합 제품표준서 개정이력 <span class="hint">「개정 (Rev +1)」 버튼을 쓰면 번호·날짜가 자동으로 들어갑니다</span>'));
-      A(tedit(p.revisions, [{ k: 'rev', label: '개정번호', w: '8%' }, { k: 'date', label: '개정일자', w: '12%', type: 'date' }, { k: 'effDate', label: '시행일자', w: '12%', type: 'date' }, { k: 'content', label: '개정 내용', ta: 2 }, { k: 'reason', label: '개정 사유', w: '16%', ta: 1 }, { k: 'author', label: '개정자', w: '10%' }, { k: 'approver', label: '승인자', w: '10%' }], { numbered: false }));
+      A(tedit(p.revisions, [{ k: 'rev', label: '개정번호', w: '8%' }, { k: 'date', label: '개정일자', w: '13%', type: 'date' }, { k: 'content', label: '개정 내용', ta: 2 }, { k: 'reason', label: '개정 사유', w: '16%', ta: 1 }, { k: 'author', label: '개정자', w: '10%' }, { k: 'approver', label: '승인자', w: '10%' }], { numbered: false }));
       break;
     case 'toc':
       A(subh('목차 — 근거 문서 (문서명·번호) · 작성 방식 <span class="hint">해설서 p84: 나눠 작성한 항목은 그 문서의 번호를 목록으로 — 공정(별첨2·3)·설비(별첨7) 자료가 없으면 여기에 제조업자 문서 이름·번호를 적으면 점검에서 인정</span>'));
@@ -1170,7 +1170,7 @@ function psDoc(p, extra) {
     </div>${foot(p)}</section>`);
   }
   // 개정내역
-  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 5, padH: 26 }))));
+  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('', dtable([{ label: '개정번호', w: '9%', k: 'rev', c: 1 }, { label: '개정일자', w: '13%', k: 'date', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '20%', k: 'reason' }, { label: '개정자', w: '12%', k: 'author', c: 1 }, { label: '승인자', w: '11%', k: 'approver', c: 1 }], p.revisions, { pad: 5, padH: 26 }))));
   const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s2: 1, s3: 2, s4: 3, s6: 4, s7: 5, s8: 6, s11: 7, s12: 8, s13: 9 };
   const H = s => LITE ? `${NO[s]}. ` : `별첨${NO[s]}. `; // 쪽 제목 앞머리 (전체본 = 별첨N)
   const SB = (s, k) => LITE ? `${NO[s]}-${k}. ` : ''; // 하위 블록 번호 (전체본은 없음)
