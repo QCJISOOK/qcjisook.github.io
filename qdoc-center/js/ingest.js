@@ -410,7 +410,7 @@ const FCHIP = { '자동': 'good', '템플릿': 'warn', '입력': 'mute', '제조
 function build(withCoa) {
   const I = ing(), M = model(), mk = maker(), info = I.info;
   if (!M.length) { notify('읽은 자료가 없습니다.'); return; }
-  const p = newProduct(); p.psNo = nextPsNo();
+  const p = newProduct();
   const single = M.length === 1 && M[0].key === '단품';
   const site = (() => { const ra = roadKey(M.find(c => c.report)?.report?.makers?.[0]?.address); return (mk?.sites || []).find(s => roadKey(s) === ra) || (mk?.sites || [])[0] || ''; })();
   const mkName = mk ? (mk.company || mk.label || mk.name) : (M.find(c => c.report)?.report?.makers?.[0]?.name || '');
@@ -506,6 +506,7 @@ function build(withCoa) {
   p.sourceIngest = { at: nowStr(), files: I.files.map(f => f.name) };
   p.scope = '전체'; p.makerRef = [...new Set(p.components.map(c => c.makerPsNo).filter(Boolean))].join(', ');
   p.keyIngredients = []; keyCandidates(p);
+  p.psNo = nextPsNo(p); // OI-브랜드-연도-순번 (제품명·품번이 정해진 뒤)
   p.v2m = false; S.products.push(p); fixProduct(p);
   let c = null;
   if (withCoa) {

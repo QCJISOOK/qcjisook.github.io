@@ -9,7 +9,6 @@ const PS_REQ = [
   { no: '3', t: '효능·효과(기능성화장품의 경우) 및 사용할 때의 주의사항', d: '주의사항은 시행규칙 [별표 3] 유형별, 효능·효과는 심사·보고받은 내용 (부록2 p254)', sec: 's8', chk: x => /효능|주의사항/.test(x.label) && x.sec === 's8' },
   { no: '4', t: '원료명, 분량 및 제조단위당 기준량', d: '보완사례 15-1: 기준량 누락 지적', sec: 's2', chk: x => x.sec === 's2' && x.lvl === '필수' },
   { no: '5', t: '공정별 상세 작업내용 및 제조공정흐름도', d: '보완사례 17-1: 표준서 공정과 제조지시·기록서 공정이 달라 지적', sec: 'sMfg', chk: x => x.sec === 'sMfg' },
-  { no: '6', t: '(삭제) 공정별 이론 생산량 및 수율관리기준', d: '고시에서 삭제됐으나 부록2 예시 양식에는 \'이론 수율\' 칸이 있음', sec: null, del: true },
   { no: '7', t: '작업 중 주의사항', d: '예시: 칭량·제조·충전·포장 시 주의사항 (부록2 p272)', sec: 'sMfg', chk: x => x.sec === 'sMfg' },
   { no: '8', t: '원자재·반제품·벌크제품·완제품의 기준 및 시험방법', d: '벌크제품 = 충전(1차 포장) 전까지 제조를 마친 것 (제2조)', sec: 's7', chk: x => x.sec === 's7' && x.lvl === '필수' },
   { no: '9', t: '제조 및 품질관리에 필요한 시설 및 기기', d: '보완사례 15-2: 제조소 보유 설비 전체를 나열해 지적 → 이 제품에 쓰는 것만', sec: 'sMfg', chk: x => x.sec === 'sMfg' },
@@ -70,7 +69,7 @@ const CASES = [
 function renderCgmp(m) {
   if (!V.cgPid || !prod(V.cgPid)) V.cgPid = S.products[S.products.length - 1]?.id || '';
   const p = prod(V.cgPid), ch = p ? psChecks(p) : [];
-  const tb = el(`<div class="toolbar"><div class="ttl">CGMP 기준 — 제품표준서·완제품성적서에 들어가야 할 사항<small>출처: 식약처 「우수화장품 제조 및 품질관리기준(CGMP) 해설서」(2024.12) · 고시 제2024-46호 · 쪽 번호는 해설서 인쇄 쪽</small></div></div>`);
+  const tb = el(`<div class="toolbar"><div class="ttl"></div></div>`); // 제목·출처 줄은 사용자 요청으로 뺌
   const sel = el(`<select style="width:auto;min-width:260px"><option value="">— 점검할 제품 —</option>${S.products.map(x => `<option value="${x.id}" ${x.id === V.cgPid ? 'selected' : ''}>${esc(x.code || '')} ${esc(x.nameKo)}</option>`).join('')}</select>`);
   sel.onchange = () => { V.cgPid = sel.value; render(); };
   tb.appendChild(el('<span class="hint">제품별 충족 여부</span>')); tb.appendChild(sel);
@@ -94,9 +93,7 @@ function renderCgmp(m) {
     t0.appendChild(el(`<tr><td>${i + 1}</td><td><b>${esc(t)}</b></td><td class="hint" style="color:var(--ink2)">${esc(why)}</td><td>${link(s, LITE_LABEL[s])}</td><td>${st}</td></tr>`));
   });
   // 1. 제품표준서 필수 (CGMP 제15조② — 기본)
-  const c1 = el(`<div class="card" style="border-color:#b9cbe6"><h3>제품표준서 필수 기재사항 — CGMP 고시 제15조② (12개 항목) <span class="r hint">해설서 p81·p84 · 보완사례 p308~311 · 우리가 직접 작성할 때도 12개 모두 포함</span></h3>
-    <div style="line-height:1.7;margin-bottom:8px">· 제조사에서 받을 수 없는 <b>5호(공정흐름도·작업내용)·9호(시설·기기)</b>는 제조사에 요청해 입력하거나, 못 받으면 「목차」의 근거 문서 칸에 제조지시 및 기록서·설비 대장 이름·번호를 적어 <b>참조</b>로 연결합니다 (해설서 p84: 나눠 작성하면 문서번호 목록). 점검은 이 참조를 충족으로 봅니다.<br>
-    · 처방 전체를 받지 못하면 별첨1 「원료 함량 일부 미공개 확인」(코스맥스 보증서 방식)으로 4호를 갈음합니다 (시행규칙 제11조①6 나목).</div><table class="list"><thead><tr><th style="width:44px">호</th><th>기재사항</th><th>해설·주의</th><th style="width:170px">대시보드 위치</th><th style="width:110px">${p ? esc(p.code || '선택 제품') : '충족'}</th></tr></thead><tbody></tbody></table></div>`);
+  const c1 = el(`<div class="card" style="border-color:#b9cbe6"><h3>제품표준서 필수 기재사항 — CGMP 고시 제15조② (12개 항목)</h3><table class="list"><thead><tr><th style="width:44px">호</th><th>기재사항</th><th>해설·주의</th><th style="width:170px">대시보드 위치</th><th style="width:110px">${p ? esc(p.code || '선택 제품') : '충족'}</th></tr></thead><tbody></tbody></table></div>`);
   const t1 = c1.querySelector('tbody');
   PS_REQ.forEach(r => {
     let st = '<span class="hint">—</span>';
