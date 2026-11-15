@@ -117,6 +117,8 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .bar.center{text-align:center}
 .doc .ph td{border-color:#9aa3ae}.doc .ph .phl{text-align:center;font-weight:700;font-size:8pt}
 .doc .ph .pht{text-align:center;font-weight:800;font-size:15pt;height:36px}.doc .ph .phs{text-align:center;font-size:7pt;color:#666;height:13px}
+.doc .toc-title{text-align:center;font-size:22pt;font-weight:800;letter-spacing:8px;text-decoration:underline;text-underline-offset:7px;margin:16mm 0 12mm}
+.doc .toc-t td,.doc .toc-t th{height:34px;font-size:10pt;padding:4px 10px}.doc .toc-t th{background:#fff;font-weight:600}
 .doc .ph .phm{text-align:center;font-size:6.8pt;color:#333;height:12px;background:#f6f8fb}
 .doc .ph .phn{text-align:center;font-size:12.5pt;font-weight:700;height:28px}.doc .ph .phe{text-align:center;font-size:8.5pt;color:#555;height:18px}
 .doc .foot{position:absolute;left:11mm;right:11mm;bottom:6mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#333}
@@ -330,7 +332,7 @@ function newProduct() {
     makers: [{ type: '화장품제조업자 ①', name: '', role: '' }],
     seller: { name: '올리브인터내셔널(주)', addr: '서울특별시 서초구 서초대로 398, 14F', role: '품질·안전관리, 시장 출하 및 유통' },
     approvals: { writer: { name: '', date: '' }, reviewer: { name: '', date: '' }, approver: { name: '', date: '' } },
-    control: '관리본', distribution: [], revisions: [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: '신규 제정', reason: '신규 제정', approver: '' }], toc: {}, tocMode: {},
+    control: '관리본', distribution: [], revisions: [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: '신규 제정', reason: '신규 제정', approver: '' }], toc: {}, tocMode: {}, tocLoc: {},
     bulkCode: '', typeDiv: '', typeClass: '기초화장용 제품류', typeSub: '', funcClass: '', rinseOff: '아니오',
     nondisclosure: { applies: '해당 없음', affect: '', nonAffect: '', company: '', person: '', date: '' },
     packMethod: { lotExp: '', primary: '', secondary: '', outbox: '' },
@@ -460,25 +462,25 @@ function psChecksFull(p) {
   if (!comps.length) add('s2', '필수', false, '구성품', '구성품이 없습니다');
   const toc = p.toc || {}, nd = p.nondisclosure || {};
   comps.forEach(c => {
-    const ings = c.ingredients || [], L = `[${c.label || '구성품'}] `, ref = !!(c.makerPsNo || toc['2'] || nd.applies === '해당');
+    const ings = c.ingredients || [], L = `[${c.label || '구성품'}] `, ref = !!(c.makerPsNo || tocRef(p, '2') || nd.applies === '해당');
     add('s2', '필수', ings.length && ings.every(r => r.name || r.inci), L + '원료명', ings.length ? '원료명이 빈 행이 있음' : '원료가 없음');
     const noPct = ings.filter(r => !String(r.pct).trim() || String(r.pct).trim() === '-').length;
     add('s2', '필수', ings.length && (!noPct || ref), L + '분량(%)', noPct ? `${noPct}행 미기재 — 처방을 못 받으면 '제조사 제품표준서 번호'를 적어 참조로 연결` : '');
     add('s2', '필수', c.batchSize || ref, L + '제조단위(배치 크기)', '미기재');
     const noQty = ings.filter(r => !(r.qty || calcQty(c, r))).length;
     add('s2', '필수', ings.length && (!noQty || ref), L + '제조단위당 기준량', noQty ? `${noQty}행 미기재 (제조단위·분량을 넣으면 자동 계산)` : '');
-    add('s4', '필수', (c.process || []).length || toc['4'] || toc['3'], L + '공정별 상세 작업내용', '작업내용 없음 — 제조사에 요청하거나 목차 5호 근거 문서(제조지시 및 기록서 번호)를 기재');
+    add('s4', '필수', (c.process || []).length || toc['4'] || tocRef(p, '3'), L + '공정별 상세 작업내용', '작업내용 없음 — 제조사에 요청하거나 목차에 제조지시 및 기록서 이름·번호를 기재');
     add('s7', '필수', (c.bulkSpecs || []).length, L + '벌크제품 기준 및 시험방법', '기준 없음');
     add('s2', '권장', ings.length && ings.every(r => r.code && r.purpose), L + '원료코드·배합목적');
   });
   if (nd.applies === '해당') add('s2', '필수', nd.company && nd.person, '원료 함량 미공개 확인 (제조업자 회사명·책임자)', '미공개 확인서의 제조업자·책임자 미기재');
-  add('s3', '필수', (p.flow || []).length || toc['3'], '제조공정흐름도', '흐름도 없음 — 제조사에 요청하거나 목차 5호 근거 문서를 기재');
+  add('s3', '필수', (p.flow || []).length || tocRef(p, '3'), '제조공정흐름도', '흐름도 없음 — 제조사에 요청하거나 목차에 제조지시 및 기록서 이름·번호를 기재');
   add('s6', '필수', (p.precautions || []).some(r => String(r.content || '').trim()), '작업 중 주의사항', '내용이 빈 행만 있음');
-  add('s7', '필수', (p.rawSpecs || []).length && p.rawSpecs.every(r => r.criterion || r.doc) || toc['7'], '원자재 기준 및 시험방법', '기준 또는 별도관리 문서(규격서 번호) 미기재');
+  add('s7', '필수', (p.rawSpecs || []).length && p.rawSpecs.every(r => r.criterion || r.doc) || tocRef(p, '7'), '원자재 기준 및 시험방법', '기준 또는 별도관리 문서(규격서 번호) 미기재');
   add('s7', '필수', p.semiNA || (p.semiSpecs || []).length, '반제품 기준 (없으면 \'해당 없음\' 표시)');
   add('s7', '필수', (p.finishedSpecs || []).length, '완제품 기준 및 시험방법');
   const eq = p.equipment || [], noUse = eq.filter(e => !e.use).length;
-  add('s11', '필수', eq.length && !noUse || (!eq.length && toc['11']), '제조·품질관리 시설 및 기기', eq.length ? `'용도 / 사용 공정' 미기재 ${noUse}건 — 이 제품에 쓰는 설비만 남기고 공정을 적기 (보완사례 15-2)` : '설비 없음 — 제조사에 요청하거나 목차 9호 근거 문서(설비 대장)를 기재');
+  add('s11', '필수', eq.length && !noUse || (!eq.length && tocRef(p, '11')), '제조·품질관리 시설 및 기기', eq.length ? `'용도 / 사용 공정' 미기재 ${noUse}건 — 이 제품에 쓰는 설비만 남기고 공정을 적기 (보완사례 15-2)` : '설비 없음 — 제조사에 요청하거나 목차에 설비 대장 이름·번호를 기재');
   add('s12', '필수', (p.storage || []).length && p.storage.every(s => s.condition), '보관조건');
   add('s12', '필수', p.shelfLife.life, '사용기한 또는 개봉 후 사용기간');
   add('rev', '필수', (p.revisions || []).length, '변경이력');
@@ -760,9 +762,10 @@ function secEditor(p, sec, ed) {
         A(form(tl.map(([n, t]) => [t, inp(p.toc, n, { ph: '예) 전성분표(단일) 2026.04.09 / 반제품성적서 QBP2409054' }), true])));
         A(el(`<div class="hint" style="margin-top:6px">'참조' 줄(처방·공정·설비 등)의 출처는 표지의 「제조업자 제품표준서 (참조 문서)」가 들어갑니다.</div>`));
       } else {
-        p.tocMode = p.tocMode || {};
-        const tb = el('<table class="ed"><colgroup><col style="width:11%"><col style="width:32%"><col style="width:11%"><col><col style="width:17%"></colgroup><thead><tr><th>CGMP</th><th>필수 기재사항 (고시 제15조②)</th><th>본 표준서</th><th>근거 문서 (문서명·번호)</th><th>작성 방식</th></tr></thead><tbody></tbody></table>');
-        TOC15.forEach(([k, no, t, at, m]) => { p.toc[k] = p.toc[k] || ''; if (!p.tocMode[k]) p.tocMode[k] = m; const tr = el(`<tr><td class="no">${esc(no)}</td><td style="padding:4px 6px">${esc(t)}</td><td class="no">${esc(at)}</td><td></td><td></td></tr>`); tr.children[3].appendChild(inp(p.toc, k, { ph: '예) 아이큐어 제조지시 및 기록서 ICC-xxx' })); tr.children[4].appendChild(inp(p.tocMode, k, { opts: TOC_MODES.includes(p.tocMode[k]) ? TOC_MODES : [...TOC_MODES, p.tocMode[k]] })); tb.querySelector('tbody').appendChild(tr); });
+        p.tocLoc = p.tocLoc || {};
+        A(el('<div class="hint" style="margin-bottom:6px">목차 칸이 비어 있으면 본문 위치가 들어갑니다. 공정·설비 자료를 제조사에서 못 받으면 「별첨3. 제조지시 및 기록서 (제조사 문서번호)」처럼 적으세요 — 점검에서 참조로 인정합니다.</div>'));
+        const tb = el('<table class="ed"><colgroup><col style="width:44%"><col></colgroup><thead><tr><th>항목 (CGMP 필수 기재사항)</th><th>목차</th></tr></thead><tbody></tbody></table>');
+        TOC15.forEach(([k, t, d], i) => { const tr = el(`<tr><td style="padding:4px 6px">${i + 1}. ${esc(t)}</td><td></td></tr>`); tr.children[1].appendChild(inp(p.tocLoc, k, { ph: d })); tb.querySelector('tbody').appendChild(tr); });
         A(tb);
       }
       break;
@@ -814,7 +817,7 @@ function secEditor(p, sec, ed) {
     case 's3':
       A(subh('제조공정흐름도 및 공정검사'));
       A(tedit(p.flow, [{ k: 'maker', label: '구분(제조원)', w: '13%' }, { k: 'stage', label: '공정 구분', w: '11%', opts: ['', ...STAGE] }, { k: 'process', label: '공정', ta: 2 }, { k: 'qc', label: '공정검사 / 관리항목 (Q.C)', ta: 2 }, { k: 'record', label: '공정검사 기록서', w: '15%' }]));
-      A(el('<div class="hint" style="margin-top:6px">자료가 없으면 「목차」의 5호 근거 문서에 제조업자 제조지시 및 기록서 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
+      A(el('<div class="hint" style="margin-top:6px">자료가 없으면 「목차」 공정 줄에 제조업자 제조지시 및 기록서 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
       break;
     case 's4':
       comps.forEach((c, i) => { A(subh('4-' + compTitle(c, i))); A(tedit(c.process, [{ k: 'stage', label: '공정 구분', w: '12%', opts: ['', ...STAGE] }, { k: 'name', label: '공정명', w: '14%' }, { k: 'work', label: '작업내용', ta: 2 }, { k: 'criteria', label: '관리기준', w: '22%', ta: 2 }])); });
@@ -899,7 +902,7 @@ function secEditor(p, sec, ed) {
     case 's11':
       A(subh('제조 및 품질관리에 필요한 시설 및 기구 <span class="hint">이 제품의 제조·충전·시험에 실제로 쓰는 것만 · 제조사별로 · 사용 공정 필수 (보완사례 15-2)</span>'));
       p.equipment.forEach(r => { if (!r.have) r.have = '예'; });
-      if (!p.equipment.length) A(el('<div class="hint">설비 목록이 없으면 「목차」 9호 근거 문서에 제조업자 설비 목록(시설·기구 대장) 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
+      if (!p.equipment.length) A(el('<div class="hint">설비 목록이 없으면 「목차」 시설·기기 줄에 제조업자 설비 목록(시설·기구 대장) 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
       A(tedit(p.equipment, [{ k: 'group', label: '분류', w: '10%', opts: ['제조', '충전·포장', '품질관리'] }, { k: 'maker', label: '제조사·시험처', w: '11%' }, { k: 'mgmtNo', label: '설비 관리번호', w: '10%' }, { k: 'name', label: '시설 및 기구', w: '18%' }, { k: 'spec', label: '규격', w: '12%' }, { k: 'qty', label: '수량', w: '5%' }, { k: 'have', label: '구비', w: '7%', opts: ['예', '아니오'] }, { k: 'use', label: '용도 / 사용 공정', w: '14%' }, { k: 'note', label: '비고' }],
         { newRow: () => ({ group: '제조', maker: '', mgmtNo: '', name: '', spec: '', qty: '1', have: '예', use: '', note: '' }) }));
       break;
@@ -933,20 +936,23 @@ const LITE_LABEL = { s1: '1. 제품 개요·표시사항', s8: '2. 효능·효�
 const FULLNUM = { s1: '1', s2: '2', s3: '3', s4: '4', s5: '5', s6: '6', s7: '7', s8: '8', s9: '9', s10: '10', s11: '11', s12: '12', s13: '13' };
 const isLite = p => p.scope === '책임판매';
 const secList = p => isLite(p) ? [['cover', '표지·승인'], ['rev', '개정내역'], ['toc', '목차 (출처)'], ...Object.entries(LITE_LABEL)] : SECS;
-/* 목차 = CGMP 고시 제15조② 필수 기재사항만 (6호·13호 삭제). 키는 p.toc 근거 문서 칸 (장 번호, 개정내역은 'rev') */
+/* 목차 (콜마식 「항목 | 목차」) = CGMP 고시 제15조② 필수 기재사항만, 문서 순서.
+   [p.toc 키(점검 참조용), 항목, 기본 목차(본문 위치)] — 목차 칸은 p.tocLoc[키] 로 고쳐 쓸 수 있음 (예: 별첨3. 제조지시 및 기록서) */
 const TOC15 = [
-  ['1', '1호 · 2호', '제품명 · 작성연월일', '표지 · 1장', '직접 작성'],
-  ['8', '3호', '효능·효과(기능성화장품의 경우) 및 사용할 때의 주의사항', '7장', '직접 / 보고서'],
-  ['2', '4호', '원료명, 분량 및 제조단위당 기준량', '2장', '직접 / 미공개 확인서'],
-  ['3', '5호', '공정별 상세 작업내용 및 제조공정흐름도', '3장 · 4장', '직접 / 참조'],
-  ['6', '7호', '작업 중 주의사항', '5장', '직접'],
-  ['7', '8호', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법', '6장', '직접 (원료·자재 별도관리)'],
-  ['11', '9호', '제조 및 품질관리에 필요한 시설 및 기기', '8장', '직접 / 참조'],
-  ['12', '10호 · 11호', '보관조건 · 사용기한 또는 개봉 후 사용기간', '9장', '직접'],
-  ['rev', '12호', '변경이력', '개정내역', '직접'],
-  ['13', '14호', '그 밖에 필요한 사항 (기능성 심사결과통지서·보고서 사본 등)', '10장 별첨', '별첨']
+  ['1', '제품명 · 작성연월일', '표지 · 1. 제품 개요 및 표시사항'],
+  ['rev', '변경이력', '개정내역'],
+  ['2', '원료명, 분량 및 제조단위당 기준량', '2. 원료 성분 및 분량'],
+  ['3', '공정별 상세 작업내용 및 제조공정흐름도', '3. 제조공정흐름도 · 4. 공정별 상세 작업내용'],
+  ['6', '작업 중 주의사항', '5. 작업 중 주의사항'],
+  ['7', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법', '6. 기준 및 시험방법'],
+  ['8', '효능·효과(기능성화장품의 경우) 및 사용할 때의 주의사항', '7. 효능·효과 및 사용할 때의 주의사항'],
+  ['11', '제조 및 품질관리에 필요한 시설 및 기기', '8. 제조 및 품질관리 시설·기구'],
+  ['12', '보관조건 · 사용기한 또는 개봉 후 사용기간', '9. 보관조건 및 사용기한'],
+  ['13', '그 밖에 필요한 사항', '10. 별첨 목록']
 ];
-const TOC_MODES = ['직접 작성', '직접', '직접 / 참조', '직접 / 미공개 확인서', '직접 (원료·자재 별도관리)', '직접 / 보고서', '별첨', '참조'];
+const TOC_DEF = Object.fromEntries(TOC15.map(([k, , d]) => [k, d]));
+/* 목차 칸을 기본값과 다르게 적었거나(예: 별첨3. 제조지시 및 기록서) 예전 근거 문서가 있으면 → 참조로 인정 */
+const tocRef = (p, k) => { const v = String((p.tocLoc || {})[k] || '').trim(); return (v && v !== TOC_DEF[k]) ? v : String((p.toc || {})[k] || '').trim(); };
 const TOC_REQ = ['1호 제품명 · 2호 작성연월일', '4호 원료명·분량·제조단위당 기준량', '5호 제조공정흐름도', '5호 공정별 상세 작업내용', '(6호 삭제 — 선택)', '7호 작업 중 주의사항', '8호 기준 및 시험방법', '3호 효능·효과 및 주의사항', '표시사항 근거 (14호)', '자재 규격 / 포장 사양 (14호)', '9호 시설 및 기기', '10호 보관조건 · 11호 사용기한', '14호 그 밖에 필요한 사항 · 12호 변경이력'];
 const TOC_MODE = ['직접 작성', '직접 / 미공개 확인서', '직접 / 참조', '직접 / 참조', '참조', '직접', '직접 (원료·자재 별도관리)', '직접 / 보고서', '직접', '직접 / 포장기준서', '직접 / 참조', '직접', '별첨'];
 const TOC = [['1', '제품 개요 및 표시사항'], ['2', '원료 성분 및 분량'], ['3', '제조공정흐름도'], ['4', '공정별 상세 작업내용'], ['5', '공정별 이론 생산량 및 수율관리기준'], ['6', '작업 중 주의사항'], ['7', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법'], ['8', '효능·효과 및 사용할 때의 주의사항'], ['9', '전성분 · 품질·안전관리 영향 성분 · 알레르기 유발성분'], ['10', '포장 기준 (구성품·포장 방법)'], ['11', '제조 및 품질관리 시설·기구'], ['12', '보관조건 및 사용기한'], ['13', '별첨 목록']];
@@ -1147,8 +1153,7 @@ function psDoc(p, extra) {
     P.push(page(p, 'toc', '목차 (Table of Contents)', `<table class="h26" style="margin-top:8px"><colgroup><col style="width:8%"><col style="width:34%"><col style="width:33%"><col></colgroup><tr><th>항목</th><th>내 용</th><th>근 거</th><th>출처(원 문서)</th></tr>${rows}${refs}</table>
       <div class="note">※ 제품표준서의 작성·보관 의무는 화장품제조업자에게 있다(화장품법 시행규칙 제11조①2). 화장품책임판매업자는 제조업자로부터 받은 제품표준서를 보관하며(제12조3), 이 문서는 품질관리에 필요한 사항(제11조①6)을 정리한 것이다. 처방·공정·설비 등 제조업자 영업비밀은 '참조'로 표시하고 제조업자 문서에 따른다(제11조①6 나목).</div>`, '책임판매업자 품질관리용 제품표준서 구성'));
   } else {
-    P.push(page(p, 'toc', '목차 (Table of Contents)', `<table class="h26" style="margin-top:8px"><colgroup><col style="width:11%"><col style="width:35%"><col style="width:12%"><col style="width:26%"><col></colgroup><tr><th>CGMP</th><th>필수 기재사항 (고시 제15조②)</th><th>본 표준서</th><th>근거 문서 (문서명·번호)</th><th>작성 방식</th></tr>${TOC15.map(([k, no, t, at, m]) => `<tr><td class="c">${no}</td><td>${esc(t)}</td><td class="c">${at}</td><td>${esc(p.toc[k] || '')}</td><td class="c">${esc((p.tocMode || {})[k] || m)}</td></tr>`).join('')}</table>
-      <div class="note">※ 6호(공정별 이론 생산량 및 수율관리기준)·13호는 고시에서 삭제됨. 기준서를 여러 문서로 나눠 작성한 항목은 근거 문서 이름·번호를 적는다(해설서 p84).</div>`, '우수화장품 제조 및 품질관리기준 제15조② 필수 기재사항'));
+    P.push(`<section class="page nosplit" data-key="toc"><div class="toc-title">목 차</div><div class="body"><table class="toc-t"><colgroup><col style="width:46%"><col></colgroup><tr><th>항 목</th><th>목 차</th></tr>${TOC15.map(([k, t, d], i) => `<tr><td>${i + 1}. ${esc(t)}</td><td>${esc((p.tocLoc || {})[k] || d)}</td></tr>`).join('')}</table></div>${foot(p)}</section>`);
   }
   // 1 제품 개요
   const mk0 = p.makers[0] || {};
@@ -1187,7 +1192,7 @@ function psDoc(p, extra) {
       <tr><td colspan="4" style="font-size:7.4pt">비공개 원료 함량으로 인한 제품 품질·안정성의 책임은 화장품제조업자에게 있으며, 식약처 등 외부기관이 비공개 성분 함량 확인을 요청하면 책임판매업자에게 공개하거나 제조업자가 직접 대응한다 (시행규칙 제11조①6 나목).</td></tr>` : ''}</table>`);
   })()));
   const stg = { label: '공정 구분', w: '11%', k: 'stage', c: 1 };
-  if (has('s3')) P.push(page(p, 's3', '3. 제조공정흐름도 및 공정검사 (Manufacturing Process Flow &amp; In-process Control)', blk('', dtable([{ label: '구분(제조원)', w: '13%', k: 'maker', c: 1 }, stg, { label: '공 정', w: '28%', k: 'process' }, { label: '공정검사 / 관리항목 (Q.C)', k: 'qc' }, { label: '공정검사 기록서', w: '16%', k: 'record', c: 1 }], p.flow, { pad: 12, padH: 40 })) + (p.flow.length ? '' : `<div class="note">※ 제조공정흐름도: ${esc(p.toc['3'] || '근거 문서(제조업자 제조지시 및 기록서 등) 이름·번호를 목차에 기재')}</div>`)));
+  if (has('s3')) P.push(page(p, 's3', '3. 제조공정흐름도 및 공정검사 (Manufacturing Process Flow &amp; In-process Control)', blk('', dtable([{ label: '구분(제조원)', w: '13%', k: 'maker', c: 1 }, stg, { label: '공 정', w: '28%', k: 'process' }, { label: '공정검사 / 관리항목 (Q.C)', k: 'qc' }, { label: '공정검사 기록서', w: '16%', k: 'record', c: 1 }], p.flow, { pad: 12, padH: 40 })) + (p.flow.length ? '' : `<div class="note">※ 제조공정흐름도: ${esc(tocRef(p, '3') || '근거 문서(제조업자 제조지시 및 기록서 등) 이름·번호를 목차에 기재')}</div>`)));
   if (has('s4')) P.push(page(p, 's4', '4. 공정별 상세 작업내용 (Detailed Process Description)', comps.map((c, i) => blk(`4-${i + 1}. ${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, stg, { label: '공정명', w: '14%', k: 'name', c: 1 }, { label: '작업내용', k: 'work' }, { label: '관리기준', w: '22%', k: 'criteria' }], c.process, { pad: 7, padH: 30 }))).join('')));
   if (has('s5')) P.push(page(p, 's5', '5. 공정별 이론 생산량 및 수율관리기준 (Theoretical Yield &amp; Yield Control)', blk('', dtable([{ label: '구분', w: '12%', k: 'part', c: 1 }, { label: '공정', w: '24%', k: 'process' }, { label: '이론 생산량', w: '26%', k: 'theory' }, { label: '수율관리기준', w: '18%', k: 'criteria', c: 1 }, { label: '비고', k: 'note' }], p.yields, { pad: 4, padH: 50 }))));
   if (has('s6')) P.push(page(p, 's6', `${NO.s6}. 작업 중 주의사항 (Precautions during Operation)`, blk('', dtable([{ label: 'No.', w: '8%', c: 1, f: (r, j) => j + 1 }, { label: '공정 구분', w: '19%', k: 'name', c: 1 }, { label: '주의사항', k: 'content' }], p.precautions, { pad: 5, padH: 50 }))));
@@ -1241,7 +1246,7 @@ function psDoc(p, extra) {
     P.push(page(p, 's11', `${NO.s11}. 제조 및 품질관리에 필요한 시설 및 기구 (Facilities &amp; Equipment)`, (groups.length ? groups : [{ group: '제조', maker: '', rows: [] }]).map((g, i) => {
       const qc = g.group === '품질관리';
       return blk(`${NO.s11}-${i + 1}. ${qc ? '품질관리(시험)' : g.group} 시설 및 기구${g.maker ? ` — ${qc ? '시험 수행처' : '제조사'} : ${esc(g.maker)}` : ''}`, dtable([{ label: '연번', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '설비 관리번호', w: '11%', k: 'mgmtNo', c: 1 }, { label: '시설 및 기구', w: '23%', k: 'name' }, { label: '규격', w: '16%', k: 'spec', c: 1 }, { label: '수량', w: '6%', k: 'qty', c: 1 }, { label: '구비', w: '6%', c: 1, f: r => r.have === '아니오' ? '✕' : '○' }, { label: qc ? '사용 시험항목' : '용도 / 사용 공정', w: '17%', k: 'use' }, { label: '비고', k: 'note' }], g.rows));
-    }).join('') + ((p.equipment || []).length ? '' : `<div class="note">※ 시설·기기: ${esc(p.toc['11'] || '근거 문서(제조업자 설비 목록 등) 이름·번호를 목차에 기재')}</div>`)));
+    }).join('') + ((p.equipment || []).length ? '' : `<div class="note">※ 시설·기기: ${esc(tocRef(p, '11') || '근거 문서(제조업자 설비 목록 등) 이름·번호를 목차에 기재')}</div>`)));
   }
   // 보관조건·사용기한
   P.push(page(p, 's12', `${NO.s12}. 보관조건 및 사용기한 (Storage Condition &amp; Shelf Life)`,
