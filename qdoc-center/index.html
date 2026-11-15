@@ -1,0 +1,1467 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>품질문서 발행센터</title>
+<style>
+:root{--navy:#2b4a7e;--navy2:#1d2f52;--bg:#f3f5f8;--card:#fff;--ink:#1b2330;--ink2:#4a5463;--muted:#7a8494;--line:#dde3ea;
+  --good:#2f7d4f;--warn:#9a5b00;--bad:#c0392b;--goodbg:#e7f3eb;--warnbg:#fdf1dc;--badbg:#fbe9e7;--sel:#eaf0f9}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","맑은 고딕",system-ui,sans-serif;font-size:13px}
+header.top{background:var(--navy2);color:#fff;display:flex;align-items:center;gap:18px;padding:0 18px;height:52px;position:sticky;top:0;z-index:20}
+.brand{white-space:nowrap}.brand b{font-size:16px;letter-spacing:.3px}.brand span{font-size:11.5px;opacity:.72;margin-left:8px}
+nav.tabs{display:flex;gap:2px;height:100%}
+nav.tabs button{background:none;border:0;color:#c3cfe3;font:inherit;font-size:13.5px;padding:0 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:#fff;border-bottom-color:#86b4ff;font-weight:700}
+.top .right{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:12px}
+.saved{opacity:.7;margin-right:6px;white-space:nowrap}
+.btn{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 11px;font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:#9fb2cc}.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.btn.sm{padding:2px 8px;font-size:12px}.btn.danger{color:var(--bad)}
+main{padding:18px;max-width:1500px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.card h3 .r{margin-left:auto;font-weight:400}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer}
+.kpi:hover{border-color:#9fb2cc}
+.kpi .n{font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--ink2);margin-top:4px;font-weight:700}.kpi .s{color:var(--muted);font-size:11.5px;margin-top:3px}
+.st{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:10px;white-space:nowrap}
+.st.good{background:var(--goodbg);color:var(--good)}.st.warn{background:var(--warnbg);color:var(--warn)}.st.bad{background:var(--badbg);color:var(--bad)}.st.mute{background:#eef1f5;color:var(--ink2)}
+table.list{width:100%;border-collapse:collapse}
+table.list th,table.list td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.list th{font-size:12px;color:var(--ink2);font-weight:700;background:#f8fafc}
+table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:var(--sel)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.split{display:grid;grid-template-columns:265px 1fr;gap:14px;align-items:start}
+.side{position:sticky;top:66px;max-height:calc(100vh - 80px);overflow:auto}
+.plist .it{padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
+.plist .it:hover{background:var(--sel)}.plist .it.on{background:var(--sel);border-color:#b9cbe6}
+.plist .it .c{font-size:11.5px;color:var(--muted)}.plist .it .nm{font-weight:700;margin:1px 0 3px;line-height:1.3}
+.secnav .s{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px;border-radius:7px;cursor:pointer;font-size:12.5px}
+.secnav .s:hover{background:var(--sel)}.secnav .s.on{background:var(--navy);color:#fff}
+.dot{min-width:20px;height:18px;border-radius:9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.dot.bad{background:var(--bad);color:#fff}.dot.warn{background:#f3c46a;color:#4d3200}.dot.good{background:var(--goodbg);color:var(--good)}
+.form{display:grid;grid-template-columns:140px 1fr 140px 1fr;gap:6px 10px;align-items:center}
+.form label{font-size:12px;color:var(--ink2);font-weight:700}
+.form .w3{grid-column:span 3}
+input,textarea,select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%;background:#fff;color:var(--ink)}
+input[type=checkbox]{width:auto}
+textarea{resize:vertical;min-height:54px;line-height:1.45}
+input:focus,textarea:focus,select:focus{outline:2px solid #9cc0ff;border-color:#6d9be0}
+.inl{display:flex;gap:6px;align-items:center}
+table.ed{width:100%;border-collapse:collapse;table-layout:fixed}
+table.ed th{font-size:11.5px;background:#f1f5fa;color:var(--ink2);padding:5px;border:1px solid var(--line);text-align:center}
+table.ed td{border:1px solid var(--line);padding:1px;vertical-align:top}
+table.ed td input,table.ed td textarea,table.ed td select{border:0;border-radius:0;padding:4px 5px;min-height:0}
+table.ed td textarea{min-height:30px}
+table.ed td.no{text-align:center;color:var(--muted);font-size:11.5px;vertical-align:middle}
+table.ed td.act{text-align:center;white-space:nowrap;vertical-align:middle}
+table.ed td.act .btn{padding:1px 6px}
+.edfoot{display:flex;gap:8px;align-items:center;margin-top:6px;color:var(--muted);font-size:11.5px}
+.sub{font-weight:800;color:var(--navy);margin:18px 0 7px;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub:first-child{margin-top:0}
+.hint{color:var(--muted);font-size:11.5px;font-weight:400}
+.checks .row{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.checks .row:last-child{border:0}.checks .row .m{color:var(--muted)}
+.checks .row a{color:var(--navy);cursor:pointer;text-decoration:underline}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar .ttl{font-size:16px;font-weight:800;margin-right:auto;line-height:1.3}
+.toolbar .ttl small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.empty{color:var(--muted);padding:22px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(15,23,40,.45);z-index:50;display:flex;align-items:center;justify-content:center}
+.modal .box{background:#fff;border-radius:12px;padding:18px;width:min(520px,92vw)}
+.modal .box h4{margin:0 0 10px}
+.funcbox{background:#f5f8fd;border:1px solid #cfdcef;border-radius:8px;padding:9px 11px;margin-top:6px;font-size:12.5px;line-height:1.6}
+.funcbox .fi{border-bottom:1px dashed #cfdcef;padding:4px 0}.funcbox .fi:last-child{border:0}
+.sugwrap{position:relative}
+.sugg{position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1px solid #b9cbe6;border-radius:8px;box-shadow:0 8px 24px rgba(20,35,60,.16);max-height:320px;overflow:auto;z-index:40}
+.sugg .si{padding:7px 10px;cursor:pointer;border-bottom:1px solid #eef2f7;font-size:12.5px}
+.sugg .si:hover,.sugg .si.on{background:var(--sel)}
+.sugg mark{background:#ffe48a;color:inherit;padding:0 1px;border-radius:2px}
+.sugg .sh{position:sticky;top:0;background:#f1f5fa;color:var(--ink2);font-size:11px;font-weight:700;padding:4px 10px;border-bottom:1px solid #e2e8f0}
+.sugg code{font-family:Consolas,monospace;background:#eef3fb;color:var(--navy);padding:0 5px;border-radius:4px;font-size:12px}
+.pill{display:inline-block;background:#eef1f5;border-radius:10px;padding:0 7px;font-size:11.5px;color:var(--ink2);margin-left:4px}
+.filt{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.filt input,.filt select{width:auto;min-width:200px}
+#preview{position:fixed;inset:0;background:#dfe4ec;z-index:60;overflow:auto}
+#preview .pbar{position:sticky;top:0;background:var(--navy2);color:#fff;padding:9px 16px;display:flex;gap:8px;align-items:center;z-index:2}
+#preview .pbar b{margin-right:auto}
+/* 알림 · 확인 창 */
+.qn-layer{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:90;display:flex;flex-direction:column;gap:8px;max-width:min(420px,calc(100vw - 32px))}
+.qn{display:flex;gap:10px;align-items:flex-start;background:var(--navy2);color:#fff;border-radius:9px;padding:10px 12px;box-shadow:0 8px 24px rgba(15,23,40,.28);font-size:12.5px;line-height:1.5}
+.qn.bad{background:#7d231a}.qn.warn{background:#6b4300}.qn.good{background:#1f5a38}
+.qn .qn-m{flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.qn .qn-x{background:none;border:0;color:inherit;font-size:16px;line-height:1;cursor:pointer;opacity:.8;padding:0 2px}
+.modal.qd{z-index:95}.modal.qd .box{display:flex;flex-direction:column}
+.qd-msg{white-space:pre-wrap;line-height:1.6;font-size:13px}
+.qd-bar{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.btn.pri.red{background:var(--bad);border-color:var(--bad)}
+.btn:focus-visible,nav.tabs button:focus-visible{outline:2px solid #86b4ff;outline-offset:1px}
+.cloudnote{background:#fdf1dc;color:#6b4300;border:1px solid #f0d49c;border-radius:8px;padding:8px 12px;margin:12px 18px 0;font-size:12.5px}
+.cloudnote[hidden]{display:none}
+@media (max-width:1180px){.brand span,.saved{display:none}header.top{gap:10px;overflow-x:auto}}
+@media (max-width:1050px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.side{position:static;max-height:none}.form{grid-template-columns:110px 1fr}.form .w3{grid-column:auto}nav.tabs button{padding:0 8px}}
+
+/* ===== 인쇄 문서 ===== */
+.doc{font-family:"Malgun Gothic","맑은 고딕",sans-serif;color:#111;font-size:8.4pt}
+.doc .page{width:210mm;height:297mm;margin:14px auto;background:#fff;padding:10mm 11mm 14mm;position:relative;box-shadow:0 1px 5px rgba(0,0,0,.2);overflow:hidden}
+.doc table{width:100%;border-collapse:collapse;table-layout:fixed}
+.doc td,.doc th{border:1px solid #7d8794;padding:2px 4px;vertical-align:middle;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35}
+.doc th{background:#dce8f5;font-weight:700;text-align:center}
+.doc td.c{text-align:center}.doc .pre{white-space:pre-wrap}
+.doc .bar{background:#2b4a7e;color:#fff;font-weight:700;padding:4px 7px;font-size:9.5pt;margin-top:9px;border:1px solid #2b4a7e}
+.doc .bar.center{text-align:center}
+.doc .ph td{border-color:#9aa3ae}.doc .ph .phl{text-align:center;font-weight:700;font-size:8pt}
+.doc .ph .pht{text-align:center;font-weight:800;font-size:11.5pt;height:24px}.doc .ph .phs{text-align:center;font-size:7pt;color:#666;height:13px}
+.doc .ph .phm{text-align:center;font-size:6.8pt;color:#333;height:12px;background:#f6f8fb}
+.doc .ph .phn{text-align:center;height:17px}.doc .ph .phe{text-align:center;font-size:7pt;color:#666;height:13px}
+.doc .foot{position:absolute;left:11mm;right:11mm;bottom:6mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#333}
+.doc .note{font-size:7.6pt;color:#333;margin-top:3px}
+.doc tbody.data td{height:19px}
+.doc .h22 td,.doc .h22 th{height:22px}.doc .h26 td,.doc .h26 th{height:26px}.doc .h30 td,.doc .h30 th{height:30px}.doc .h34 td{height:34px}
+.doc .logo .l1{font-family:"Arial Black",Arial,sans-serif;font-weight:900;font-size:25pt;letter-spacing:6px;line-height:1}
+.doc .logo .l2{font-size:7.5pt;letter-spacing:4.5px;margin-top:2px}
+.doc .cov-top{display:flex;align-items:center;justify-content:space-between;margin:6mm 0 7mm}
+.doc .cov-title{text-align:center;font-size:21pt;font-weight:800;letter-spacing:6px;line-height:1.3;margin-right:10mm}
+.doc .cov-title span{letter-spacing:0;font-size:17pt}
+.doc .page.att{padding:9mm 9mm 12mm}
+.doc .att .cap{font-size:8pt;color:#333;margin-bottom:3mm;display:flex;justify-content:space-between}
+.doc .att img{display:block;width:100%;height:262mm;object-fit:contain;border:1px solid #ccd}
+/* 성적서 */
+.doc .coa{font-size:8.6pt}
+.doc .coa .head{display:flex;align-items:center;margin-bottom:8px}
+.doc .coa .title{flex:1;text-align:center;font-size:17pt;font-weight:800;letter-spacing:1px;padding-right:38mm}
+.doc .coa td,.doc .coa th{text-align:center}
+.doc .coa th{background:#f3f6fa}
+.doc .coa .tests th{background:#dce8f5}
+.doc .coa .box{border:1.6px solid #222}
+.doc .coa .mt{margin-top:6px}
+.doc .coa .info td,.doc .coa .info th{height:22px}
+.doc .coa .tests td{height:20px}
+.doc .coa.dense .tests td{height:17px;font-size:7.8pt;padding:1px 3px}
+.doc .coa .left{text-align:left}
+.doc .coa .sign td{height:42px}
+.doc .coa .big{font-size:12pt;font-weight:800}
+.doc .coa-ph{font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #222;padding:0 0 3px;margin-bottom:6px}
+.doc .page:not(.cont) > .coa-ph{display:none}
+.doc .coa tbody.data td{height:20px}
+@media print{
+  @page{size:A4;margin:0}
+  body>*:not(#preview){display:none!important}
+  html,body{background:#fff}
+  #preview{position:static;overflow:visible;background:#fff}
+  #preview .pbar{display:none}
+  .doc .page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><b>품질문서 발행센터</b><span>제품표준서 · 완제품성적서</span></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="right">
+    <span class="saved" id="saved"></span>
+    <button class="btn ghost sm" id="bkSave" title="모든 데이터를 JSON 파일로 저장">백업 저장</button>
+    <button class="btn ghost sm" id="bkLoad" title="백업 JSON 불러오기">불러오기</button>
+    <input type="file" id="bkFile" accept=".json" hidden>
+  </div>
+</header>
+<div class="cloudnote" id="cloudNote" hidden></div>
+<main id="main"></main>
+
+<script src="js/platform.js"></script>
+<script src="data/seed.js"></script>
+<script src="data/makers.js"></script>
+<script src="data/items.js"></script>
+<script src="data/funcdocs.js"></script>
+<script>
+'use strict';
+/* ================= 기본 도구 ================= */
+const LS = 'qdoc-center-v1';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nl = s => esc(s).replace(/\n/g, '<br>');
+const uid = p => p + '-' + Math.random().toString(36).slice(2, 9);
+const norm = s => String(s || '').replace(/[^0-9A-Za-z가-힣]/g, '').toLowerCase();
+const num = s => { const v = parseFloat(String(s ?? '').replace(/,/g, '')); return isNaN(v) ? null : v; };
+const pad2 = n => String(n).padStart(2, '0');
+const fmt = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const today = () => fmt(new Date());
+const nowStr = () => { const d = new Date(); return `${fmt(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+function addMonths(ds, m) { if (!/^\d{4}-\d{2}-\d{2}$/.test(ds || '') || !m) return ''; const [y, mo, da] = ds.split('-').map(Number); const t = new Date(y, mo - 1 + Number(m), da); t.setDate(t.getDate() - 1); return fmt(t); }
+function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+const FD = (window.FUNC_DOCS && Array.isArray(window.FUNC_DOCS.items)) ? window.FUNC_DOCS : { items: [], updatedAt: '', missing: true };
+const FDmap = new Map(FD.items.map(it => [it.seq, it]));
+const FDname = new Map(); FD.items.forEach(it => { const k = norm(it.name); if (!FDname.has(k)) FDname.set(k, []); FDname.get(k).push(it); });
+
+/* ================= 저장소 ================= */
+let S = null; // 모든 선언이 끝난 뒤 맨 아래에서 load()
+function load() {
+  let d = null;
+  if (Cloud.art) {
+    // 공유 페이지: 제품·성적서·발행 이력은 공동 저장소에서 받음. 이 브라우저에는 「자료로 작성」 작업 중인 것만.
+    d = { products: [], coas: [], issues: [] };
+    try { const t = localStorage.getItem(LS + '-ingest'); if (t) d.ingest = JSON.parse(t); } catch (e) { }
+    return d;
+  }
+  try { const t = localStorage.getItem(LS); if (t) d = JSON.parse(t); } catch (e) { }
+  if (!d) d = JSON.parse(JSON.stringify(window.SEED || { products: [], coas: [], issues: [] }));
+  d.products = d.products || []; d.coas = d.coas || []; d.issues = d.issues || [];
+  d.products.forEach(fixProduct); d.coas.forEach(fixCoa);
+  return d;
+}
+function fixProduct(p) {
+  const needUp = !p.v2m;
+  const P = newProduct(); for (const k in P) if (p[k] === undefined && !(needUp && (k === 'finishedSpecs' || k === 'precautions'))) p[k] = P[k];
+  p.components.forEach(c => { const C = newComp(''); for (const k in C) if (c[k] === undefined) c[k] = C[k]; c.functional = (c.functional === true || c.functional === '예') ? '예' : '아니오'; });
+  p.funcLinks = p.funcLinks || []; p.funcExclude = p.funcExclude || []; p.funcCache = p.funcCache || {};
+  funcLinks(p).forEach(it => { if (!it.missing) p.funcCache[it.seq] = it; });
+  if (needUp) upgradeV2(p);
+  if (p.toc) for (const k in p.toc) if (p.toc[k] === '제조사 자료 필요') p.toc[k] = ''; // 예전 자동 작성 문구는 참조 문서가 아님
+}
+/* ---------- 양식 v2 (한국콜마·코스맥스·한국화장품제조 비교 반영) ---------- */
+const STAGE = ['칭량·제조', '충전', '포장'];
+const APPLY = ['벌크 시험자료 적용', '입고검사', '위탁시험 / 제조사', '완제품 시험'];
+const CAT16 = [['타르색소', '시행규칙 제19조②3 가'], ['금박', '제19조②3 나'], ['샴푸와 린스에 들어 있는 인산염의 종류', '제19조②3 다'], ['과일산 (AHA)', '제19조②3 라'], ['기능성화장품의 효능·효과를 나타내는 원료 (주성분)', '제19조②3 마'], ['사용 한도가 고시된 원료 (보존제 등, 안전기준 [별표 2])', '제19조②3 바'], ['성분명을 제품 명칭의 일부로 사용한 경우 그 성분', '제19조④3'], ['인체 세포·조직 배양액', '제19조④4'], ['천연·유기농으로 표시·광고하는 경우 그 원료', '제19조④5'], ['레티놀 (비타민A) 및 그 유도체', '제12조11 가 (0.5%↑ 안정성 자료)'], ['아스코빅애시드 (비타민C) 및 그 유도체', '제12조11 나'], ['토코페롤 (비타민E)', '제12조11 다'], ['과산화화합물', '제12조11 라'], ['효소', '제12조11 마'], ['착향제 알레르기 유발성분', '알레르기 유발성분 표시 규정'], ['영유아·어린이 사용 표시 시 보존제', '제19조④8']];
+function catNo(cat) {
+  const s = String(cat || '');
+  const R = [[/타르|색소/, 1], [/금박/, 2], [/인산염/, 3], [/AHA|과일산|하이드록시애시드/, 4], [/주성분|기능성/, 5], [/보존제|사용 ?한도|사용상 제한|살리실/, 6], [/명칭|제품명/, 7], [/세포|배양액/, 8], [/유기농|천연/, 9], [/레티놀/, 10], [/아스코빅|비타민C/, 11], [/토코페롤|비타민E/, 12], [/과산화/, 13], [/효소/, 14], [/알레르기|착향/, 15], [/영유아|어린이/, 16]];
+  const r = R.find(([re]) => re.test(s)); return r ? r[1] : 0;
+}
+function deriveFinished(f) {
+  const t = f.item || '';
+  if (!f.stage) f.stage = /표시|포장사양|포장상태|외관|자재/.test(t) ? '완제품' : '충전품';
+  if (!f.apply) f.apply = /특정세균|병원성|함량|확인시험/.test(t) ? '위탁시험 / 제조사' : /내용량|이물|표시|포장|외관/.test(t) ? '입고검사' : '벌크 시험자료 적용';
+  if (!f.basis) f.basis = /기능성/.test(f.method || '') ? '보고(심사) 기준' : /안전기준/.test(f.method || '') ? '화장품 안전기준 등에 관한 규정' : /표시/.test(t) ? '화장품법 제10조' : '';
+}
+function upgradeV2(p) {
+  const lines = String(p.type || '').split('\n').map(s => s.trim()).filter(Boolean);
+  if (!p.typeClass) p.typeClass = lines.find(l => /제품류/.test(l)) || '';
+  if (!p.typeDiv) p.typeDiv = isFunctional(p) || /기능성/.test(p.type) ? '기능성화장품' : '화장품';
+  if (!p.funcClass) { const fl = lines.find(l => /기능성/.test(l)) || ''; p.funcClass = /미백/.test(fl) && /주름/.test(fl) ? '미백 + 주름개선' : /미백/.test(fl) ? '미백' : /주름/.test(fl) ? '주름개선' : /자외선/.test(fl) ? '자외선 차단' : ''; }
+  (p.revisions || []).forEach(r => { if (r.effDate === undefined) r.effDate = r.date; if (r.reason === undefined) r.reason = /신규|제정/.test(r.content) ? '신규 제정' : ''; });
+  (p.finishedSpecs || []).forEach(deriveFinished);
+  (p.components || []).forEach(c => (c.bulkSpecs || []).forEach(b => { if (!b.specType) b.specType = /함량|확인|기능성/.test(b.item + b.method) ? '허가 규격' : '자가 규격'; if (!b.freq) b.freq = '매 배치'; if (b.basis === undefined) b.basis = (String(b.method).match(/「[^」]+」/) || [''])[0]; }));
+  if (p.scope === '책임판매' || p.scope === '제조업자' || !p.scope) p.scope = '전체';
+  p.finishedSpecs = p.finishedSpecs || []; p.precautions = p.precautions || [];
+  p.v2m = true;
+}
+const typeLine = p => [p.typeDiv, p.typeClass, p.typeSub].filter(Boolean).join(' / ') || String(p.type || '').split('\n')[0];
+function fixCoa(c) {
+  c.lots = c.lots || []; c.results = c.results || []; c.retain = c.retain || { qty: '', location: '', until: '', mode: '사용기한' };
+  c.sign = c.sign || { writer: '', reviewer: '', approver: '' }; c.release = c.release || { status: '', approver: '', date: '' }; c.psRef = c.psRef || { no: '', rev: '' };
+}
+let saveT;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    if (Cloud.usesLocal()) {
+      try { localStorage.setItem(LS, JSON.stringify(S)); if (!Cloud.art) $('#saved').textContent = '저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+      catch (e) { $('#saved').textContent = '저장 실패: ' + e.message; }
+    } else {
+      try { if (S.ingest) localStorage.setItem(LS + '-ingest', JSON.stringify(S.ingest)); else localStorage.removeItem(LS + '-ingest'); } catch (e) { }
+    }
+    Cloud.queue();
+  }, 250);
+}
+/* 공동 저장소에서 다른 사람이 고친 내용 반영 — 입력 중이면 칸을 벗어날 때 다시 그림 */
+let rrT = 0, rrWait = false, usedFallback = false;
+function rerenderSoon() {
+  clearTimeout(rrT);
+  rrT = setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.closest && a.closest('#main') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) {
+      if (!rrWait) { rrWait = true; a.addEventListener('blur', () => { rrWait = false; rerenderSoon(); }, { once: true }); }
+      return;
+    }
+    render();
+  }, 120);
+}
+function cloudHooks() {
+  return {
+    normalize(coll, d) { if (coll === 'products') fixProduct(d); else if (coll === 'coas') fixCoa(d); return d; },
+    items: coll => S[coll] || [],
+    apply(coll, changes) {
+      const arr = S[coll] = S[coll] || [];
+      changes.forEach(ch => {
+        const i = arr.findIndex(x => x.id === ch.id);
+        if (ch.type === 'removed') { if (i >= 0) arr.splice(i, 1); return; }
+        if (i >= 0) { if (ch.s && JSON.stringify(arr[i]) === JSON.stringify(ch.data)) return; arr[i] = ch.data; } else arr.push(ch.data);
+      });
+      if (coll === 'issues') arr.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+      rerenderSoon();
+    },
+    firstSync() {
+      // 늦게 연결됐으면 임시로 띄운 이 브라우저 자료는 버리고 공동 저장소 것만
+      if (usedFallback) { ['products', 'coas', 'issues'].forEach(c => { S[c] = (S[c] || []).filter(x => Cloud.last[c].has(x.id)); }); usedFallback = false; }
+      rerenderSoon();
+    },
+    fallback() {
+      // 공동 저장소를 못 쓰면 이 브라우저 저장소(+예시)로
+      if (S.products.length || S.coas.length) return;
+      usedFallback = true;
+      let d = null; try { const t = localStorage.getItem(LS); if (t) d = JSON.parse(t); } catch (e) { }
+      if (!d) d = JSON.parse(JSON.stringify(window.SEED || { products: [], coas: [], issues: [] }));
+      S.products = d.products || []; S.coas = d.coas || []; S.issues = d.issues || [];
+      S.products.forEach(fixProduct); S.coas.forEach(fixCoa); render();
+    },
+    status(m, text) {
+      $('#saved').textContent = text;
+      const n = $('#cloudNote');
+      const msg = { alone: '공동 저장소를 쓸 수 없어 이 브라우저에만 저장됩니다 (claude.ai 로그인 필요). 다른 사람에게는 보이지 않습니다.', slow: '공동 저장소가 응답하지 않아 이 브라우저에 임시로 보관합니다. 잠시 뒤 새로고침해 주세요.', readonly: '보기 권한으로 열었습니다. 고친 내용은 공동 저장소에 저장되지 않습니다.', error: '공동 저장소에 저장하지 못했습니다' + text.replace(/^[^—]*/, ' ') }[m];
+      n.hidden = !msg; if (msg) n.textContent = msg;
+    }
+  };
+}
+const V = { tab: 'dash', pid: null, sec: 's1', cid: null, fq: '', cf: '' };
+function changed() { save(); if (V.tab === 'ps') refreshPS(); if (V.tab === 'coa') refreshCoa(); }
+const prod = id => S.products.find(p => p.id === id);
+
+/* ================= 새 데이터 ================= */
+function newComp(label) { return { id: uid('c'), label, fullName: '', maker: '', batchSize: '', batchUnit: 'kg', makerPsNo: '', functional: '아니오', ingredients: [], process: [], bulkSpecs: [], fullIngredients: [] }; }
+function newProduct() {
+  return {
+    id: uid('p'), code: '', nameKo: '', nameEn: '', nameSub: '', psNo: '', rev: '0', date: today(), author: '',
+    docInfo: '대외비 문서 (Confidential)', effective: '승인 완료 후', nextReview: '변경 발생 시', type: '', weight: '', appearance: '', packUnit: '',
+    makers: [{ type: '화장품제조업자 ①', name: '', role: '' }],
+    seller: { name: '올리브인터내셔널(주)', addr: '서울특별시 서초구 서초대로 398, 14F', role: '품질·안전관리, 시장 출하 및 유통' },
+    approvals: { writer: { name: '', date: '' }, reviewer: { name: '', date: '' }, approver: { name: '', date: '' } },
+    control: '관리본', distribution: [], revisions: [{ rev: '0', date: today(), effDate: today(), author: '품질관리팀', content: '신규 제정', reason: '신규 제정', approver: '' }], toc: {}, tocMode: {},
+    bulkCode: '', typeDiv: '', typeClass: '기초화장용 제품류', typeSub: '', funcClass: '', rinseOff: '아니오',
+    nondisclosure: { applies: '해당 없음', affect: '', nonAffect: '', company: '', person: '', date: '' },
+    packMethod: { lotExp: '', primary: '', secondary: '', outbox: '' },
+    components: [newComp('구성품 ①')], usage: '',
+    labeling: { maker: '', seller: '㈜올리브인터내셔널 / 서울특별시 서초구 서초대로 398, 14층', functionalLabel: '', cautions: '', fullIng: '' },
+    flow: [], yields: [], precautions: ['일반사항', '칭량', '제조', '충전', '포장 (포장작업 시 주의사항)'].map(name => ({ name, content: '' })),
+    rawSpecs: [{ type: '원료', item: '', method: '', criterion: '', note: '' }, { type: '자재(포장재)', item: '', method: '', criterion: '', note: '' }],
+    semiNA: true, semiSpecs: [], finishedSpecs: DEFAULT_FIN.map(([item, criterion, method]) => { const f = { item, sub: '', criterion, method, note: '' }; deriveFinished(f); return f; }),
+    efficacy: { effect: '', actives: '', reviewNo: '', reviewDate: '' }, cautionsCommon: '', cautionsExtra: '',
+    packaging: [], equipment: [],
+    storage: [{ type: '원자재', target: '원료 및 자재', condition: '', maxStorage: '', note: '' }, { type: '벌크제품 ①', target: '', condition: '', maxStorage: '', note: '' }, { type: '완제품', target: '충진·포장 완료품', condition: '', maxStorage: '', note: '' }],
+    shelfLife: { life: '', months: '', basis: '', note: '' }, openLife: { life: '', basis: '', note: '' },
+    attachments: [], funcLinks: [], funcExclude: [], funcCache: {},
+    scope: '전체', makerRef: '', keyIngredients: [], allergenNote: '', v2m: true
+  };
+}
+// 3사 공통 완제품 필수 항목 (양식 v2 7-5)
+const DEFAULT_FIN = [['표시기재사항', '표준품과 동일', '자재 표준품과 비교'], ['외관 (자재 이상 유무)', '표준품과 동일', '육안 비교'], ['포장사양', '포장 기준서와 일치', '포장 기준서 대조'], ['내용량', '표기량의 97% 이상 (3개 평균)', '중량 측정 (화장품 안전기준 등에 관한 규정)'], ['성상·색상·향취', '표준품과 동일', '육안·후각 비교'], ['pH', '', 'pH 미터'], ['이물', '이물질이 없어야 함', '육안'], ['미생물 (총호기성생균수)', '1,000 cfu/g(mL) 이하', '화장품 안전기준 등에 관한 규정'], ['특정세균 (대장균·녹농균·황색포도상구균)', '불검출', '화장품 안전기준 등에 관한 규정']];
+function nextPsNo() {
+  const y = today().slice(0, 4); let n = 0;
+  S.products.forEach(p => { const m = (p.psNo || '').match(new RegExp('OI-PS-' + y + '-(\\d+)')); if (m) n = Math.max(n, +m[1]); });
+  return `OI-PS-${y}-${String(n + 1).padStart(3, '0')}`;
+}
+function nextTestNo() {
+  const d = today().replace(/-/g, '').slice(2); const n = S.coas.filter(c => (c.testNo || '').startsWith('QC-' + d)).length + 1;
+  return `QC-${d}-${pad2(n)}`;
+}
+/* 7장 완제품 기준 한 줄 → 성적서 한 줄 (결과 적용에 따라 시험자 미리 채움) */
+function coaRowFrom(p, f) {
+  const mk = ((p.components || []).find(k => k.label === f.sub) || (p.components || [])[0] || {}).maker || '제조사';
+  const tester = f.apply === '입고검사' ? '자사 (입고검사)' : f.apply === '위탁시험 / 제조사' ? '위탁시험기관 / 제조사' : f.apply === '벌크 시험자료 적용' ? mk : f.apply === '완제품 시험' ? '자사' : '';
+  return { item: f.item, sub: f.sub, criterion: f.criterion, result: '', judge: '', method: f.method, tester, apply: f.apply || '', note: f.apply === '벌크 시험자료 적용' ? '벌크 시험자료 적용' : '' };
+}
+function newCoa(p) {
+  return {
+    id: uid('coa'), productId: p.id, testNo: nextTestNo(),
+    lots: p.components.map(k => ({ label: k.label, lot: '', maker: k.maker, mfgDate: '' })),
+    expiry: '', receiptDate: today(), labelQty: (p.weight || '').replace(/\n/g, ' / '), sampleQty: '', receiptQty: '',
+    requestDate: today(), samplingDate: '', psRef: { no: p.psNo, rev: p.rev },
+    results: (p.finishedSpecs || []).map(f => coaRowFrom(p, f)),
+    remarks: '', retain: { qty: '', location: '', until: '', mode: '사용기한' }, judgeDate: '', verdict: '',
+    sign: { writer: '', reviewer: '', approver: '' }, release: { status: '', approver: '', date: '' }, createdAt: today()
+  };
+}
+
+/* ================= 기능성 자료 연결 ================= */
+const isFunctional = p => (p.components || []).some(c => c.functional === '예');
+function funcAuto(p) {
+  const names = [p.nameKo, ...(p.components || []).map(c => c.fullName)].map(norm).filter(Boolean);
+  const out = []; names.forEach(n => (FDname.get(n) || []).forEach(it => out.push(it.seq)));
+  return [...new Set(out)];
+}
+function funcLinks(p) {
+  const ex = new Set(p.funcExclude || []);
+  const seqs = new Set(funcAuto(p).filter(s => !ex.has(s))); (p.funcLinks || []).forEach(s => seqs.add(s));
+  return [...seqs].map(s => FDmap.get(s) || (p.funcCache || {})[s] || { seq: s, name: '(자료 목록에 없음)', missing: true });
+}
+const pdfPages = it => (it.pdfs || []).reduce((a, f) => a + f.pages.length, 0);
+
+/* ================= CGMP 점검 ================= */
+function calcQty(c, r) { const b = num(c.batchSize), pc = num(r.pct); return (b != null && pc != null) ? (b * pc / 100).toFixed(4) : ''; }
+/* 품질·안전관리에 영향을 주는 성분 후보 (범주만 표시, 사용한도는 안전기준 [별표 2] 확인) */
+const KEY_RULES = [
+  [/^(페녹시에탄올|벤질알코올|클로페네신|소듐벤조에이트|벤조익애씨드|포타슘소르베이트|소르빅애씨드|디엠디엠하이단토인|데하이드로아세틱애씨드|소듐데하이드로아세테이트)$|파라벤$|이소치아졸리논|아이소싸이아졸리논/, '보존제 (사용상 제한 원료)'],
+  [/^(글라이콜릭|락틱|시트릭|말릭|타타릭|만델릭)애씨드$/, '알파-하이드록시애시드(AHA)'],
+  [/^살리실릭애씨드$|살리실레이트$/, '살리실릭애씨드 및 그 염류'],
+  [/레티놀|레티닐|레티날/, '레티놀(비타민A) 및 유도체'],
+  [/아스코빅|아스코빌/, '아스코빅애씨드(비타민C) 및 유도체'],
+  [/^우레아$/, '사용 한도 원료 (우레아)'],
+  [/^토코페롤$|^토코페릴아세테이트$/, '토코페롤(비타민E)']
+];
+const ALLERGENS = ['아밀신남알', '벤질알코올', '신나밀알코올', '시트랄', '유제놀', '하이드록시시트로넬알', '아이소유제놀', '아밀신나밀알코올', '벤질살리실레이트', '신남알', '쿠마린', '제라니올', '아니스알코올', '벤질신나메이트', '파네솔', '부틸페닐메틸프로피오날', '리날룰', '벤질벤조에이트', '시트로넬올', '헥실신남알', '리모넨', '메틸2-옥티노에이트', '알파-아이소메틸아이오논', '참나무이끼추출물', '나무이끼추출물'];
+function keyCandidates(p) {
+  const comps = p.components || [], single = comps.length === 1;
+  const pctOf = (c, name) => {
+    const src = c.composition || (S.ingest && window.__ingest ? (window.__ingest.model().find(k => k.key === c.label)?.single?.single || []) : []);
+    const hit = src.find(x => norm(x.ko || x.name) === norm(name)); return hit ? String(+(+hit.pct).toFixed(6)) : '';
+  };
+  const out = p.keyIngredients = p.keyIngredients || []; let n = 0;
+  const push = (c, name, cat, pct) => { const comp = single ? '' : c.label; if (out.some(r => r.comp === comp && norm(r.name) === norm(name))) return; out.push({ comp, name, pct: pct || pctOf(c, name), category: cat, note: '' }); n++; };
+  // 기능성 주성분: 8장 '기능성 주성분' 글에서 (예: [1제] 나이아신아마이드 2% / 아데노신 0.04%)
+  String(p.efficacy.actives || '').split('\n').forEach(line => {
+    const lab = (line.match(/^\[([^\]]+)\]/) || [])[1]; const c = comps.find(k => k.label === lab) || comps[0]; if (!c) return;
+    [...line.matchAll(/([가-힣A-Za-z0-9\-\/]+)\s+([\d.]+)\s*%/g)].forEach(m => push(c, m[1], '기능성 주성분', m[2]));
+  });
+  comps.forEach(c => (c.fullIngredients || []).forEach(name => {
+    const r = KEY_RULES.find(([re]) => re.test(name)); if (r) push(c, name, r[1]);
+    if (ALLERGENS.includes(name)) push(c, name, '착향제 알레르기 유발성분 (씻어내는 제품 0.01%·씻어내지 않는 제품 0.001% 초과 시 표시)');
+  }));
+  return n;
+}
+/* 책임판매업자용 점검: 시행규칙 제12조(받은 표준서 보관·제조번호별 품질검사)와 한국콜마 발송본 구성 기준 */
+function psChecksLite(p) {
+  const R = []; const add = (sec, lvl, ok, label, msg = '') => R.push({ sec, lvl, ok: !!ok, label, msg });
+  const comps = p.components || [], fn = isFunctional(p), links = funcLinks(p);
+  add('s1', '필수', p.nameKo, '제품명');
+  add('cover', '필수', p.date, '작성(제·개정)연월일');
+  add('s1', '필수', (p.makers[0] || {}).name || p.labeling.maker, '화장품제조업자 (상호·소재지)');
+  add('s1', '필수', p.usage, '용법·용량');
+  if (fn) add('s8', '필수', p.efficacy.effect, '효능·효과 (기능성화장품)');
+  if (fn) add('s8', '필수', p.efficacy.reviewNo || links.length, '기능성 보고(심사) 번호', '보고서·심사결과통지서 번호');
+  add('s8', '필수', p.cautionsCommon || p.labeling.cautions, '사용할 때의 주의사항');
+  comps.forEach(c => add('s9', '필수', (c.fullIngredients || []).length, `[${c.label || '구성품'}] 전성분`, '전성분 없음'));
+  if (fn) add('s9', '필수', (p.keyIngredients || []).some(k => /주성분/.test(k.category)) || p.efficacy.actives, '기능성 주성분 함량', '품질·안전관리 영향 성분 표에 주성분과 함량');
+  comps.forEach(c => add('s7', '필수', (c.bulkSpecs || []).length, `[${c.label || '구성품'}] 벌크제품 기준 및 시험방법`, '기준 없음'));
+  add('s7', '필수', (p.finishedSpecs || []).length, '완제품 기준 및 시험방법');
+  add('s12', '필수', (p.storage || []).some(s => s.condition), '보관조건');
+  add('s12', '필수', p.shelfLife.life, '사용기한');
+  add('rev', '필수', (p.revisions || []).length, '변경이력');
+  add('s9', '권장', (p.keyIngredients || []).length, '품질·안전관리에 영향을 주는 성분 표', '자료로 작성 시 자동 / 「후보 찾기」');
+  add('s7', '권장', (p.finishedSpecs || []).some(f => /내용량/.test(f.item)), '완제품 기준에 내용량');
+  add('s12', '권장', p.openLife.life, '개봉 후 사용기간');
+  add('cover', '권장', p.makerRef || comps.some(c => c.makerPsNo), '제조업자 제품표준서 번호 (참조 문서)', '처방·공정·설비는 이 문서를 참조');
+  add('cover', '권장', p.approvals.approver.name, '승인자 성명');
+  if (fn) add('s13', '권장', links.some(it => pdfPages(it)) || (p.uploads || []).some(u => u.kind === '기능성보고서') || (p.attachments || []).some(a => /기능성/.test(a.name) && a.no), '기능성 보고서 사본 첨부');
+  add('s13', '권장', (p.uploads || []).some(u => u.kind === '반제품성적서') || (p.attachments || []).some(a => /성적서/.test(a.name)), '반제품(벌크) 성적서 첨부');
+  return R;
+}
+function psChecks(p) { return isLite(p) ? psChecksLite(p) : psChecksFull(p); }
+function psChecksFull(p) {
+  const R = []; const add = (sec, lvl, ok, label, msg = '') => R.push({ sec, lvl, ok: !!ok, label, msg });
+  const comps = p.components || [], fn = isFunctional(p), links = funcLinks(p);
+  add('s1', '필수', p.nameKo, '제품명');
+  add('cover', '필수', p.date, '작성(제·개정)연월일');
+  if (fn) add('s8', '필수', p.efficacy.effect, '효능·효과 (기능성화장품)');
+  add('s8', '필수', p.cautionsCommon || p.labeling.cautions, '사용할 때의 주의사항');
+  if (!comps.length) add('s2', '필수', false, '구성품', '구성품이 없습니다');
+  const toc = p.toc || {}, nd = p.nondisclosure || {};
+  comps.forEach(c => {
+    const ings = c.ingredients || [], L = `[${c.label || '구성품'}] `, ref = !!(c.makerPsNo || toc['2'] || nd.applies === '해당');
+    add('s2', '필수', ings.length && ings.every(r => r.name || r.inci), L + '원료명', ings.length ? '원료명이 빈 행이 있음' : '원료가 없음');
+    const noPct = ings.filter(r => !String(r.pct).trim() || String(r.pct).trim() === '-').length;
+    add('s2', '필수', ings.length && (!noPct || ref), L + '분량(%)', noPct ? `${noPct}행 미기재 — 처방을 못 받으면 '제조사 제품표준서 번호'를 적어 참조로 연결` : '');
+    add('s2', '필수', c.batchSize || ref, L + '제조단위(배치 크기)', '미기재');
+    const noQty = ings.filter(r => !(r.qty || calcQty(c, r))).length;
+    add('s2', '필수', ings.length && (!noQty || ref), L + '제조단위당 기준량', noQty ? `${noQty}행 미기재 (제조단위·분량을 넣으면 자동 계산)` : '');
+    add('s4', '필수', (c.process || []).length || toc['4'], L + '공정별 상세 작업내용', '작업내용 없음 — 제조사에 요청하거나 목차 4번 근거 문서(제조지시 및 기록서 번호)를 기재');
+    add('s7', '필수', (c.bulkSpecs || []).length, L + '벌크제품 기준 및 시험방법', '기준 없음');
+    add('s2', '권장', ings.length && ings.every(r => r.code && r.purpose), L + '원료코드·배합목적');
+  });
+  if (nd.applies === '해당') add('s2', '필수', nd.company && nd.person, '원료 함량 미공개 확인 (제조업자 회사명·책임자)', '미공개 확인서의 제조업자·책임자 미기재');
+  add('s3', '필수', (p.flow || []).length || toc['3'], '제조공정흐름도', '흐름도 없음 — 제조사에 요청하거나 목차 3번 근거 문서를 기재');
+  add('s6', '필수', (p.precautions || []).some(r => String(r.content || '').trim()), '작업 중 주의사항', '내용이 빈 행만 있음');
+  add('s7', '필수', (p.rawSpecs || []).length && p.rawSpecs.every(r => r.criterion || r.doc) || toc['7'], '원자재 기준 및 시험방법', '기준 또는 별도관리 문서(규격서 번호) 미기재');
+  add('s7', '필수', p.semiNA || (p.semiSpecs || []).length, '반제품 기준 (없으면 \'해당 없음\' 표시)');
+  add('s7', '필수', (p.finishedSpecs || []).length, '완제품 기준 및 시험방법');
+  comps.forEach(c => add('s9', '필수', (c.fullIngredients || []).length, `[${c.label || '구성품'}] 전성분`, '전성분 없음'));
+  if (fn) add('s9', '필수', (p.keyIngredients || []).some(k => catNo(k.category) === 5) || p.efficacy.actives, '기능성 주성분 함량', '9장 관리 성분 표에 주성분과 함량');
+  const eq = p.equipment || [], noUse = eq.filter(e => !e.use).length;
+  add('s11', '필수', eq.length && !noUse || (!eq.length && toc['11']), '제조·품질관리 시설 및 기기', eq.length ? `'용도 / 사용 공정' 미기재 ${noUse}건 — 이 제품에 쓰는 설비만 남기고 공정을 적기 (보완사례 15-2)` : '설비 없음 — 제조사에 요청하거나 목차 11번 근거 문서(설비 대장)를 기재');
+  add('s12', '필수', (p.storage || []).length && p.storage.every(s => s.condition), '보관조건');
+  add('s12', '필수', p.shelfLife.life, '사용기한 또는 개봉 후 사용기간');
+  add('rev', '필수', (p.revisions || []).length, '변경이력');
+  add('cover', '권장', (p.distribution || []).length, '배포처(사본 배포 기록)');
+  add('cover', '권장', p.approvals.approver.name, '승인자 성명');
+  add('s1', '권장', p.appearance && p.packUnit, '성상·포장단위');
+  if (fn) add('s8', '권장', p.efficacy.reviewNo || links.length, '기능성 보고(심사) 번호', '의약품안전나라 자료와 연결되지 않음');
+  if (fn) add('s13', '권장', links.some(it => pdfPages(it)) || (p.uploads || []).some(u => u.kind === '기능성보고서') || (p.attachments || []).some(a => /기능성/.test(a.name) && a.no), '기능성 보고서 원본(PDF) 첨부','공개 정보만 연결됨 — 로그인해 받은 보고서 PDF를 기능성자료\\보고서에 넣고 갱신');
+  add('s10', '권장', (p.packaging || []).length && p.packaging.every(r => r.material && r.code), '포장재 자재코드·재질');
+  add('s11', '권장', eq.length && eq.every(e => e.mgmtNo), '설비 관리번호');
+  add('s12', '권장', (p.storage || []).filter(s => /벌크/.test(s.type)).every(s => s.maxStorage), '벌크제품 최대 보관기간');
+  add('s12', '권장', p.shelfLife.basis, '사용기한 기산점');
+  add('s5', '권장', (p.yields || []).length && p.yields.every(y => y.criteria) || toc['5'], '수율관리기준 (빈칸 없음)');
+  add('s1', '권장', p.typeClass, '유형 (화장품법 시행규칙 [별표 3] 유형)');
+  add('s7', '권장', (p.finishedSpecs || []).length && p.finishedSpecs.every(f => f.apply), '완제품 기준 — 결과 적용 (벌크 인용 / 입고검사 / 위탁)', '결과 적용 칸이 빈 항목 있음');
+  add('s9', '권장', (p.keyIngredients || []).length, '품질·안전관리에 영향을 주는 성분 (16구분)', '「후보 자동 찾기」');
+  add('s10', '권장', Object.values(p.packMethod || {}).some(v => String(v).trim()), '포장 방법 (LOT·사용기한 표시 위치 등)');
+  add('s13', '권장', (p.attachments || []).length || links.length || (p.uploads || []).length, '별첨 목록');
+  return R;
+}
+function coaChecks(c) {
+  const R = []; const add = (lvl, ok, label, msg = '') => R.push({ lvl, ok: !!ok, label, msg });
+  add('필수', c.lots.length && c.lots.every(l => l.lot), '제조번호(LOT)', '구성품별 LOT 미기재');
+  const miss = c.results.filter(r => !String(r.result).trim()).length;
+  add('필수', c.results.length && !miss, '시험결과', miss ? `${miss}항목 미기재` : '시험항목 없음');
+  const nj = c.results.filter(r => !r.judge).length;
+  add('필수', c.results.length && !nj, '항목별 판정', nj ? `${nj}항목 미판정` : '');
+  add('필수', c.verdict, '최종 판정 (적합/부적합/보류)', '제20조⑥');
+  add('필수', c.sign.reviewer || c.sign.approver, '시험기록 검토 서명', '제20조⑥ 시험기록 검토 후 판정');
+  if (c.verdict === '적합') add('필수', c.release.status === '출고 승인' && c.release.approver && c.release.date, '출고(시장출하) 승인', '제19조② 품질부서 책임자 출고 승인');
+  add('권장', c.testNo, '시험번호'); add('권장', c.requestDate, '시험의뢰일'); add('권장', c.samplingDate, '검체채취일');
+  add('권장', c.lots.every(l => l.mfgDate), '제조일(구성품별)'); add('권장', c.expiry, '사용기한');
+  add('권장', c.results.every(r => r.tester), '항목별 시험자(자사/제조사)');
+  add('권장', c.retain.qty, '보관용 검체 수량', '제21조③');
+  const p = prod(c.productId);
+  if (p) {
+    const fs = p.finishedSpecs || [];
+    const diff = c.results.filter(r => { const f = fs.find(f => f.item === r.item && (f.sub || '') === (r.sub || '')); return !f || f.criterion !== r.criterion; }).length;
+    add('권장', !diff, '제품표준서 7장 완제품 기준과 일치', diff ? `${diff}항목이 표준서와 다름` : '');
+  }
+  return R;
+}
+function coaStatus(c) {
+  const req = coaChecks(c).filter(x => x.lvl === '필수' && !x.ok && !/출고/.test(x.label));
+  if (req.length) return ['작성 중', 'mute'];
+  if (c.verdict === '부적합') return ['부적합', 'bad'];
+  if (c.verdict === '보류') return ['보류', 'warn'];
+  if (c.release.status === '출고 승인' && c.release.approver && c.release.date) return ['출고 승인', 'good'];
+  return ['출고 승인 대기', 'warn'];
+}
+const chip = (t, k) => `<span class="st ${k}">${{ good: '✓', warn: '!', bad: '✕', mute: '•' }[k]} ${esc(t)}</span>`;
+function suggestVerdict(c) {
+  if (!c.results.length) return '';
+  if (c.results.some(r => r.judge === '부적합')) return '부적합';
+  if (c.results.every(r => r.judge === '적합')) return '적합';
+  return '';
+}
+
+/* ================= 입력 도구 ================= */
+function inp(obj, key, { type = 'text', ph = '', rows = 0, opts = null, onch = null } = {}) {
+  let e;
+  if (opts) { e = document.createElement('select'); e.innerHTML = opts.map(o => `<option value="${esc(o)}">${esc(o || '—')}</option>`).join(''); e.value = obj[key] ?? ''; }
+  else if (rows) { e = document.createElement('textarea'); e.rows = rows; e.value = obj[key] ?? ''; }
+  else { e = document.createElement('input'); e.type = type; e.value = obj[key] ?? ''; }
+  if (ph) e.placeholder = ph;
+  e.addEventListener(opts || type === 'date' ? 'change' : 'input', () => { obj[key] = e.value; changed(); onch && onch(e.value, e); });
+  if (type === 'date') e.addEventListener('input', () => { obj[key] = e.value; save(); });
+  return e;
+}
+/* 제품명 비슷한 이름 찾기: 의약품안전나라 보고 품목 + 등록된 제품표준서 */
+function productNames() {
+  const map = new Map();
+  FD.items.forEach(it => {
+    const base = String(it.name).replace(/\s*\d\s*제$/, '').trim(), k = norm(base), sub = (String(it.name).match(/(\d)\s*제$/) || [])[1];
+    const o = map.get(k) || { name: base, src: '의약품안전나라 보고', date: it.date, parts: [], seqs: [] };
+    if (sub) o.parts.push(sub + '제'); o.seqs.push(it.seq); if ((it.date || '') > (o.date || '')) o.date = it.date; map.set(k, o);
+  });
+  S.products.forEach(p => { const k = norm(p.nameKo); if (!k) return; const o = map.get(k); if (o) { o.src = '등록된 제품표준서 · ' + o.src; o.name = p.nameKo; } else map.set(k, { name: p.nameKo, src: '등록된 제품표준서', date: p.date, parts: [], seqs: [] }); });
+  return [...map.values()].map(o => ({ ...o, type: o.src.startsWith('등록') ? 'ps' : 'report' }));
+}
+/* ERP 품목조회 (data/items.js) — 제품코드·규격·사용기한 */
+const ITEMS = (window.ITEMS && window.ITEMS.items) || [];
+ITEMS.forEach(it => it._k = norm(`${it.b} ${it.n} ${it.c} ${it.bc}`));
+const ASSET_RANK = { '제품': 0, '상품': 1, '반제품': 2, '상품(세트품)': 3 };
+function erpMatches(toks, limit) {
+  return ITEMS.filter(it => toks.every(t => it._k.includes(t)))
+    .sort((a, b) => (ASSET_RANK[a.a] ?? 5) - (ASSET_RANK[b.a] ?? 5) || a.n.length - b.n.length).slice(0, limit)
+    .map(it => ({ type: 'erp', name: it.n, code: it.c, spec: it.s, brand: it.b, vendor: it.v, life: it.life, open: it.open, en: it.en, asset: it.a, cat: it.k }));
+}
+function suggest(input, onPick, { mode = 'name' } = {}) {
+  const wrap = document.createElement('div'); wrap.className = 'sugwrap'; input.parentNode.insertBefore(wrap, input); wrap.appendChild(input);
+  const box = el('<div class="sugg" hidden></div>'); wrap.appendChild(box);
+  let list = [], cur = -1;
+  const pick = o => { box.hidden = true; input.value = mode === 'code' ? (o.code || '') : o.name; input.dispatchEvent(new Event('input')); onPick && onPick(o); };
+  const show = () => {
+    const toks = input.value.trim().split(/\s+/).map(norm).filter(Boolean); if (!toks.length) { box.hidden = true; return; }
+    const erp = erpMatches(toks, mode === 'code' ? 20 : 12).filter(o => o.code !== input.value.trim());
+    const docs = mode === 'code' ? [] : productNames().filter(o => { const k = norm(o.name); return toks.every(t => k.includes(t)) && k !== norm(input.value); })
+      .sort((a, b) => (b.type === 'ps') - (a.type === 'ps') || (b.date || '').localeCompare(a.date || '')).slice(0, 8);
+    list = [...docs.filter(o => o.type === 'ps'), ...erp, ...docs.filter(o => o.type !== 'ps')];
+    if (!list.length) { box.hidden = true; return; }
+    const hi = s => { let h = esc(s); toks.forEach(t => { h = h.replace(new RegExp(t.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*'), 'i'), m => `<mark>${m}</mark>`); }); return h; };
+    const head = { ps: '등록된 제품표준서', erp: `ERP 품목 — 제품코드 (${esc(window.ITEMS?.source || '품목조회 없음')})`, report: '의약품안전나라 기능성 보고 품목' };
+    let last = '';
+    box.innerHTML = list.map((o, i) => {
+      const h = o.type !== last ? `<div class="sh">${head[o.type]}</div>` : ''; last = o.type;
+      const body = o.type === 'erp'
+        ? `<code>${hi(o.code)}</code> <b>${hi(o.name)}</b><span class="hint"> · ${esc([o.spec, o.brand, o.asset, o.life && o.life !== '0' ? `사용기한 ${o.life}개월` : '', o.vendor].filter(Boolean).join(' · '))}</span>`
+        : `<b>${hi(o.name)}</b>${o.parts?.length ? ` <span class="pill">${esc([...new Set(o.parts)].sort().join('·'))}</span>` : ''}<span class="hint"> · ${esc(o.src)}${o.date ? ' · ' + esc(o.date) : ''}</span>`;
+      return `${h}<div class="si ${i === cur ? 'on' : ''}" data-i="${i}">${body}</div>`;
+    }).join('') + `<div class="hint" style="padding:4px 10px">${list.length}건 · ↑↓ Enter로 선택${mode === 'name' ? ' · ERP 품목을 고르면 제품코드도 함께 들어갑니다' : ''}</div>`;
+    box.hidden = false;
+    box.querySelectorAll('.si').forEach(d => d.onmousedown = e => { e.preventDefault(); pick(list[+d.dataset.i]); });
+  };
+  input.setAttribute('autocomplete', 'off');
+  input.addEventListener('input', () => { cur = -1; show(); });
+  input.addEventListener('focus', show);
+  input.addEventListener('blur', () => setTimeout(() => box.hidden = true, 150));
+  input.addEventListener('keydown', e => {
+    if (box.hidden) return;
+    if (e.key === 'ArrowDown') { cur = Math.min(cur + 1, list.length - 1); show(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { cur = Math.max(cur - 1, 0); show(); e.preventDefault(); }
+    else if (e.key === 'Enter' && cur >= 0) { pick(list[cur]); e.preventDefault(); }
+    else if (e.key === 'Escape') box.hidden = true;
+  });
+  return wrap;
+}
+function form(items) {
+  const f = document.createElement('div'); f.className = 'form';
+  items.forEach(([label, node, wide]) => {
+    const l = document.createElement('label'); l.innerHTML = label; f.appendChild(l);
+    const w = document.createElement('div'); if (wide) w.className = 'w3'; w.appendChild(node); f.appendChild(w);
+  });
+  return f;
+}
+function inl(...nodes) { const d = document.createElement('div'); d.className = 'inl'; nodes.forEach(n => d.appendChild(typeof n === 'string' ? el(`<span>${n}</span>`) : n)); return d; }
+function subh(html) { return el(`<div class="sub">${html}</div>`); }
+function button(label, fn, cls = 'btn sm') { const b = document.createElement('button'); b.className = cls; b.innerHTML = label; b.onclick = fn; return b; }
+
+/* 표 편집기: 엑셀 붙여넣기·행 추가/삭제/위로 */
+function tedit(rows, cols, { newRow, numbered = true, onchange, addLabel = '+ 행 추가' } = {}) {
+  const wrap = document.createElement('div');
+  const blank = () => newRow ? newRow() : Object.fromEntries(cols.map(c => [c.k, '']));
+  function render() {
+    const colg = (numbered ? '<col style="width:34px">' : '') + cols.map(c => `<col style="width:${c.w || 'auto'}">`).join('') + '<col style="width:64px">';
+    wrap.innerHTML = `<table class="ed"><colgroup>${colg}</colgroup><thead><tr>${numbered ? '<th>No</th>' : ''}${cols.map(c => `<th>${c.label}</th>`).join('')}<th></th></tr></thead><tbody></tbody></table>
+      <div class="edfoot"><button class="btn sm">${addLabel}</button><span>엑셀에서 여러 칸을 복사해 칸에 붙여넣으면 여러 행이 한 번에 들어갑니다.</span></div>`;
+    const tb = wrap.querySelector('tbody');
+    rows.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      if (numbered) tr.appendChild(el(`<td class="no">${i + 1}</td>`));
+      cols.forEach((c, ci) => {
+        const td = document.createElement('td'); let e;
+        if (c.opts) { e = document.createElement('select'); e.innerHTML = c.opts.map(o => `<option value="${esc(o)}">${esc(o || '—')}</option>`).join(''); e.value = r[c.k] ?? ''; }
+        else if (c.ta) { e = document.createElement('textarea'); e.rows = c.ta; e.value = r[c.k] ?? ''; }
+        else { e = document.createElement('input'); e.value = r[c.k] ?? ''; if (c.calc) e.placeholder = c.calc(r) || ''; if (c.type) e.type = c.type; }
+        e.addEventListener(c.opts ? 'change' : 'input', () => { r[c.k] = e.value; changed(); onchange && onchange(r, c.k, e, tr); });
+        e.addEventListener('paste', ev => {
+          const t = (ev.clipboardData || window.clipboardData).getData('text/plain');
+          if (!/[\t\n]/.test(t.replace(/\r?\n$/, ''))) return;
+          ev.preventDefault(); pasteGrid(t, i, ci);
+        });
+        td.appendChild(e); tr.appendChild(td);
+      });
+      const act = el('<td class="act"><button class="btn sm" title="위로">↑</button> <button class="btn sm danger" title="삭제">✕</button></td>');
+      act.children[0].onclick = () => { if (i > 0) { [rows[i - 1], rows[i]] = [rows[i], rows[i - 1]]; changed(); render(); } };
+      act.children[1].onclick = () => { rows.splice(i, 1); changed(); render(); };
+      tr.appendChild(act); tb.appendChild(tr);
+    });
+    wrap.querySelector('.edfoot .btn').onclick = () => { rows.push(blank()); changed(); render(); tb.lastElementChild?.querySelector('input,textarea,select')?.focus(); };
+  }
+  function pasteGrid(t, r0, c0) {
+    const lines = t.replace(/\r/g, '').replace(/\n$/, '').split('\n').map(l => l.split('\t'));
+    lines.forEach((cells, i) => { const ri = r0 + i; if (!rows[ri]) rows.push(blank()); cells.forEach((v, j) => { const c = cols[c0 + j]; if (c) rows[ri][c.k] = v.trim(); }); });
+    changed(); render();
+  }
+  render(); wrap.rerender = render; return wrap;
+}
+
+/* ================= 탭 ================= */
+const TABS = [['dash', '대시보드'], ['ingest', '자료로 작성'], ['ps', '제품표준서'], ['coa', '완제품성적서'], ['func', '기능성 자료'], ['log', '발행 이력'], ['cgmp', 'CGMP 기준']];
+const RENDER = window.RENDER = window.RENDER || {};
+function go(tab, opt = {}) { Object.assign(V, { tab }, opt); render(); window.scrollTo(0, 0); }
+function render() {
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="${V.tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.t));
+  const m = $('#main'); m.innerHTML = '';
+  Object.assign(RENDER, { dash: renderDash, ps: renderPS, coa: renderCoa, func: renderFunc, log: renderLog });
+  (RENDER[V.tab] || (m => m.appendChild(el('<div class="card empty">불러오는 중…</div>'))))(m);
+}
+
+/* ================= 대시보드 ================= */
+function renderDash(m) {
+  const ps = S.products, pfail = ps.filter(p => psChecks(p).some(x => x.lvl === '필수' && !x.ok));
+  const st = S.coas.map(c => [c, coaStatus(c)]);
+  const wait = st.filter(([, s]) => s[0] === '출고 승인 대기'), draft = st.filter(([, s]) => s[0] === '작성 중');
+  const ym = today().slice(0, 7), month = S.coas.filter(c => (c.judgeDate || '').startsWith(ym));
+  const fnN = ps.filter(isFunctional).length, fnLinked = ps.filter(p => isFunctional(p) && funcLinks(p).length).length;
+  m.appendChild(el(`<div class="kpis">
+    <div class="kpi" data-go="ps"><div class="n">${ps.length}</div><div class="l">제품표준서</div><div class="s">기능성 ${fnN}개 · 의약품안전나라 연결 ${fnLinked}개</div></div>
+    <div class="kpi" data-go="ps"><div class="n" style="color:${pfail.length ? 'var(--bad)' : 'var(--good)'}">${pfail.length}</div><div class="l">필수 항목 미충족 제품</div><div class="s">${pfail.length ? chip('보완 필요', 'bad') : chip('모두 충족', 'good')}</div></div>
+    <div class="kpi" data-go="coa"><div class="n" style="color:${wait.length ? 'var(--warn)' : 'inherit'}">${wait.length}</div><div class="l">출고 승인 대기 성적서</div><div class="s">작성 중 ${draft.length}건 · 제19조② 출고 승인 필요</div></div>
+    <div class="kpi" data-go="coa"><div class="n">${month.length}</div><div class="l">이번 달 판정 성적서</div><div class="s">${ym} · 전체 ${S.coas.length}건</div></div>
+  </div>`));
+  m.querySelectorAll('.kpi').forEach(k => k.onclick = () => go(k.dataset.go));
+  const g = el('<div class="grid2"></div>'); m.appendChild(g);
+  // 확인 필요
+  const todo = [];
+  ps.forEach(p => psChecks(p).filter(x => x.lvl === '필수' && !x.ok).forEach(x => todo.push({ k: 'ps', id: p.id, sec: x.sec, who: p.code || p.nameKo, text: x.label, msg: x.msg })));
+  S.coas.forEach(c => { const p = prod(c.productId); coaChecks(c).filter(x => x.lvl === '필수' && !x.ok).forEach(x => todo.push({ k: 'coa', id: c.id, who: (c.testNo || '성적서') + ' · ' + (p?.code || ''), text: x.label, msg: x.msg })); });
+  const c1 = el(`<div class="card"><h3>확인 필요 (CGMP 필수) <span class="r hint">${todo.length}건 · 누르면 해당 화면으로</span></h3><div class="checks"></div></div>`);
+  const ck = c1.querySelector('.checks');
+  if (!todo.length) ck.innerHTML = '<div class="empty">필수 항목이 모두 채워져 있습니다.</div>';
+  todo.slice(0, 60).forEach(t => { const r = el(`<div class="row">${chip('필수', 'bad')}<div><a>${esc(t.who)}</a> — <b>${esc(t.text)}</b> <span class="m">${esc(t.msg)}</span></div></div>`); r.querySelector('a').onclick = () => t.k === 'ps' ? go('ps', { pid: t.id, sec: t.sec }) : go('coa', { cid: t.id }); ck.appendChild(r); });
+  g.appendChild(c1);
+  const right = el('<div></div>'); g.appendChild(right);
+  const c2 = el(`<div class="card"><h3>최근 성적서 <span class="r"></span></h3><table class="list"><thead><tr><th>시험번호</th><th>제품</th><th>LOT</th><th>판정일</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
+  c2.querySelector('.r').appendChild(button('+ 새 성적서', () => go('coa', { cid: null, newCoa: true })));
+  const tb = c2.querySelector('tbody');
+  [...S.coas].sort((a, b) => (b.judgeDate || b.createdAt || '').localeCompare(a.judgeDate || a.createdAt || '')).slice(0, 8).forEach(c => {
+    const p = prod(c.productId), s = coaStatus(c);
+    const tr = el(`<tr class="click"><td>${esc(c.testNo || '—')}</td><td>${esc(p?.nameKo || '(삭제된 제품)')}</td><td>${esc(c.lots.map(l => l.lot).filter(Boolean).join(', '))}</td><td>${esc(c.judgeDate)}</td><td>${chip(s[0], s[1])}</td></tr>`);
+    tr.onclick = () => go('coa', { cid: c.id }); tb.appendChild(tr);
+  });
+  if (!S.coas.length) tb.innerHTML = '<tr><td colspan="5" class="empty">성적서가 없습니다.</td></tr>';
+  right.appendChild(c2);
+  const c3 = el(`<div class="card"><h3>의약품안전나라 기능성 자료</h3><div style="line-height:1.7">${FD.missing ? chip('자료 파일 없음', 'warn') + ' 기능성자료\\기능성자료_갱신.bat 을 실행하세요.' : `${chip('연결됨', 'good')} 보고 품목 <b>${FD.items.length}</b>건 · 마지막 갱신 ${esc(FD.updatedAt)}<br>보고서 PDF 받은 품목 ${FD.items.filter(pdfPages).length}건`}</div></div>`);
+  c3.appendChild(button('기능성 자료 보기', () => go('func'))); right.appendChild(c3);
+}
+
+/* ================= 제품표준서 ================= */
+const SECS = [['cover', '표지·승인·배포'], ['rev', '개정내역'], ['toc', '목차 (출처)'], ['s1', '1. 제품 개요·표시사항'], ['s2', '2. 원료 성분 및 분량'], ['s3', '3. 제조공정흐름도'], ['s4', '4. 공정별 상세 작업'], ['s5', '5. 이론 생산량·수율'], ['s6', '6. 작업 중 주의사항'], ['s7', '7. 기준 및 시험방법'], ['s8', '8. 효능·효과·주의사항'], ['s9', '9. 전성분'], ['s10', '10. 포장재 규격'], ['s11', '11. 시설 및 기구'], ['s12', '12. 보관조건·사용기한'], ['s13', '13. 별첨']];
+function renderPS(m) {
+  if (!V.pid || !prod(V.pid)) V.pid = S.products[0]?.id || null;
+  const sp = el(`<div class="split"><div class="side"><div class="card"><h3>제품 <span class="r"></span></h3><div class="plist" id="plist"></div></div><div class="card"><h3>항목</h3><div class="secnav" id="secnav"></div></div></div><div id="psmain"></div></div>`);
+  m.appendChild(sp);
+  sp.querySelector('h3 .r').appendChild(button('+ 새 제품', () => { const p = newProduct(); p.psNo = nextPsNo(); p.nameKo = '새 제품'; S.products.push(p); save(); go('ps', { pid: p.id, sec: 's1' }); }));
+  const pm = $('#psmain');
+  if (!V.pid) { pm.appendChild(el('<div class="card empty">제품이 없습니다. 왼쪽 위 「+ 새 제품」을 누르세요.</div>')); refreshPS(); return; }
+  const p = prod(V.pid);
+  const tb = el(`<div class="toolbar"><div class="ttl">${esc(p.nameKo || '(제품명 없음)')}<small>${esc(p.code)} · ${esc(p.psNo)} · Rev.${esc(p.rev)} · ${esc(p.date)}</small></div></div>`);
+  tb.appendChild(button('미리보기 · 발행', () => previewPS(p), 'btn pri'));
+  tb.appendChild(button('개정 (Rev +1)', () => revise(p), 'btn'));
+  tb.appendChild(button('복제', () => { const q = JSON.parse(JSON.stringify(p)); q.id = uid('p'); q.psNo = nextPsNo(); q.nameKo += ' (복제)'; q.rev = '0'; q.revisions = [{ rev: '0', date: today(), author: '품질관리팀', content: '신규 제정', approver: '' }]; S.products.push(q); save(); go('ps', { pid: q.id }); }, 'btn'));
+  tb.appendChild(button('삭제', async () => { if (await askConfirm(`「${p.nameKo}」 제품표준서를 지울까요? 성적서는 남습니다.${Cloud.shared() ? '\n공동 저장소에서도 지워져 다른 사람에게서도 사라집니다.' : ''}`, { ok: '지우기', danger: true })) { S.products = S.products.filter(x => x !== p); save(); go('ps', { pid: null }); } }, 'btn danger'));
+  pm.appendChild(tb);
+  pm.appendChild(el(`<div class="card"><h3>필수 항목 점검 <span class="r hint">${isLite(p) ? '책임판매업자용 — 시행규칙 제12조 · 한국콜마 발송본 구성 기준 (표지에서 범위 변경)' : '제조업자 수준 — CGMP 고시 제15조② · 해설서 권장'}</span></h3><div class="checks" id="pschecks"></div></div>`));
+  const ed = el('<div class="card" id="psed"></div>'); pm.appendChild(ed);
+  if (!secList(p).some(s => s[0] === V.sec)) V.sec = 's1';
+  secEditor(p, V.sec, ed);
+  refreshPS();
+}
+function refreshPS() {
+  const pl = $('#plist'); if (!pl) return;
+  pl.innerHTML = '';
+  S.products.forEach(p => {
+    const f = psChecks(p).filter(x => x.lvl === '필수' && !x.ok).length;
+    const it = el(`<div class="it ${p.id === V.pid ? 'on' : ''}"><div class="c">${esc(p.code || '코드 없음')} · ${esc(p.psNo)} Rev.${esc(p.rev)}</div><div class="nm">${esc(p.nameKo || '(제품명 없음)')}</div>${f ? chip(`필수 ${f}건 미충족`, 'bad') : chip('필수 충족', 'good')}${isFunctional(p) ? ' <span class="pill">기능성</span>' : ''}</div>`);
+    it.onclick = () => go('ps', { pid: p.id }); pl.appendChild(it);
+  });
+  const p = prod(V.pid); const sn = $('#secnav'); if (!p || !sn) return;
+  const ch = psChecks(p); sn.innerHTML = '';
+  secList(p).forEach(([k, l]) => {
+    const r = ch.filter(x => x.sec === k && !x.ok && x.lvl === '필수').length, w = ch.filter(x => x.sec === k && !x.ok && x.lvl === '권장').length;
+    const d = r ? `<span class="dot bad" title="필수 ${r}건">${r}</span>` : w ? `<span class="dot warn" title="권장 ${w}건">${w}</span>` : `<span class="dot good">✓</span>`;
+    const s = el(`<div class="s ${k === V.sec ? 'on' : ''}"><span>${l}</span>${d}</div>`);
+    s.onclick = () => { V.sec = k; const ed = $('#psed'); ed.innerHTML = ''; secEditor(p, k, ed); refreshPS(); }; sn.appendChild(s);
+  });
+  const pc = $('#pschecks'); if (!pc) return;
+  const bad = ch.filter(x => !x.ok).sort((a, b) => (a.lvl === '필수' ? 0 : 1) - (b.lvl === '필수' ? 0 : 1));
+  pc.innerHTML = bad.length ? '' : `<div class="row">${chip('필수·권장 모두 충족', 'good')}</div>`;
+  const reqN = bad.filter(x => x.lvl === '필수').length;
+  if (bad.length) pc.appendChild(el(`<div class="row"><b>필수 ${reqN}건 · 권장 ${bad.length - reqN}건</b>&nbsp;<span class="m">항목 이름을 누르면 해당 칸으로 갑니다.</span></div>`));
+  bad.slice(0, 40).forEach(x => {
+    const r = el(`<div class="row">${chip(x.lvl, x.lvl === '필수' ? 'bad' : 'warn')}<div><a>${esc(secList(p).find(s => s[0] === x.sec)?.[1] || '')}</a> — <b>${esc(x.label)}</b> <span class="m">${esc(x.msg)}</span></div></div>`);
+    r.querySelector('a').onclick = () => { V.sec = x.sec; const ed = $('#psed'); ed.innerHTML = ''; secEditor(p, x.sec, ed); refreshPS(); ed.scrollIntoView({ behavior: 'smooth' }); };
+    pc.appendChild(r);
+  });
+}
+function revise(p) {
+  const box = el(`<div class="modal"><div class="box"><h4>개정 (Rev.${esc(p.rev)} → Rev.${(num(p.rev) ?? 0) + 1})</h4><label class="hint">개정 내용</label><textarea rows="4" id="rvTxt" placeholder="예) 7-5 완제품 기준 중 점도 기준 변경 (6,000~14,000 → 7,000~13,000)"></textarea><div class="toolbar" style="margin:12px 0 0;justify-content:flex-end"><button class="btn" id="rvNo">취소</button><button class="btn pri" id="rvOk">개정</button></div></div></div>`);
+  document.body.appendChild(box); $('#rvTxt').focus();
+  $('#rvNo').onclick = () => box.remove();
+  $('#rvOk').onclick = () => {
+    const t = $('#rvTxt').value.trim(); if (!t) { $('#rvTxt').focus(); return; }
+    p.rev = String((num(p.rev) ?? 0) + 1); p.date = today();
+    p.revisions.push({ rev: p.rev, date: p.date, author: '품질관리팀', content: t, approver: '' });
+    box.remove(); save(); go('ps', { pid: p.id, sec: 'rev' });
+  };
+}
+function compTitle(c, i) { return `${i + 1}. [${esc(c.label || '구성품')}] ${esc(c.fullName || '')} <span class="hint">제조사 : ${esc(c.maker || '—')}</span>`; }
+function secEditor(p, sec, ed) {
+  const A = n => ed.appendChild(n);
+  const comps = p.components;
+  switch (sec) {
+    case 'cover': {
+      A(subh('작성 범위'));
+      const sc = inp(p, 'scope', { opts: ['전체', '책임판매'], onch: () => go('ps', { pid: p.id, sec: 'cover' }) });
+      A(form([['작성 범위', inl(sc, el('<span class="hint">전체 = CGMP 제15조② 12개 항목 모두 (양식 v2, 기본) · 책임판매 = 간소 6개 장 (처방·공정·설비는 제조업자 문서 참조)</span>')), true],
+        ['벌크코드 (제조사)', inp(p, 'bulkCode')], ['포장단위', inp(p, 'packUnit')],
+        ['제조업자 제품표준서 (참조 문서)', inp(p, 'makerRef', { ph: '예) 한국콜마 제품표준서 MF10117403 Rev.0 (2026-06-08)' }), true]]));
+      A(subh('표지 기본 정보'));
+      const no = inp(p, 'psNo');
+      A(form([['제품표준서 번호', inl(no, button('자동', () => { p.psNo = nextPsNo(); no.value = p.psNo; changed(); }))], ['개정번호', inp(p, 'rev')],
+        ['제·개정일', inp(p, 'date', { type: 'date' })], ['제품코드', inp(p, 'code')], ['문서정보', inp(p, 'docInfo')], ['문서 효력발생일', inp(p, 'effective')],
+        ['문서 차기검토일', inp(p, 'nextReview')], ['제·개정자', inp(p, 'author')]]));
+      A(subh('제조 및 책임판매 주체'));
+      A(tedit(p.makers, [{ k: 'type', label: '구분', w: '22%' }, { k: 'name', label: '업체명', w: '26%' }, { k: 'role', label: '역할' }], { numbered: false }));
+      A(form([['책임판매업자', inp(p.seller, 'name')], ['주소', inp(p.seller, 'addr')], ['역할', inp(p.seller, 'role'), true]]));
+      A(subh('검토 및 승인 <span class="hint">서명은 인쇄 후 직접</span>'));
+      A(form([['작성 (담당자)', inp(p.approvals.writer, 'name')], ['작성일', inp(p.approvals.writer, 'date', { type: 'date' })],
+        ['검토 (확인자)', inp(p.approvals.reviewer, 'name')], ['검토일', inp(p.approvals.reviewer, 'date', { type: 'date' })],
+        ['승인 (책임자)', inp(p.approvals.approver, 'name')], ['승인일', inp(p.approvals.approver, 'date', { type: 'date' })]]));
+      A(subh('배포 및 관리 <span class="hint">해설서: 개정 시 구본 사본 회수, 원본은 "무효본" 표시</span>'));
+      A(form([['관리 구분', inp(p, 'control', { opts: ['관리본', '비관리본'] })]]));
+      A(tedit(p.distribution, [{ k: 'dest', label: '배포처 (부서·업체)', w: '34%' }, { k: 'copyNo', label: '사본번호' }, { k: 'date', label: '배포일', type: 'date' }, { k: 'recall', label: '회수일', type: 'date' }]));
+      break;
+    }
+    case 'rev':
+      A(subh('통합 제품표준서 개정이력 <span class="hint">「개정 (Rev +1)」 버튼을 쓰면 번호·날짜가 자동으로 들어갑니다</span>'));
+      A(tedit(p.revisions, [{ k: 'rev', label: '개정번호', w: '8%' }, { k: 'date', label: '개정일자', w: '12%', type: 'date' }, { k: 'effDate', label: '시행일자', w: '12%', type: 'date' }, { k: 'content', label: '개정 내용', ta: 2 }, { k: 'reason', label: '개정 사유', w: '16%', ta: 1 }, { k: 'author', label: '개정자', w: '10%' }, { k: 'approver', label: '승인자', w: '10%' }], { numbered: false }));
+      break;
+    case 'toc':
+      A(subh('목차 — 근거 문서 (문서명·번호) · 작성 방식 <span class="hint">해설서 p84: 나눠 작성한 항목은 그 문서의 번호를 목록으로 — 공정(3·4장)·설비(11장) 자료가 없으면 여기에 제조업자 문서 이름·번호를 적으면 점검에서 인정</span>'));
+      if (isLite(p)) {
+        const tl = LITE_TOC.map(([s, t], i) => [FULLNUM[s], `${i + 1}. ${t}`]);
+        tl.forEach(([n]) => { p.toc[n] = p.toc[n] || ''; });
+        A(form(tl.map(([n, t]) => [t, inp(p.toc, n, { ph: '예) 전성분표(단일) 2026.04.09 / 반제품성적서 QBP2409054' }), true])));
+        A(el(`<div class="hint" style="margin-top:6px">'참조' 줄(처방·공정·설비 등)의 출처는 표지의 「제조업자 제품표준서 (참조 문서)」가 들어갑니다.</div>`));
+      } else {
+        p.tocMode = p.tocMode || {};
+        const rows = [...TOC.map(([n, t], i) => [n, `${n}. ${t}`, TOC_REQ[i], TOC_MODE[i]]), ['3+', '+ 공정 검사방법 · 포장작업 시 주의사항', '(3장·6장 보완)', '별첨']];
+        const tb = el('<table class="ed"><colgroup><col style="width:30%"><col style="width:20%"><col><col style="width:18%"></colgroup><thead><tr><th>항목</th><th>CGMP 기재사항</th><th>근거 문서 (문서명·번호)</th><th>작성 방식</th></tr></thead><tbody></tbody></table>');
+        rows.forEach(([n, t, r, m]) => { p.toc[n] = p.toc[n] || ''; if (!p.tocMode[n]) p.tocMode[n] = m; const tr = el(`<tr><td style="padding:4px 6px">${esc(t)}</td><td class="no" style="text-align:left;padding:4px 6px">${esc(r)}</td><td></td><td></td></tr>`); tr.children[2].appendChild(inp(p.toc, n, { ph: '예) 아이큐어 제조지시 및 기록서 ICC-xxx' })); tr.children[3].appendChild(inp(p.tocMode, n, { opts: ['직접 작성', '직접 / 참조', '직접 / 미공개 확인서', '직접 (원료·자재 별도관리)', '직접 / 보고서', '직접 / 포장기준서', '직접', '별첨', '참조'] })); tb.querySelector('tbody').appendChild(tr); });
+        A(tb);
+      }
+      break;
+    case 's1': {
+      A(subh('1-1. 제품 기본정보'));
+      const nk = inp(p, 'nameKo'), nkBox = document.createElement('div'); nkBox.appendChild(nk);
+      const cd = inp(p, 'code', { ph: '코드나 제품명 일부' }), cdBox = document.createElement('div'); cdBox.appendChild(cd);
+      const fromErp = o => { if (o.type !== 'erp') return; p.code = o.code; cd.value = o.code; if (!p.shelfLife.life && +o.life) { p.shelfLife.life = `제조일로부터 ${o.life}개월`; p.shelfLife.months = o.life; } if (!p.openLife.life && +o.open) p.openLife.life = `개봉 후 ${o.open}개월`; if (!p.nameEn && o.en) p.nameEn = o.en; changed(); };
+      suggest(nk, fromErp); suggest(cd, fromErp, { mode: 'code' });
+      A(form([['제품명 (한글)', nkBox, true], ['제품명 (영문)', inp(p, 'nameEn'), true], ['구성 표기', inp(p, 'nameSub', { rows: 2, ph: '[볼] ...\n[세럼] ...' }), true],
+        ['제품코드', cdBox], ['벌크코드 (제조사)', inp(p, 'bulkCode')],
+        ['유형구분', inp(p, 'typeDiv', { opts: ['', '화장품', '기능성화장품'] })], ['유형분류', inp(p, 'typeClass', { ph: '예) 기초화장용 제품류' })],
+        ['유형세분류', inp(p, 'typeSub', { ph: '예) 에센스·크림·로션' })], ['기능성 분류', inp(p, 'funcClass', { ph: '예) 미백 + 주름개선' })],
+        ['제품 중량', inp(p, 'weight', { rows: 2 })], ['포장단위', inp(p, 'packUnit')], ['성상', inp(p, 'appearance', { rows: 2 }), true]]));
+      A(subh('구성품 (제조사별) <span class="hint">2·4·7·9장이 구성품별로 나뉩니다 · 기능성 \'예\'면 의약품안전나라 보고 자료와 자동 연결</span>'));
+      const t = tedit(comps, [{ k: 'label', label: '구분', w: '9%' }, { k: 'fullName', label: '구성품 제품명', w: '26%' }, { k: 'maker', label: '제조사', w: '15%' }, { k: 'batchSize', label: '제조단위', w: '9%' }, { k: 'batchUnit', label: '단위', w: '7%', opts: ['kg', 'L', 'ea', 'g'] }, { k: 'makerPsNo', label: '제조사 제품표준서 번호', w: '17%' }, { k: 'functional', label: '기능성', w: '8%', opts: ['아니오', '예'] }],
+        { newRow: () => newComp('구성품 ' + '①②③④⑤⑥'[comps.length] || comps.length + 1) });
+      A(t);
+      A(subh('1-2. 사용방법'));
+      A(inp(p, 'usage', { rows: 5 }));
+      A(subh('1-3. 표시사항'));
+      const fi = inp(p.labeling, 'fullIng', { rows: 5 });
+      A(form([['화장품제조업자', inp(p.labeling, 'maker', { rows: 2 }), true], ['화장품책임판매업자', inp(p.labeling, 'seller'), true], ['기능성 표시', inp(p.labeling, 'functionalLabel'), true],
+        ['사용할 때의 주의사항', inp(p.labeling, 'cautions', { rows: 4 }), true], ['전성분', fi, true]]));
+      A(inl(button('9장 전성분 목록으로 채우기', () => { p.labeling.fullIng = comps.map(c => `[${c.label}] ${(c.fullIngredients || []).join(', ')}`).join('\n'); fi.value = p.labeling.fullIng; changed(); })));
+      break;
+    }
+    case 's2':
+      if (!comps.length) A(el('<div class="empty">1장에서 구성품을 먼저 추가하세요.</div>'));
+      comps.forEach((c, i) => {
+        A(subh('2-' + compTitle(c, i)));
+        const sum = el('<span class="hint"></span>');
+        const upd = () => { const tp = c.ingredients.reduce((a, r) => a + (num(r.pct) || 0), 0), tq = c.ingredients.reduce((a, r) => a + (num(r.qty || calcQty(c, r)) || 0), 0); sum.textContent = `분량 합계 ${tp ? tp.toFixed(4) : '-'} % · 기준량 합계 ${tq ? tq.toFixed(4) : '-'} ${c.batchUnit}`; };
+        let t;
+        A(form([['제조단위 <span class="st bad">필수</span>', inl(inp(c, 'batchSize', { ph: '예) 500', onch: () => t.rerender() }), inp(c, 'batchUnit', { opts: ['kg', 'L', 'ea', 'g'] }), '/ batch')], ['제조사 제품표준서 번호', inp(c, 'makerPsNo', { ph: '처방 비공개 시 참조 번호' })]]));
+        t = tedit(c.ingredients, [{ k: 'code', label: '원료코드', w: '9%' }, { k: 'name', label: '원료명(상품명)', w: '14%' }, { k: 'inci', label: '성분명', ta: 1 }, { k: 'purpose', label: '배합목적', w: '10%' }, { k: 'spec', label: '규격', w: '7%' }, { k: 'pct', label: '분량(%)', w: '8%' }, { k: 'qty', label: '기준량 (자동)', w: '10%', calc: r => calcQty(c, r) }, { k: 'note', label: '비고', w: '8%' }],
+          { newRow: () => ({ code: '', name: '', inci: '', purpose: '', spec: 'ICID', pct: '', qty: '', note: '' }), onchange: (r, k, e, tr) => { if (k === 'pct') { const q = tr.querySelectorAll('input')[6]; if (q) q.placeholder = calcQty(c, r); } upd(); } });
+        A(t); A(sum); upd();
+      });
+      A(el('<div class="hint" style="margin-top:8px">※ 기준량 칸을 비워 두면 「제조단위 × 분량(%) ÷ 100」으로 자동 계산해 인쇄합니다.</div>'));
+      {
+        p.nondisclosure = p.nondisclosure || { applies: '해당 없음', affect: '', nonAffect: '', company: '', person: '', date: '' };
+        const nd = p.nondisclosure;
+        A(subh(`2-${comps.length + 1}. 원료 함량 일부 미공개 확인 <span class="hint">코스맥스 보증서 방식 · 제조업자가 처방 전체를 주지 않을 때 (시행규칙 제11조①6 나목)</span>`));
+        A(form([['해당 여부', inp(nd, 'applies', { opts: ['해당 없음', '해당'], onch: () => render() })],
+          ...(nd.applies === '해당' ? [['영향을 주는 성분 수', inp(nd, 'affect', { ph: '9장 관리 성분 수' })], ['영향을 주지 않는 성분 수', inp(nd, 'nonAffect', { ph: '함량 비공개 성분 수' })], ['제조업자 회사명', inp(nd, 'company')], ['확인 책임자', inp(nd, 'person')], ['확인 일자', inp(nd, 'date', { type: 'date' })]] : [])]));
+      }
+      break;
+    case 's3':
+      A(subh('제조공정흐름도 및 공정검사'));
+      A(tedit(p.flow, [{ k: 'maker', label: '구분(제조원)', w: '13%' }, { k: 'stage', label: '공정 구분', w: '11%', opts: ['', ...STAGE] }, { k: 'process', label: '공정', ta: 2 }, { k: 'qc', label: '공정검사 / 관리항목 (Q.C)', ta: 2 }, { k: 'record', label: '공정검사 기록서', w: '15%' }]));
+      A(el('<div class="hint" style="margin-top:6px">자료가 없으면 「목차」의 3번 근거 문서에 제조업자 제조지시 및 기록서 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
+      break;
+    case 's4':
+      comps.forEach((c, i) => { A(subh('4-' + compTitle(c, i))); A(tedit(c.process, [{ k: 'stage', label: '공정 구분', w: '12%', opts: ['', ...STAGE] }, { k: 'name', label: '공정명', w: '14%' }, { k: 'work', label: '작업내용', ta: 2 }, { k: 'criteria', label: '관리기준', w: '22%', ta: 2 }])); });
+      break;
+    case 's5':
+      A(subh('공정별 이론 생산량 및 수율관리기준 <span class="hint">고시 6호는 삭제됐지만 공정관리 근거로 유지 — 빈칸 대신 기준 또는 \'해당 없음\'</span>'));
+      A(tedit(p.yields, [{ k: 'part', label: '구분', w: '13%' }, { k: 'process', label: '공정', ta: 2 }, { k: 'theory', label: '이론 생산량', ta: 2 }, { k: 'criteria', label: '수율관리기준', w: '15%' }, { k: 'note', label: '비고', w: '12%' }]));
+      break;
+    case 's6':
+      A(subh('작업 중 주의사항'));
+      A(tedit(p.precautions, [{ k: 'name', label: '공정 구분', w: '20%' }, { k: 'content', label: '주의사항', ta: 3 }]));
+      break;
+    case 's7': {
+      const L7 = isLite(p), n7 = L7 ? 4 : 7; let k7 = 1;
+      if (L7) A(el(`<div class="funcbox">원료·자재 기준 및 시험방법은 제조업자 기준(별책)을 따르므로 인쇄본에는 '제조업자 기준 참조'로만 나갑니다. (참조 문서: ${esc(p.makerRef || '표지에서 입력')})</div>`));
+      else {
+        A(subh(`${n7}-${k7++}. 원자재 (원료·자재)`));
+        A(tedit(p.rawSpecs, [{ k: 'type', label: '구분', w: '12%' }, { k: 'item', label: '시험항목', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'doc', label: '별도관리 문서 (규격서 번호)', w: '20%' }], { numbered: false }));
+        A(subh(`${n7}-${k7++}. 반제품 기준 및 시험방법`));
+        const na = el(`<label class="inl" style="font-size:12.5px"><input type="checkbox" ${p.semiNA ? 'checked' : ''}> 해당 없음 (충전 전 제조를 마친 내용물은 벌크제품으로 관리)</label>`);
+        na.querySelector('input').onchange = e => { p.semiNA = e.target.checked; changed(); };
+        A(na); A(tedit(p.semiSpecs, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'note', label: '비고', w: '14%' }]));
+      }
+      if (L7) k7 = 2;
+      comps.forEach(c => { A(subh(`${n7}-${k7++}. 벌크제품 기준 및 시험방법 — [${esc(c.label)}] ${esc(c.fullName)} <span class="hint">제조사 : ${esc(c.maker || '—')}</span>`)); A(tedit(c.bulkSpecs, L7 ? [{ k: 'item', label: '시험항목', w: '18%' }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'note', label: '비고', w: '18%', ta: 1 }]
+        : [{ k: 'item', label: '시험항목', w: '14%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법 (요약)', ta: 1 }, { k: 'basis', label: '시험 근거', w: '14%', ta: 1 }, { k: 'specType', label: '규격 유형', w: '9%', opts: ['', '자가 규격', '허가 규격'] }, { k: 'freq', label: '적용 주기', w: '10%', opts: ['', '매 배치', '초도 생산', '초도 3배치'] }, { k: 'note', label: '비고', w: '10%' }], { newRow: () => ({ item: '', criterion: '', method: '', basis: '', specType: '자가 규격', freq: '매 배치', note: '' }) })); });
+      A(subh(`${n7}-${k7++}. 완제품 기준 및 시험방법 <span class="hint">완제품성적서의 시험항목·기준은 이 표에서 가져옵니다</span>`));
+      A(tedit(p.finishedSpecs, L7 ? [{ k: 'item', label: '시험항목', w: '22%' }, { k: 'sub', label: '구분', w: '8%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'note', label: '비고', w: '10%' }]
+        : [{ k: 'item', label: '시험항목', w: '15%' }, { k: 'sub', label: '구성품', w: '7%' }, { k: 'stage', label: '구분', w: '8%', opts: ['', '충전품', '완제품'] }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'basis', label: '시험 근거', w: '12%' }, { k: 'apply', label: '결과 적용', w: '13%', opts: ['', ...APPLY] }], { newRow: () => ({ item: '', sub: '', stage: '충전품', criterion: '', method: '', basis: '', apply: '입고검사', note: '' }) }));
+      if (!L7) A(el('<div class="hint" style="margin-top:6px">결과 적용: 벌크 시험자료 적용 = 반제품성적서 결과 인용 (한국화장품 방식) · 입고검사 = 자사 · 위탁시험 / 제조사 = 특정세균·기능성 함량 등. 완제품성적서를 만들 때 이 값으로 시험자 칸이 미리 채워집니다.</div>'));
+      break;
+    }
+    case 's8': {
+      A(subh(`${isLite(p) ? 2 : 8}-1. 효능·효과 (기능성화장품)`));
+      const ef = inp(p.efficacy, 'effect', { rows: 3 });
+      A(form([['효능·효과', ef, true], ['기능성 주성분', inp(p.efficacy, 'actives'), true], ['기능성 보고(심사) 번호', inp(p.efficacy, 'reviewNo', { ph: '비우면 의약품안전나라 보고일련번호를 자동으로 씀' })], ['보고(심사) 일자', inp(p.efficacy, 'reviewDate', { type: 'date' })]]));
+      A(funcBox(p, ef));
+      A(subh(`${isLite(p) ? 2 : 8}-2. 사용할 때의 주의사항`));
+      A(form([['공통 (시행규칙 [별표 3])', inp(p, 'cautionsCommon', { rows: 5 }), true], ['제품 특성상 추가', inp(p, 'cautionsExtra', { rows: 4 }), true]]));
+      break;
+    }
+    case 's9':
+      comps.forEach((c, i) => {
+        A(subh(`${isLite(p) ? 3 : 9}-${i + 1}. 전성분 [${esc(c.label)}] ${esc(c.fullName)} <span class="hint">한 줄에 한 성분 · 지금 ${c.fullIngredients.length}종</span>`));
+        const o = { v: (c.fullIngredients || []).join('\n') };
+        const ta = inp(o, 'v', { rows: 8, onch: v => { c.fullIngredients = v.split('\n').map(s => s.trim()).filter(Boolean); } });
+        A(ta);
+        A(inl(button('1-3 전성분에서 가져오기', () => {
+          const line = (p.labeling.fullIng || '').split('\n').find(l => l.includes(`[${c.label}]`)) || (comps.length === 1 ? p.labeling.fullIng : '');
+          if (!line) { notify(`1-3 전성분에 [${c.label}] 줄이 없습니다.`); return; }
+          c.fullIngredients = line.replace(/^\[[^\]]*\]\s*/, '').split(/,\s+/).map(s => s.replace(/\(\s*[\d,.]+\s*ppm\s*\)/i, '').trim()).filter(Boolean);
+          ta.value = c.fullIngredients.join('\n'); changed();
+        })));
+      });
+      if (!isLite(p)) {
+        A(subh(`9-${comps.length + 1}. 품질·안전관리에 영향을 주는 성분 (16구분 체크리스트) <span class="hint">인쇄본에서 구분별로 모아 ☑ 표시 · 함량은 「자료로 작성」 전성분표에서 자동</span>`));
+        p.keyIngredients = p.keyIngredients || [];
+        p.keyIngredients.forEach(k => { const no = catNo(k.category); if (no) k.category = CAT16[no - 1][0]; });
+        const C16 = CAT16.map(c => c[0]), extra = [...new Set(p.keyIngredients.map(k => k.category).filter(v => v && !C16.includes(v)))];
+        const kt2 = tedit(p.keyIngredients, [{ k: 'comp', label: '구성품', w: '9%' }, { k: 'name', label: '성분명', w: '22%' }, { k: 'pct', label: '함량 (%)', w: '11%' }, { k: 'category', label: '구분 (16구분)', opts: ['', ...C16, ...extra] }, { k: 'note', label: '비고', w: '14%' }]);
+        A(kt2);
+        A(inl(button('후보 자동 찾기', () => { const n = keyCandidates(p); p.keyIngredients.forEach(k => { const no = catNo(k.category); if (no) k.category = CAT16[no - 1][0]; }); if (!n) notify('추가할 후보가 없습니다.'); kt2.rerender(); changed(); }), el('<span class="hint">기능성 주성분·보존제·AHA·레티놀·비타민C·토코페롤·알레르기 유발성분을 전성분에서 찾습니다. 타르색소·제품명 성분·유기농 등은 직접 추가하세요.</span>')));
+        A(subh(`9-${comps.length + 2}. 착향제 알레르기 유발성분 (25종)`));
+        A(form([['씻어내는 제품', inp(p, 'rinseOff', { opts: ['아니오', '예'] })], ['', el('<span class="hint">예 = 0.01% 초과, 아니오 = 0.001% 초과 시 전성분 표시 대상. 함량은 위 표에 \'착향제 알레르기 유발성분\'으로 넣으면 인쇄본 25종 표에 들어갑니다.</span>')]]));
+      }
+      if (isLite(p)) {
+        A(subh(`3-${comps.length + 1}. 품질·안전관리에 영향을 주는 성분 <span class="hint">기능성 주성분 · 사용제한 원료(보존제·AHA·레티놀·비타민C 유도체 등) · 착향제 알레르기 유발성분 — 처방 전체 대신 이것만 함량을 적습니다</span>`));
+        p.keyIngredients = p.keyIngredients || [];
+        const kt = tedit(p.keyIngredients, [{ k: 'comp', label: '구성품', w: '10%' }, { k: 'name', label: '성분명', w: '24%' }, { k: 'pct', label: '함량 (%)', w: '12%' }, { k: 'category', label: '구분' }, { k: 'note', label: '비고', w: '18%' }]);
+        A(kt);
+        A(inl(button('후보 자동 찾기', () => { const n = keyCandidates(p); if (!n) notify('추가할 후보가 없습니다. (함량은 「자료로 작성」에 올린 전성분표에서 가져옵니다)'); kt.rerender(); changed(); }), el('<span class="hint">전성분에서 기능성 주성분·사용제한 원료·알레르기 유발성분을 찾아 넣습니다. 사용한도는 「화장품 안전기준 등에 관한 규정」 [별표 2]로 확인하세요.</span>')));
+        A(form([['알레르기 유발성분 문구', inp(p, 'allergenNote', { rows: 2, ph: '예) 착향제 구성 성분 중 알레르기 유발성분 25종을 의도적으로 제조에 사용하지 않음' }), true]]));
+      }
+      break;
+    case 's10':
+      A(subh('10-1. 구성품 (포장재 규격)'));
+      A(tedit(p.packaging, [{ k: 'grade', label: '1차/2차', w: '8%', opts: ['', '1차', '2차'] }, { k: 'name', label: '구성품명', w: '19%' }, { k: 'code', label: '구성품 코드', w: '11%' }, { k: 'material', label: '재질', w: '12%' }, { k: 'spec', label: '규격(치수·용량)', w: '13%' }, { k: 'supplier', label: '공급사', w: '12%' }, { k: 'unit', label: '수량', w: '6%' }, { k: 'note', label: '비고' }]));
+      p.packMethod = p.packMethod || { lotExp: '', primary: '', secondary: '', outbox: '' };
+      A(subh('10-2. 포장 방법 <span class="hint">코스맥스 포장기준서 방식</span>'));
+      A(form([['LOT·사용기한 표시', inp(p.packMethod, 'lotExp', { rows: 2, ph: '예) 용기 하면·단상자 후면 하단에 LOT ○○○ / EXP YYYYMMDD까지 (포장일 기준 36개월-1일)' }), true], ['1차 포장 (용기)', inp(p.packMethod, 'primary', { rows: 2 }), true], ['2차 포장 (단상자)', inp(p.packMethod, 'secondary', { rows: 2 }), true], ['아웃박스 · 라벨', inp(p.packMethod, 'outbox', { rows: 2, ph: '예) 입수 24EA, 4면 라벨(품번·품명·바코드·제조일자·사용기한·LOT)' }), true]]));
+      break;
+    case 's11':
+      A(subh('제조 및 품질관리에 필요한 시설 및 기구 <span class="hint">이 제품의 제조·충전·시험에 실제로 쓰는 것만 · 제조사별로 · 사용 공정 필수 (보완사례 15-2)</span>'));
+      p.equipment.forEach(r => { if (!r.have) r.have = '예'; });
+      if (!p.equipment.length) A(el('<div class="hint">설비 목록이 없으면 「목차」 11번 근거 문서에 제조업자 설비 목록(시설·기구 대장) 이름·번호를 적으세요 (점검에서 참조로 인정).</div>'));
+      A(tedit(p.equipment, [{ k: 'group', label: '분류', w: '10%', opts: ['제조', '충전·포장', '품질관리'] }, { k: 'maker', label: '제조사·시험처', w: '11%' }, { k: 'mgmtNo', label: '설비 관리번호', w: '10%' }, { k: 'name', label: '시설 및 기구', w: '18%' }, { k: 'spec', label: '규격', w: '12%' }, { k: 'qty', label: '수량', w: '5%' }, { k: 'have', label: '구비', w: '7%', opts: ['예', '아니오'] }, { k: 'use', label: '용도 / 사용 공정', w: '14%' }, { k: 'note', label: '비고' }],
+        { newRow: () => ({ group: '제조', maker: '', mgmtNo: '', name: '', spec: '', qty: '1', have: '예', use: '', note: '' }) }));
+      break;
+    case 's12':
+      A(subh('12-1. 단계별 보관조건 <span class="hint">벌크제품은 최대 보관기간을 정하고, 가까워지면 완제품 제조 전 재평가 (제17조③)</span>'));
+      A(tedit(p.storage, [{ k: 'type', label: '구분', w: '12%' }, { k: 'target', label: '대상', w: '20%', ta: 1 }, { k: 'condition', label: '보관조건', ta: 2 }, { k: 'maxStorage', label: '최대 보관기간', w: '13%' }, { k: 'note', label: '비고', w: '14%' }], { numbered: false }));
+      A(subh('12-2. 사용기한 또는 개봉 후 사용기간'));
+      A(form([['사용기한', inp(p.shelfLife, 'life', { ph: '예) 제조일로부터 36개월' })], ['개월 수 (자동 계산용)', inp(p.shelfLife, 'months', { type: 'number', ph: '36' })], ['기산점', inp(p.shelfLife, 'basis', { ph: '예) 세럼 벌크 제조일' })], ['비고', inp(p.shelfLife, 'note')],
+        ['개봉 후 사용기간', inp(p.openLife, 'life')], ['기산점', inp(p.openLife, 'basis')], ['비고', inp(p.openLife, 'note'), true]]));
+      break;
+    case 's13': {
+      const links = funcLinks(p);
+      A(subh('의약품안전나라에서 자동으로 붙는 별첨'));
+      A(el(`<div class="funcbox">${links.length ? links.map(it => `<div class="fi">기능성화장품 보고서 — <b>${esc(it.name)}</b> · 보고일련번호 ${esc(it.seq)} · 보고완료 ${esc(it.date || '')} · ${pdfPages(it) ? `보고서 PDF ${pdfPages(it)}쪽 첨부` : '공개 정보 1쪽 (보고서 PDF 없음)'}</div>`).join('') : '연결된 기능성 자료가 없습니다. (8장에서 연결)'}</div>`));
+      A(subh('별첨 목록 <span class="hint">해설서: 기능성 심사결과통지서(또는 보고서) 사본·근거자료 첨부 권장</span>'));
+      const t = tedit(p.attachments, [{ k: 'name', label: '문서명', w: '34%' }, { k: 'no', label: '문서번호', w: '16%' }, { k: 'rev', label: '개정번호·일자', w: '13%' }, { k: 'location', label: '보관 위치', w: '15%' }, { k: 'note', label: '비고' }]);
+      A(t);
+      A(inl(button('기본 목록 넣기', () => {
+        ['원료 규격서 (7-1 원료 기준)', '포장재 규격서 (7-1 자재 기준 · 10장)', '표준견본 관리 기록 (성상·색상·향취·표시사항 비교 기준)', '제조사 제품표준서 (처방·제조단위 원본)', '제조지시 및 기록서 양식 (칭량·제조·충전·포장)', '완제품 시험성적서 양식', '안정성 시험 자료 (보관조건·사용기한 설정 근거)']
+          .forEach(n => { if (!p.attachments.some(a => a.name === n)) p.attachments.push({ name: n, no: '', rev: '', location: '', note: '' }); });
+        changed(); t.rerender();
+      })));
+      break;
+    }
+  }
+}
+/* 책임판매업자용(간소) 구성 — 한국콜마 발송본 구성 + 시행규칙 제12조 의무 기준 */
+const LITE_TOC = [['s1', '제품 개요 및 표시사항 (제품명·유형·제조업자·용법·용량)', '제품 식별 · 표시사항 근거'], ['s8', '효능·효과 및 사용할 때의 주의사항', '기능성 보고(심사) 내용 · 시행규칙 [별표 3]'], ['s9', '성분 (전성분 · 품질·안전관리에 영향을 주는 성분)', '전성분 표시 · 사용제한 원료·주성분 함량'], ['s7', '기준 및 시험방법 (벌크제품 · 완제품)', '제조번호별 품질검사 기준 (제12조5)'], ['s12', '보관조건 및 사용기한', '사용기한·개봉 후 사용기간 표시 근거'], ['s13', '별첨 목록', '기능성 보고서 사본 · 반제품성적서 등']];
+const LITE_REF = ['성분 및 함량 (처방) · 제조단위', '제조공정흐름도 · 공정별 상세 작업내용', '작업 중 주의사항', '공정별 이론 생산량 및 수율관리기준', '원료 · 자재 기준 및 시험방법', '포장 기준 (포장재 규격)', '제조 및 품질관리 시설 · 기기'];
+const LITE_LABEL = { s1: '1. 제품 개요·표시사항', s8: '2. 효능·효과·주의사항', s9: '3. 성분 (전성분·관리 성분)', s7: '4. 기준 및 시험방법', s12: '5. 보관조건·사용기한', s13: '6. 별첨' };
+const FULLNUM = { s1: '1', s2: '2', s3: '3', s4: '4', s5: '5', s6: '6', s7: '7', s8: '8', s9: '9', s10: '10', s11: '11', s12: '12', s13: '13' };
+const isLite = p => p.scope === '책임판매';
+const secList = p => isLite(p) ? [['cover', '표지·승인·배포'], ['rev', '개정내역'], ['toc', '목차 (출처)'], ...Object.entries(LITE_LABEL)] : SECS;
+const TOC_REQ = ['1호 제품명 · 2호 작성연월일', '4호 원료명·분량·제조단위당 기준량', '5호 제조공정흐름도', '5호 공정별 상세 작업내용', '(6호 삭제 — 선택)', '7호 작업 중 주의사항', '8호 기준 및 시험방법', '3호 효능·효과 및 주의사항', '표시사항 근거 (14호)', '자재 규격 / 포장 사양 (14호)', '9호 시설 및 기기', '10호 보관조건 · 11호 사용기한', '14호 그 밖에 필요한 사항 · 12호 변경이력'];
+const TOC_MODE = ['직접 작성', '직접 / 미공개 확인서', '직접 / 참조', '직접 / 참조', '참조', '직접', '직접 (원료·자재 별도관리)', '직접 / 보고서', '직접', '직접 / 포장기준서', '직접 / 참조', '직접', '별첨'];
+const TOC = [['1', '제품 개요 및 표시사항'], ['2', '원료 성분 및 분량'], ['3', '제조공정흐름도'], ['4', '공정별 상세 작업내용'], ['5', '공정별 이론 생산량 및 수율관리기준'], ['6', '작업 중 주의사항'], ['7', '원자재·반제품·벌크제품·완제품의 기준 및 시험방법'], ['8', '효능·효과 및 사용할 때의 주의사항'], ['9', '전성분 · 품질·안전관리 영향 성분 · 알레르기 유발성분'], ['10', '포장 기준 (구성품·포장 방법)'], ['11', '제조 및 품질관리 시설·기구'], ['12', '보관조건 및 사용기한'], ['13', '별첨 목록']];
+function funcBox(p, effInput) {
+  const box = el('<div class="funcbox"></div>');
+  function draw() {
+    const links = funcLinks(p), auto = new Set(funcAuto(p));
+    box.innerHTML = `<b>의약품안전나라 기능성 보고 자료</b> <span class="hint">${FD.missing ? '자료 파일 없음 — 기능성자료_갱신.bat 실행' : `공개 보고 ${FD.items.length}건 · 갱신 ${esc(FD.updatedAt)}`}</span>`;
+    if (!links.length) box.appendChild(el(`<div class="fi hint">${isFunctional(p) ? '제품명이 같은 보고 품목을 찾지 못했습니다. 아래에서 골라 연결하세요.' : '기능성 구성품이 없습니다 (1장 구성품의 \'기능성\'을 \'예\'로).'}</div>`));
+    links.forEach(it => {
+      const r = el(`<div class="fi">✓ <b>${esc(it.name)}</b>${auto.has(it.seq) ? '<span class="pill">이름 자동 연결</span>' : ''} · 보고일련번호 ${esc(it.seq)} · 부서접수번호 ${esc(it.receiptNo || '')} · 보고완료 ${esc(it.date || '')} · ${pdfPages(it) ? `보고서 PDF ${pdfPages(it)}쪽` : '<span style="color:var(--warn)">보고서 PDF 없음</span>'}
+        ${it.effect ? `<div class="hint">효능·효과: ${esc(it.effect)}</div>` : ''}<div class="inl" style="margin-top:3px"></div></div>`);
+      const bar = r.querySelector('.inl');
+      if (it.url) bar.appendChild(el(`<a class="btn sm" href="${esc(it.url)}" target="_blank" rel="noopener">의약품안전나라에서 보기</a>`));
+      if (it.effect) bar.appendChild(button('효능·효과 가져오기', () => { p.efficacy.effect = it.effect.replace(/\(PA:\s*null\s*\)/, '').trim(); effInput.value = p.efficacy.effect; changed(); }));
+      bar.appendChild(button('연결 해제', () => { p.funcLinks = p.funcLinks.filter(s => s !== it.seq); if (auto.has(it.seq)) p.funcExclude.push(it.seq); changed(); draw(); }, 'btn sm danger'));
+      box.appendChild(r);
+    });
+    if (!FD.missing) {
+      const dl = 'fdl-' + p.id;
+      const row = el(`<div class="inl" style="margin-top:6px"><input list="${dl}" placeholder="보고 품목명 검색해 연결 (예: 나드플러스)"><datalist id="${dl}">${FD.items.map(it => `<option value="${esc(it.name)} · ${esc(it.seq)}">`).join('')}</datalist></div>`);
+      row.appendChild(button('연결', () => {
+        const v = row.querySelector('input').value; const m = v.match(/(\d{10})\s*$/); const it = m ? FDmap.get(m[1]) : FD.items.find(x => x.name === v.trim());
+        if (!it) { notify('목록에서 골라 주세요.'); return; }
+        p.funcLinks = [...new Set([...(p.funcLinks || []), it.seq])]; p.funcExclude = (p.funcExclude || []).filter(s => s !== it.seq); p.funcCache[it.seq] = it; changed(); draw();
+      }));
+      box.appendChild(row);
+    }
+  }
+  draw(); return box;
+}
+
+/* ================= 완제품성적서 ================= */
+function renderCoa(m) {
+  if (V.newCoa) { V.newCoa = false; return newCoaDialog(m); }
+  if (V.cid && !S.coas.find(c => c.id === V.cid)) V.cid = null;
+  if (!V.cid) return coaList(m);
+  const c = S.coas.find(x => x.id === V.cid), p = prod(c.productId);
+  const tb = el(`<div class="toolbar"><div class="ttl">완제품시험성적서 ${esc(c.testNo)}<small>${esc(p?.nameKo || '(삭제된 제품)')} · ${esc(c.lots.map(l => `${l.label} ${l.lot}`).join(' / '))}</small></div></div>`);
+  tb.appendChild(button('← 목록', () => go('coa', { cid: null }), 'btn'));
+  tb.appendChild(button('미리보기 · 발행', () => previewCoa(c), 'btn pri'));
+  tb.appendChild(button('삭제', async () => { if (await askConfirm(`성적서 ${c.testNo}를 지울까요?${Cloud.shared() ? '\n공동 저장소에서도 지워져 다른 사람에게서도 사라집니다.' : ''}`, { ok: '지우기', danger: true })) { S.coas = S.coas.filter(x => x !== c); save(); go('coa', { cid: null }); } }, 'btn danger'));
+  m.appendChild(tb);
+  m.appendChild(el('<div class="card"><h3>CGMP 점검 <span class="r hint">제19조·제20조·제21조 · 해설서 【시험성적서】</span></h3><div class="checks" id="coachecks"></div></div>'));
+  const ed = el('<div class="card"></div>'); m.appendChild(ed);
+  const A = n => ed.appendChild(n);
+  A(subh('검체 정보'));
+  const tn = inp(c, 'testNo');
+  A(form([['제품', el(`<div><b>${esc(p?.nameKo || '')}</b> <span class="hint">${esc(p?.code || '')}</span></div>`), true],
+    ['시험번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['기준 근거', el(`<div>제품표준서 ${esc(c.psRef.no)} Rev.${esc(c.psRef.rev)} <span class="hint">7장 완제품 기준</span></div>`)],
+    ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['입고량 (EA)', inp(c, 'receiptQty')], ['표시용량', inp(c, 'labelQty')], ['샘플채취량 (EA)', inp(c, 'sampleQty')],
+    ['시험의뢰일', inp(c, 'requestDate', { type: 'date' })], ['검체채취일', inp(c, 'samplingDate', { type: 'date' })]]));
+  A(subh('구성품별 제조번호(LOT)·제조일'));
+  const ex = inp(c, 'expiry', { type: 'date' });
+  A(tedit(c.lots, [{ k: 'label', label: '구성품', w: '14%' }, { k: 'lot', label: '제조번호(LOT)', w: '22%' }, { k: 'maker', label: '제조사', w: '24%' }, { k: 'mfgDate', label: '제조일', type: 'date' }], { numbered: false }));
+  const autoExp = () => { const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); const mo = num(p?.shelfLife?.months) || (String(p?.shelfLife?.life || '').match(/(\d+)\s*개월/) || [])[1]; if (!ds.length || !mo) { notify('구성품 제조일과 제품표준서 12-2 사용기한(개월)이 있어야 계산됩니다.'); return; } c.expiry = addMonths(ds[0], mo); ex.value = c.expiry; changed(); };
+  A(form([['사용기한', inl(ex, button('자동 계산', autoExp))], ['', el(`<span class="hint">가장 이른 제조일 + 표준서 사용기한(${esc(p?.shelfLife?.life || '미설정')})</span>`)]]));
+  A(subh('시험 결과 <span class="hint">항목·기준은 제품표준서 7장에서 가져옴</span>'));
+  let rt;
+  const bar = inl(button('표준서 기준 다시 불러오기', async () => {
+    if (!p) return; if (!await askConfirm('제품표준서 7장 완제품 기준으로 시험항목을 다시 맞춥니다. 같은 항목의 결과는 유지됩니다.', { ok: '다시 맞추기' })) return;
+    c.results = (p.finishedSpecs || []).map(f => { const o = c.results.find(r => r.item === f.item && (r.sub || '') === (f.sub || '')) || {}, d = coaRowFrom(p, f); return { ...d, result: o.result || '', judge: o.judge || '', tester: o.tester || d.tester, note: o.note || d.note }; });
+    c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
+  }), button('결과 있는 항목 모두 적합', () => { c.results.forEach(r => { if (String(r.result).trim() && !r.judge) r.judge = '적합'; }); changed(); rt.rerender(); }),
+    button('시험자 일괄 입력', async () => { const v = await askText('빈 시험자 칸에 넣을 이름 (예: 자사 / (주)블리스팩 / 리봄화장품)'); if (v == null) return; c.results.forEach(r => { if (!r.tester) r.tester = v; }); changed(); rt.rerender(); }));
+  A(bar);
+  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '16%' }, { k: 'sub', label: '구분', w: '6%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'result', label: '시험결과', w: '11%' }, { k: 'judge', label: '판정', w: '8%', opts: ['', '적합', '부적합'] }, { k: 'method', label: '시험방법', w: '17%', ta: 1 }, { k: 'tester', label: '시험자', w: '9%' }, { k: 'note', label: '비고', w: '7%' }]);
+  A(rt);
+  A(subh('특이사항'));
+  A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
+  A(subh('보관용 검체 <span class="hint">제21조③ 사용기한까지 (개봉 후 사용기간 표시품은 제조일로부터 3년)</span>'));
+  const un = inp(c.retain, 'until', { type: 'date' });
+  const calcUntil = () => { const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); c.retain.until = c.retain.mode === '사용기한' ? c.expiry : (ds[0] ? addMonths(ds[0], 36) : ''); un.value = c.retain.until; changed(); };
+  A(form([['수량 (EA)', inp(c.retain, 'qty')], ['보관 위치', inp(c.retain, 'location')], ['보관기한 기준', inp(c.retain, 'mode', { opts: ['사용기한', '제조일+3년'], onch: calcUntil })], ['보관기한', inl(un, button('계산', calcUntil))]]));
+  A(subh('판정 및 서명'));
+  const sug = el('<span class="hint" id="vsug"></span>');
+  A(form([['판정일자', inp(c, 'judgeDate', { type: 'date' })], ['최종 판정', inl(inp(c, 'verdict', { opts: ['', '적합', '부적합', '보류'] }), sug)],
+    ['작성', inp(c.sign, 'writer')], ['확인 (검토)', inp(c.sign, 'reviewer')], ['승인', inp(c.sign, 'approver')]]));
+  A(subh('출고(시장출하) 승인 <span class="st bad">필수</span> <span class="hint">제19조② 시험결과 적합 + 품질부서 책임자가 출고 승인한 것만 출고 (긴급 출하도 동일)</span>'));
+  A(form([['승인 여부', inp(c.release, 'status', { opts: ['', '출고 승인', '보류'] })], ['승인자 (품질관리 책임자)', inp(c.release, 'approver')], ['승인일', inp(c.release, 'date', { type: 'date' })]]));
+  refreshCoa();
+}
+function refreshCoa() {
+  const box = $('#coachecks'); const c = S.coas.find(x => x.id === V.cid); if (!box || !c) return;
+  const ch = coaChecks(c), bad = ch.filter(x => !x.ok), s = coaStatus(c);
+  box.innerHTML = `<div class="row"><b>상태</b>&nbsp;${chip(s[0], s[1])}&nbsp;<span class="m">필수 ${bad.filter(x => x.lvl === '필수').length}건 · 권장 ${bad.filter(x => x.lvl === '권장').length}건 미충족</span></div>`;
+  bad.sort((a, b) => (a.lvl === '필수' ? 0 : 1) - (b.lvl === '필수' ? 0 : 1)).forEach(x => box.appendChild(el(`<div class="row">${chip(x.lvl, x.lvl === '필수' ? 'bad' : 'warn')}<div><b>${esc(x.label)}</b> <span class="m">${esc(x.msg)}</span></div></div>`)));
+  const sv = suggestVerdict(c), vs = $('#vsug'); if (vs) vs.textContent = sv && sv !== c.verdict ? `항목 판정으로 보면 「${sv}」` : '';
+}
+function coaList(m) {
+  const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 7장 기준</small></div></div>');
+  tb.appendChild(button('+ 새 성적서', () => go('coa', { newCoa: true }), 'btn pri')); m.appendChild(tb);
+  const card = el(`<div class="card"><div class="filt"><select id="cf"><option value="">전체 상태</option><option>작성 중</option><option>출고 승인 대기</option><option>출고 승인</option><option>부적합</option><option>보류</option></select></div><table class="list"><thead><tr><th>시험번호</th><th>제품코드</th><th>제품</th><th>LOT</th><th>입고일</th><th>판정일</th><th>판정</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
+  m.appendChild(card);
+  const sel = card.querySelector('#cf'); sel.value = V.cf || '';
+  const draw = () => {
+    const tbd = card.querySelector('tbody'); tbd.innerHTML = '';
+    const rows = [...S.coas].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).filter(c => !V.cf || coaStatus(c)[0] === V.cf);
+    rows.forEach(c => { const p = prod(c.productId), s = coaStatus(c); const tr = el(`<tr class="click"><td>${esc(c.testNo || '—')}</td><td>${esc(p?.code || '')}</td><td>${esc(p?.nameKo || '(삭제된 제품)')}</td><td>${esc(c.lots.map(l => l.lot).filter(Boolean).join(', '))}</td><td>${esc(c.receiptDate)}</td><td>${esc(c.judgeDate)}</td><td>${esc(c.verdict || '—')}</td><td>${chip(s[0], s[1])}</td></tr>`); tr.onclick = () => go('coa', { cid: c.id }); tbd.appendChild(tr); });
+    if (!rows.length) tbd.innerHTML = '<tr><td colspan="8" class="empty">해당하는 성적서가 없습니다.</td></tr>';
+  };
+  sel.onchange = () => { V.cf = sel.value; draw(); }; draw();
+}
+function newCoaDialog(m) {
+  if (!S.products.length) { m.appendChild(el('<div class="card empty">제품표준서를 먼저 만드세요.</div>')); return; }
+  const card = el(`<div class="card" style="max-width:640px"><h3>새 완제품시험성적서</h3><div class="hint" style="margin-bottom:8px">제품을 고르면 제품표준서 7장 완제품 기준이 시험항목으로 들어갑니다.</div><select id="np">${S.products.map(p => `<option value="${p.id}">${esc(p.code)} · ${esc(p.nameKo)} (${esc(p.psNo)} Rev.${esc(p.rev)})</option>`).join('')}</select><div class="toolbar" style="margin:12px 0 0;justify-content:flex-end"></div></div>`);
+  m.appendChild(card);
+  const t = card.querySelector('.toolbar');
+  t.appendChild(button('취소', () => go('coa', { cid: null }), 'btn'));
+  t.appendChild(button('만들기', () => { const p = prod(card.querySelector('#np').value); const c = newCoa(p); S.coas.push(c); save(); go('coa', { cid: c.id }); }, 'btn pri'));
+}
+
+/* ================= 기능성 자료 탭 ================= */
+function renderFunc(m) {
+  const linkedBy = new Map(); S.products.forEach(p => funcLinks(p).forEach(it => { if (!linkedBy.has(it.seq)) linkedBy.set(it.seq, []); linkedBy.get(it.seq).push(p); }));
+  m.appendChild(el(`<div class="toolbar"><div class="ttl">의약품안전나라 기능성 자료<small>${FD.missing ? '자료 파일(기능성자료/funcdocs.js)이 없습니다' : `${esc(FD.source || '')} · ${esc(FD.entp || '')} · 마지막 갱신 ${esc(FD.updatedAt)}`}</small></div></div>`));
+  m.appendChild(el(`<div class="card"><h3>받는 방법</h3><div style="line-height:1.75">
+    ① <b>공개 정보 (자동)</b> — 보고일련번호·보고완료일자·부서접수번호·효능·효과·용법·용량·사용상의 주의사항. <code>기능성자료\\기능성자료_갱신.bat</code>을 실행하면 로그인 없이 새로 받습니다.<br>
+    ② <b>보고서 원본 PDF (로그인 필요)</b> — 의약품안전나라에 로그인해 받은 기능성화장품 보고서(또는 심사결과통지서) PDF를 <code>기능성자료\\보고서</code> 폴더에 넣고 ①을 다시 실행하면, 파일 이름의 보고일련번호(10자리) 또는 제품명으로 품목에 붙습니다.<br>
+    ③ 제품표준서 1장 구성품의 <b>기능성 = 예</b>, 구성품 제품명이 보고 품목명과 같으면 자동 연결 → 8-1 보고번호, 13장 별첨, 인쇄본 뒤쪽 별첨 쪽으로 들어갑니다.</div></div>`));
+  const card = el(`<div class="card"><div class="filt"><input id="fq" placeholder="제품명·보고일련번호 검색"><label class="inl hint"><input type="checkbox" id="fl"> 제품표준서에 연결된 것만</label><span class="hint" id="fcnt"></span></div><table class="list"><thead><tr><th>보고완료일자</th><th>제품명 (보고 품목명)</th><th>보고일련번호</th><th>부서접수번호</th><th>보고서 PDF</th><th>연결된 제품표준서</th><th></th></tr></thead><tbody></tbody></table></div>`);
+  m.appendChild(card);
+  const q = card.querySelector('#fq'), fl = card.querySelector('#fl'); q.value = V.fq || '';
+  const draw = () => {
+    const k = norm(q.value); const rows = FD.items.filter(it => (!k || norm(it.name).includes(k) || it.seq.includes(q.value.trim())) && (!fl.checked || linkedBy.has(it.seq)));
+    card.querySelector('#fcnt').textContent = `${rows.length}건`;
+    const tb = card.querySelector('tbody'); tb.innerHTML = '';
+    rows.slice(0, 300).forEach(it => {
+      const ps = linkedBy.get(it.seq) || [];
+      const tr = el(`<tr><td>${esc(it.date)}</td><td>${esc(it.name)}</td><td>${esc(it.seq)}</td><td>${esc(it.receiptNo)}</td><td>${pdfPages(it) ? chip(pdfPages(it) + '쪽', 'good') : '<span class="hint">없음</span>'}</td><td></td><td><a class="btn sm" href="${esc(it.url)}" target="_blank" rel="noopener">보기</a></td></tr>`);
+      const td = tr.children[5]; ps.forEach(p => { const a = el(`<a style="cursor:pointer;color:var(--navy);text-decoration:underline;margin-right:6px">${esc(p.code || p.nameKo)}</a>`); a.onclick = () => go('ps', { pid: p.id, sec: 's8' }); td.appendChild(a); });
+      tb.appendChild(tr);
+    });
+    if (!rows.length) tb.innerHTML = `<tr><td colspan="7" class="empty">${FD.missing ? '자료 파일이 없습니다.' : '검색 결과가 없습니다.'}</td></tr>`;
+  };
+  q.oninput = () => { V.fq = q.value; draw(); }; fl.onchange = draw; draw();
+}
+
+/* ================= 발행 이력 ================= */
+function renderLog(m) {
+  m.appendChild(el('<div class="toolbar"><div class="ttl">발행 이력<small>미리보기에서 「발행 (인쇄 / PDF 저장)」을 누를 때 기록됩니다</small></div></div>'));
+  const card = el('<div class="card"><table class="list"><thead><tr><th>발행 일시</th><th>종류</th><th>문서번호</th><th>제품</th><th>판·LOT</th><th>상태</th></tr></thead><tbody></tbody></table></div>');
+  const tb = card.querySelector('tbody');
+  S.issues.forEach(x => tb.appendChild(el(`<tr><td>${esc(x.at)}</td><td>${esc(x.type)}</td><td>${esc(x.docNo)}</td><td>${esc(x.product)}</td><td>${esc(x.ref)}</td><td>${esc(x.state || '')}</td></tr>`)));
+  if (!S.issues.length) tb.innerHTML = '<tr><td colspan="6" class="empty">아직 발행한 문서가 없습니다.</td></tr>';
+  m.appendChild(card);
+}
+function logIssue(o) { S.issues.unshift({ id: uid('i'), at: nowStr(), ...o }); save(); }
+
+/* ================= 인쇄 문서: 제품표준서 ================= */
+let BID = 0;
+const hdr = (p, title, sub = '') => `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="2" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr><tr><td class="phs">${esc(sub)}</td></tr><tr><td rowspan="3" class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr><tr><td class="phe">${esc(p.nameEn)}</td></tr><tr><td class="phm">${(() => { const pu = String(p.packUnit || p.weight || '').split('\n').map(s => s.trim()).filter(s => s && !/^\[[^\]]*\]$/.test(s)).join(' / '); return [['표준서 번호', p.psNo], ['제품코드', p.code], ['벌크코드', p.bulkCode], ['', typeLine(p)], ['포장단위', pu]].filter(([, v]) => v).map(([k, v]) => (k ? k + ' ' : '') + esc(v)).join(' · '); })()}</td></tr></table>`;
+const foot = p => `<div class="foot"><span>${esc(p.psNo)} (Rev.${esc(p.rev)})</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div>`;
+const page = (p, key, title, body, sub = '') => `<section class="page" data-key="${key}">${hdr(p, title, sub)}<div class="body">${body}</div>${foot(p)}</section>`;
+const blk = (bar, inner) => `<div class="blk" data-id="b${++BID}">${bar ? `<div class="bar">${bar}</div>` : ''}${inner}</div>`;
+function dtable(cols, rows, { pad = 0, padH = 19, extra = '' } = {}) {
+  const colg = cols.map(c => `<col style="width:${c.w || 'auto'}">`).join('');
+  const tr = (r, i) => `<tr>${cols.map(c => `<td class="${c.c ? 'c' : ''}">${c.f ? c.f(r, i) : nl(r[c.k])}</td>`).join('')}</tr>`;
+  const pads = Array.from({ length: Math.max(0, pad - rows.length) }, () => `<tr class="pad" style="height:${padH}px">${cols.map(() => '<td></td>').join('')}</tr>`).join('');
+  return `<table class="dsplit"><colgroup>${colg}</colgroup><thead><tr>${cols.map(c => `<th>${c.label}</th>`).join('')}</tr></thead><tbody class="data">${rows.map(tr).join('')}${pads}${extra}</tbody></table>`;
+}
+const N = { label: 'No.', w: '6%', c: 1, f: (r, i) => i + 1 };
+function psDoc(p, extra) {
+  BID = 0;
+  const comps = p.components || [], links = funcLinks(p), P = [];
+  const ck = (on) => on ? '☑' : '☐';
+  // 표지
+  P.push(`<section class="page nosplit" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div>
+  <div class="bar center">통합 제품표준서 (Integrated Product Standard)</div>
+  <table class="h22" style="margin-top:6px"><colgroup><col style="width:42%"><col></colgroup><tr><th>제 품 명 (한글)</th><td>${esc(p.nameKo)}</td></tr><tr><th>제 품 명 (영문)</th><td>${esc(p.nameEn)}</td></tr></table>
+  <table class="h22" style="margin-top:8px"><colgroup><col style="width:22%"><col style="width:20%"><col style="width:20%"><col></colgroup>
+   <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
+   <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
+   <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>포장단위</th><td class="c">${nl(p.packUnit || p.weight)}</td></tr>
+   ${isFunctional(p) ? `<tr><th>기능성 보고(심사) 번호</th><td class="c" style="font-size:7.5pt">${esc(p.efficacy.reviewNo || funcLinks(p).map(it => it.seq).join(', '))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (funcLinks(p)[0] || {}).date || '')}</td></tr>` : ''}
+   <tr><th>문서정보</th><td class="c">${esc(p.docInfo)}</td><th>문서 효력발생일</th><td class="c">${esc(p.effective)}</td></tr>
+   <tr><th>문서 차기검토일</th><td class="c">${esc(p.nextReview)}</td><th>제·개정자</th><td class="c">${esc(p.author)}</td></tr></table>
+  <div class="bar center" style="margin-top:12px">제조 및 책임판매 주체</div>
+  <table class="h30"><colgroup><col style="width:22%"><col style="width:24%"><col></colgroup><tr><th>구 분</th><th>업체명</th><th>역 할</th></tr>
+   ${p.makers.map(m => `<tr><td>${esc(m.type)}</td><td>${esc(m.name)}</td><td>${nl(m.role)}</td></tr>`).join('')}
+   <tr><td>화장품책임판매업자</td><td>${esc(p.seller.name)}<br>(${esc(p.seller.addr)})</td><td>${nl(p.seller.role)}</td></tr></table>
+  <div class="bar center" style="margin-top:12px">검토 및 승인 (Review &amp; Approval)</div>
+  <table class="h34"><colgroup><col style="width:16%"><col style="width:22%"><col style="width:20%"><col style="width:24%"><col></colgroup><tr><th>구분</th><th>Job Title</th><th>Name</th><th>Signature</th><th>Date</th></tr>
+   ${[['작성', '품질관리 담당자', 'writer'], ['검토', '품질관리 확인자', 'reviewer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>
+  <div class="bar center" style="margin-top:12px">배포 및 관리 (Distribution)</div>
+  <table class="h22"><colgroup><col style="width:22%"><col></colgroup><tr><th>관리 구분</th><td>${ck(p.control !== '비관리본')} 관리본&nbsp;&nbsp;${ck(p.control === '비관리본')} 비관리본&nbsp;&nbsp;※ 개정 시 구본 사본은 회수·폐기, 원본은 "무효본" 표시 후 보관</td></tr><tr><th>원본 보관</th><td>품질관리팀</td></tr></table>
+  <table class="h22"><colgroup><col style="width:22%"><col style="width:28%"><col style="width:14%"><col style="width:18%"><col></colgroup><tr><th>사본 배포처</th><th>부서 / 업체명</th><th>사본번호</th><th>배포일</th><th>회수일</th></tr>
+   ${[...p.distribution, ...Array(Math.max(0, 3 - p.distribution.length)).fill({})].map((d, i) => `<tr><td class="c">${i + 1}</td><td>${esc(d.dest)}</td><td class="c">${esc(d.copyNo)}</td><td class="c">${esc(d.date)}</td><td class="c">${esc(d.recall)}</td></tr>`).join('')}</table>
+  ${foot(p)}</section>`);
+  // 개정내역
+  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 17, padH: 26 })), '본 통합 제품표준서의 개정 이력'));
+  // 작성 범위: 전체(CGMP 12개 항목, 양식 v2) / 간소(책임판매업자 6장)
+  const LITE = isLite(p);
+  const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s1: 1, s2: 2, s3: 3, s4: 4, s5: 5, s6: 6, s7: 7, s8: 8, s9: 9, s10: 10, s11: 11, s12: 12, s13: 13 };
+  const has = s => NO[s] != null;
+  const refSrc = p.makerRef || [...new Set(comps.map(c => c.makerPsNo).filter(Boolean))].join(', ') || '제조업자 보관 문서';
+  // 목차
+  if (LITE) {
+    const rows = LITE_TOC.map(([s, t, why]) => `<tr><td class="c">${NO[s]}</td><td>${esc(t)}</td><td>${esc(why)}</td><td>${esc(p.toc[FULLNUM[s]] || '')}</td></tr>`).join('');
+    const refs = LITE_REF.map(t => `<tr><td class="c">참조</td><td>${esc(t)}</td><td>제조업자 문서 (시행규칙 제11조①2)</td><td>${esc(refSrc)}</td></tr>`).join('');
+    P.push(page(p, 'toc', '목차 (Table of Contents)', `<table class="h26" style="margin-top:8px"><colgroup><col style="width:8%"><col style="width:34%"><col style="width:33%"><col></colgroup><tr><th>항목</th><th>내 용</th><th>근 거</th><th>출처(원 문서)</th></tr>${rows}${refs}</table>
+      <div class="note">※ 제품표준서의 작성·보관 의무는 화장품제조업자에게 있다(화장품법 시행규칙 제11조①2). 화장품책임판매업자는 제조업자로부터 받은 제품표준서를 보관하며(제12조3), 이 문서는 품질관리에 필요한 사항(제11조①6)을 정리한 것이다. 처방·공정·설비 등 제조업자 영업비밀은 '참조'로 표시하고 제조업자 문서에 따른다(제11조①6 나목).</div>`, '책임판매업자 품질관리용 제품표준서 구성'));
+  } else {
+    P.push(page(p, 'toc', '목차 (Table of Contents)', `<table class="h26" style="margin-top:8px"><colgroup><col style="width:6%"><col style="width:30%"><col style="width:24%"><col style="width:26%"><col></colgroup><tr><th>항목</th><th>내 용</th><th>CGMP 기재사항</th><th>근거 문서 (문서명·번호)</th><th>작성 방식</th></tr>${TOC.map(([n, t], i) => `<tr><td class="c">${n}</td><td>${esc(t)}</td><td>${esc(TOC_REQ[i])}</td><td>${esc(p.toc[n] || '')}</td><td class="c">${esc((p.tocMode || {})[n] || TOC_MODE[i])}</td></tr>`).join('')}<tr><td class="c">+</td><td>공정 검사방법 · 포장작업 시 주의사항</td><td>(3장·6장 보완)</td><td>${esc(p.toc['3+'] || '')}</td><td class="c">${esc((p.tocMode || {})['3+'] || '별첨')}</td></tr></table>
+      <div class="note">※ 해설서 p84: 기준서를 여러 규정으로 나눠 작성하면 해당 기준서에 그 문서의 번호를 목록으로 정리한다. '별첨·참조' 항목은 근거 문서 이름과 번호를 적는다.</div>`, 'CGMP 제15조② 기재사항 대비표 · 근거 문서 목록'));
+  }
+  // 1 제품 개요
+  const mk0 = p.makers[0] || {};
+  P.push(page(p, 's1', `${NO.s1}. 제품 개요 및 표시사항 (Product Information &amp; Notation)`,
+    `<div class="blk"><div class="bar">${NO.s1}-1. 제품 기본정보</div><table class="h26"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:17%"><col></colgroup>
+      <tr><th>제품명 (한글)</th><td>${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td><th>제품명 (영문)</th><td>${esc(p.nameEn)}</td></tr>
+      <tr><th>제품표준서 번호</th><td>${esc(p.psNo)}</td><th>제정연월일</th><td>${esc(p.date)}</td></tr>
+      <tr><th>제품코드</th><td>${esc(p.code)}</td><th>개정번호</th><td>${esc(p.rev)}</td></tr>
+      ${LITE ? `<tr><th>제품 유형</th><td>${nl(p.type)}</td><th>제품 중량</th><td>${nl(p.weight)}</td></tr>` : `<tr><th>벌크코드 (제조사)</th><td>${esc(p.bulkCode)}</td><th>유형구분</th><td>${esc(p.typeDiv)}</td></tr>
+      <tr><th>유형분류</th><td>${esc(p.typeClass)}</td><th>유형세분류</th><td>${esc(p.typeSub)}</td></tr>
+      ${isFunctional(p) || p.funcClass ? `<tr><th>기능성 분류</th><td>${esc(p.funcClass)}</td><th>보고(심사) 번호</th><td style="font-size:7.5pt">${esc(p.efficacy.reviewNo || funcLinks(p).map(it => it.seq).join(', '))}</td></tr>` : ''}
+      <tr><th>제품 중량</th><td>${nl(p.weight)}</td><th>포장단위</th><td>${nl(p.packUnit)}</td></tr>`}
+      <tr><th>성상</th><td colspan="3">${nl(p.appearance)}</td></tr>
+      ${LITE ? `<tr><th>제조업자 제품표준서</th><td colspan="3">${esc(refSrc)}</td></tr>` : `<tr><th>제조단위</th><td colspan="3">${comps.map(c => `[${esc(c.label)}] ${esc(c.batchSize || '　　')} ${esc(c.batchUnit)} / batch`).join('　　')}</td></tr>`}</table></div>
+    ${LITE ? `<div class="blk"><div class="bar">${NO.s1}-2. 용법·용량 (Directions for Use)</div><table><tr><td class="pre" style="height:56px;vertical-align:top">${esc(p.usage)}</td></tr></table></div>` :
+    `<div class="blk"><div class="bar">${NO.s1}-2. 제품 정보 요약</div><table class="h26"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:17%"><col></colgroup>
+      <tr><th>용법·용량</th><td colspan="3" class="pre">${esc(p.usage)}</td></tr>
+      <tr><th>보관조건 (저장방법)</th><td>${esc((p.storage.find(s => /완제품/.test(s.type)) || {}).condition || '')}</td><th>사용기한</th><td>${esc(p.shelfLife.life)}</td></tr>
+      <tr><th>효능·효과</th><td>${nl(p.efficacy.effect)}</td><th>개봉 후 사용기간</th><td>${esc(p.openLife.life)}</td></tr></table><div class="note">※ 상세 내용은 8장(효능·효과·주의사항), 12장(보관조건·사용기한)</div></div>`}
+    <div class="blk"><div class="bar">${NO.s1}-3. 표시사항 (Labeling)</div><table><colgroup><col style="width:17%"><col></colgroup>
+      <tr><th style="height:34px">화장품제조업자</th><td>${nl(p.labeling.maker)}</td></tr><tr><th style="height:26px">화장품책임판매업자</th><td>${nl(p.labeling.seller)}</td></tr>
+      <tr><th style="height:26px">기능성 표시</th><td>${nl(p.labeling.functionalLabel)}</td></tr>
+      ${LITE ? '' : `<tr><th style="height:70px">사용할 때의 주의사항</th><td>${nl(p.labeling.cautions)}</td></tr><tr><th style="height:110px">전성분</th><td>${nl(p.labeling.fullIng)}</td></tr>`}</table></div>`));
+  // 2 원료 성분 및 분량 (제조업자 수준만)
+  if (has('s2')) P.push(page(p, 's2', '2. 원료 성분 및 분량 (Material Component Criteria and Amount)', comps.map((c, i) => {
+    const ings = c.ingredients || [], tp = ings.reduce((a, r) => a + (num(r.pct) || 0), 0), tq = ings.reduce((a, r) => a + (num(r.qty || calcQty(c, r)) || 0), 0);
+    const info = `<table class="h22"><colgroup><col style="width:14%"><col style="width:18%"><col style="width:14%"><col style="width:18%"><col style="width:16%"><col></colgroup><tr><th>제조단위</th><td class="c">${esc(c.batchSize)} ${esc(c.batchUnit)} / batch</td><th>함량 기준</th><td class="c">본품 100 g 중 (% w/w)</td><th>제조사 표준서</th><td>${esc(c.makerPsNo)}</td></tr></table>`;
+    const tot = `<tr class="tot"><td colspan="6" class="c"><b>합 계</b></td><td class="c">${tp ? tp.toFixed(4) : '-'}</td><td class="c">${tq ? tq.toFixed(4) : '-'}</td><td></td></tr>`;
+    return blk(`2-${i + 1}. ${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, info + dtable([{ label: '구분', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '원료코드', w: '9%', k: 'code', c: 1 }, { label: '원료명', w: '13%', k: 'name' }, { label: '성분명', k: 'inci' }, { label: '배합목적', w: '10%', k: 'purpose', c: 1 }, { label: '규격', w: '7%', k: 'spec', c: 1 }, { label: '분량(%)', w: '9%', k: 'pct', c: 1 }, { label: '제조단위당<br>기준량', w: '10%', c: 1, f: r => esc(r.qty || calcQty(c, r)) }, { label: '비고', w: '8%', k: 'note' }], ings, { pad: 6, extra: tot }));
+  }).join('') + '<div class="note">※ 제조단위당 기준량 = 제조단위 × 분량(%) ÷ 100</div>' + (() => {
+    const nd = p.nondisclosure || {}; const on = nd.applies === '해당';
+    return blk(`2-${comps.length + 1}. 원료 함량 일부 미공개 확인 (해당 시)`, `<table class="h22"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:24%"><col></colgroup>
+      <tr><th>해당 여부</th><td colspan="3">${on ? '☑ 해당 — 품질·안전관리 영향 성분만 함량 기재 (9장 관리 성분 표)' : '☑ 해당 없음 — 처방 전체 확보'}</td></tr>
+      ${on ? `<tr><th>영향을 주는 성분 수</th><td class="c">${esc(nd.affect)} 종</td><th>영향을 주지 않는 성분 수</th><td class="c">${esc(nd.nonAffect)} 종 (함량 비공개)</td></tr>
+      <tr><th>제조업자 확인</th><td colspan="3">회사명 : ${esc(nd.company)}　　책임자 : ${esc(nd.person)} (인)　　일자 : ${esc(nd.date)}</td></tr>
+      <tr><td colspan="4" style="font-size:7.4pt">비공개 원료 함량으로 인한 제품 품질·안정성의 책임은 화장품제조업자에게 있으며, 식약처 등 외부기관이 비공개 성분 함량 확인을 요청하면 책임판매업자에게 공개하거나 제조업자가 직접 대응한다 (시행규칙 제11조①6 나목).</td></tr>` : ''}</table>`);
+  })()));
+  const stg = { label: '공정 구분', w: '11%', k: 'stage', c: 1 };
+  if (has('s3')) P.push(page(p, 's3', '3. 제조공정흐름도 및 공정검사 (Manufacturing Process Flow &amp; In-process Control)', blk('', dtable([{ label: '구분(제조원)', w: '13%', k: 'maker', c: 1 }, stg, { label: '공 정', w: '28%', k: 'process' }, { label: '공정검사 / 관리항목 (Q.C)', k: 'qc' }, { label: '공정검사 기록서', w: '16%', k: 'record', c: 1 }], p.flow, { pad: 12, padH: 40 })) + (p.flow.length ? '' : `<div class="note">※ 제조공정흐름도: ${esc(p.toc['3'] || '근거 문서(제조업자 제조지시 및 기록서 등) 이름·번호를 목차에 기재')}</div>`)));
+  if (has('s4')) P.push(page(p, 's4', '4. 공정별 상세 작업내용 (Detailed Process Description)', comps.map((c, i) => blk(`4-${i + 1}. ${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)}`, dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, stg, { label: '공정명', w: '14%', k: 'name', c: 1 }, { label: '작업내용', k: 'work' }, { label: '관리기준', w: '22%', k: 'criteria' }], c.process, { pad: 7, padH: 30 }))).join('')));
+  if (has('s5')) P.push(page(p, 's5', '5. 공정별 이론 생산량 및 수율관리기준 (Theoretical Yield &amp; Yield Control)', blk('', dtable([{ label: '구분', w: '12%', k: 'part', c: 1 }, { label: '공정', w: '24%', k: 'process' }, { label: '이론 생산량', w: '26%', k: 'theory' }, { label: '수율관리기준', w: '18%', k: 'criteria', c: 1 }, { label: '비고', k: 'note' }], p.yields, { pad: 4, padH: 50 }))));
+  if (has('s6')) P.push(page(p, 's6', '6. 작업 중 주의사항 (Precautions during Operation)', blk('', dtable([{ label: 'No.', w: '8%', c: 1, f: (r, j) => j + 1 }, { label: '공정 구분', w: '19%', k: 'name', c: 1 }, { label: '주의사항', k: 'content' }], p.precautions, { pad: 5, padH: 50 }))));
+  // 효능·효과 (책임판매업자용은 2장)
+  const rno = p.efficacy.reviewNo ? `${esc(p.efficacy.reviewNo)}${p.efficacy.reviewDate ? ' / ' + esc(p.efficacy.reviewDate) : ''}` : links.map(it => `기능성화장품 보고 · 보고일련번호 ${esc(it.seq)} · 부서접수번호 ${esc(it.receiptNo || '')} · 보고완료 ${esc(it.date || '')}`).join('<br>');
+  const s8page = page(p, 's8', `${NO.s8}. 효능·효과 및 사용할 때의 주의사항`,
+    `<div class="blk"><div class="bar">${NO.s8}-1. 효능·효과${isFunctional(p) ? ' (기능성화장품)' : ''}</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:46px">효능·효과</th><td>${nl(p.efficacy.effect)}</td></tr><tr><th style="height:28px">기능성 주성분</th><td>${nl(p.efficacy.actives)}</td></tr><tr><th style="height:34px">기능성 보고(심사)<br>번호·일자</th><td>${rno}${links.length ? `<br><span style="font-size:7.5pt;color:#444">(보고서 사본 → ${NO.s13}장 별첨)</span>` : ''}</td></tr></table></div>
+     <div class="blk"><div class="bar">${NO.s8}-2. 사용할 때의 주의사항</div><table><colgroup><col style="width:18%"><col></colgroup><tr><th style="height:110px">공통<br>(화장품법 시행규칙<br>[별표 3])</th><td class="pre">${esc(p.cautionsCommon)}</td></tr><tr><th style="height:90px">제품 특성상<br>추가 주의사항</th><td class="pre">${esc(p.cautionsExtra)}</td></tr></table></div>`);
+  if (LITE) P.push(s8page);
+  // 성분 (책임판매업자용 3장: 전성분 + 품질·안전관리에 영향을 주는 성분)
+  const fullBlocks = comps.map((c, i) => {
+    const L = c.fullIngredients || [], E = c.fullIngredientsEn || [], h = Math.max(Math.ceil(L.length / 2), 4), rows = Array.from({ length: h }, (_, k) => ({ a: k + 1, an: L[k] || '', ae: E[k] || '', b: L[k + h] ? k + h + 1 : '', bn: L[k + h] || '', be: E[k + h] || '' }));
+    const cols = (!LITE && E.length) ? [{ label: '연번', w: '6%', c: 1, f: r => r.an ? r.a : '' }, { label: '성분명', w: '22%', k: 'an' }, { label: 'INCI', w: '22%', k: 'ae' }, { label: '연번', w: '6%', c: 1, k: 'b' }, { label: '성분명', w: '22%', k: 'bn' }, { label: 'INCI', k: 'be' }]
+      : [{ label: '연번', w: '7%', c: 1, f: r => r.an ? r.a : '' }, { label: '성분명', w: '43%', k: 'an' }, { label: '연번', w: '7%', c: 1, k: 'b' }, { label: '성분명', k: 'bn' }];
+    return blk(`${NO.s9}-${i + 1}. 전성분 — ${esc(c.fullName || c.label)} (${L.length}종)`, dtable(cols, rows));
+  }).join('');
+  // 양식 v2: 품질·안전관리 영향 성분 16구분 + 알레르기 유발성분 25종
+  const KI = p.keyIngredients || [];
+  const chk16 = !LITE ? blk(`${NO.s9}-${comps.length + 1}. 품질·안전관리에 영향을 주는 성분 — 함량 필수 기재 체크리스트`, dtable([{ label: 'No.', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '함량 필수 기재 성분 구분', w: '33%', k: 't' }, { label: '해당', w: '6%', c: 1, f: r => r.hit.length ? '☑' : '☐' }, { label: '성분명 (구성품)', f: r => esc(r.hit.map(k => `${k.name}${k.comp ? ' [' + k.comp + ']' : ''}`).join(', ')) }, { label: '함량 (%)', w: '12%', c: 1, f: r => esc(r.hit.map(k => k.pct).filter(Boolean).join(', ')) }, { label: '근거', w: '16%', f: r => `<span style="font-size:7pt">${esc(r.law)}</span>` }],
+    CAT16.map(([t, law], i) => ({ t, law: law.startsWith('제') ? '시행규칙 ' + law : law, hit: KI.filter(k => catNo(k.category) === i + 1) }))) + '<div class="note">※ 사용한도는 「화장품 안전기준 등에 관한 규정」 [별표 2]로 확인. 처방 전체를 받지 못해도 이 표의 성분 함량은 제조업자에게 받는다.</div>') : '';
+  const hasFrag = comps.some(c => (c.fullIngredients || []).some(n => /^향료$|^향$/.test(n)));
+  const ALG = typeof ALLERGENS !== 'undefined' ? ALLERGENS : [];
+  const algRows = ALG.map(a => { const k = KI.find(x => norm(x.name) === norm(a)); const v = k ? num(k.pct) : null, th = p.rinseOff === '예' ? 0.01 : 0.001; return { a, pct: k ? k.pct : '', mark: v != null ? (v > th ? '☑ 표시' : '☐') : '' }; });
+  const algBlock = !LITE ? blk(`${NO.s9}-${comps.length + 2}. 착향제 구성 성분 중 알레르기 유발성분 (25종)`, `<table><tr><td style="height:22px">${hasFrag ? '☐ 착향제 미사용&nbsp;&nbsp;☑ 향료 사용 — 아래 표에 제조업자 향료 자료의 함량 기재' : '☑ 착향제 미사용 (전성분에 향료 없음) — 알레르기 유발성분을 의도적으로 사용하지 않음'}　(${p.rinseOff === '예' ? '씻어내는 제품: 0.01% 초과 시 표시' : '씻어내지 않는 제품: 0.001% 초과 시 표시'})</td></tr></table>` +
+    dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '성분명', w: '40%', k: 'a' }, { label: '제품 중 함량 (%)', w: '20%', k: 'pct', c: 1 }, { label: '전성분 표시 대상', k: 'mark', c: 1 }], algRows)) : '';
+  const keyBlock = LITE ? blk(`${NO.s9}-${comps.length + 1}. 품질·안전관리에 영향을 주는 성분`, dtable([{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '구성품', w: '10%', k: 'comp', c: 1 }, { label: '성분명', w: '26%', k: 'name' }, { label: '함량 (%, 100g 기준)', w: '15%', k: 'pct', c: 1 }, { label: '구분', k: 'category' }, { label: '비고', w: '16%', k: 'note' }], p.keyIngredients || [], { pad: 4 }) +
+    `<div class="note">※ 기능성 주성분, 「화장품 안전기준 등에 관한 규정」 사용상 제한이 필요한 원료(보존제·AHA·레티놀 등)와 그 함량. 사용한도는 같은 규정 [별표 2]에 따른다.</div><table style="margin-top:4px"><tr><td style="font-size:7.8pt">${esc(p.allergenNote || '착향제 구성 성분 중 알레르기 유발성분(25종): 해당 성분이 있으면 위 표에 기재, 없으면 "의도적으로 사용하지 않음"')}</td></tr></table>`) : '';
+  const s9page = has('s9') ? page(p, 's9', LITE ? `${NO.s9}. 성분 (전성분 · 품질·안전관리에 영향을 주는 성분)` : '9. 전성분 · 품질·안전관리 영향 성분 · 알레르기 유발성분', fullBlocks + keyBlock + chk16 + algBlock) : '';
+  if (LITE && s9page) P.push(s9page);
+  // 기준 및 시험방법
+  const specCols = [{ label: '시험항목', w: '18%', k: 'item' }, { label: '시험방법', w: '30%', k: 'method' }, { label: '시험기준', k: 'criterion' }, { label: '비고', w: '20%', k: 'note' }];
+  const n7 = NO.s7; let k7 = 1, s7 = '';
+  if (LITE) s7 += blk(`${n7}-${k7++}. 원료·자재 기준 및 시험방법`, `<table><tr><td style="height:24px">제조업자 기준(별책)에 따름 — ${esc(refSrc)}</td></tr></table>`);
+  else {
+    s7 += blk(`${n7}-${k7++}. 원자재 (원료·자재)`, dtable([{ label: '구분', w: '11%', k: 'type', c: 1 }, { label: '시험항목', w: '20%', k: 'item' }, { label: '시험방법', w: '22%', k: 'method' }, { label: '시험기준', w: '20%', k: 'criterion' }, { label: '별도관리 문서 (규격서 번호)', k: 'doc' }], p.rawSpecs));
+    s7 += blk(`${n7}-${k7++}. 반제품 기준 및 시험방법`, p.semiNA ? `<table><tr><td style="height:24px">☑ 해당 없음 — 충전 전 제조를 마친 내용물은 벌크제품으로 관리하며, 공정 중 검사는 3장 공정검사 참조</td></tr></table>` : dtable(specCols, p.semiSpecs));
+  }
+  const bulkCols = LITE ? specCols : [{ label: 'No.', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '14%', k: 'item' }, { label: '시험기준', w: '19%', k: 'criterion' }, { label: '시험방법 (요약)', w: '19%', k: 'method' }, { label: '시험 근거', w: '15%', k: 'basis' }, { label: '규격 유형', w: '9%', k: 'specType', c: 1 }, { label: '적용 주기', w: '9%', k: 'freq', c: 1 }, { label: '비고', k: 'note' }];
+  comps.forEach(c => { s7 += blk(`${n7}-${k7++}. 벌크제품 기준 및 시험방법 (${esc(c.fullName || c.label)} / 제조사 : ${esc(c.maker)})`, dtable(bulkCols, c.bulkSpecs, { pad: 3 })); });
+  if (!LITE) s7 += '<div class="note">규격 유형 = 허가 규격(기능성 보고·심사 기준) / 자가 규격 · 적용 주기 = 매 배치 / 초도 생산 / 초도 3배치</div>';
+  const finCols = LITE ? [{ label: 'No.', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '20%', k: 'item' }, { label: '구분', w: '8%', k: 'sub', c: 1 }, { label: '시험기준', w: '26%', k: 'criterion' }, { label: '시험방법', k: 'method' }, { label: '비고', w: '10%', k: 'note' }]
+    : [{ label: 'No.', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '시험항목', w: '16%', k: 'item' }, { label: '구성품', w: '7%', k: 'sub', c: 1 }, { label: '구분', w: '8%', k: 'stage', c: 1 }, { label: '시험기준', w: '19%', k: 'criterion' }, { label: '시험방법 (요약)', k: 'method' }, { label: '시험 근거', w: '13%', k: 'basis' }, { label: '결과 적용', w: '12%', k: 'apply', c: 1 }];
+  s7 += blk(`${n7}-${k7++}. 완제품 (충전품·완제품) 기준 및 시험방법 [${esc([...new Set(comps.map(c => c.maker).filter(Boolean))].join(', '))} → ${esc(p.seller.name)} 확인]`, dtable(finCols, p.finishedSpecs, { pad: 5 }) + `<div class="note">※ 완제품 시험성적서의 시험항목·시험기준은 이 표와 같다. 제조번호별 품질검사 후 유통한다(시행규칙 제12조5).${LITE ? '' : ' 결과 적용 = 벌크 시험자료 적용(반제품성적서 결과 인용) / 입고검사(자사) / 위탁시험·제조사 / 완제품 시험.'}</div>`);
+  P.push(page(p, 's7', `${n7}. ${LITE ? '기준 및 시험방법 (벌크제품 · 완제품)' : '원자재·반제품·벌크제품·완제품의 기준 및 시험방법'} (Specifications &amp; Test Methods)`, s7));
+  if (!LITE) { P.push(s8page); if (s9page) P.push(s9page); }
+  if (has('s10')) { const pm = p.packMethod || {}; P.push(page(p, 's10', '10. 포장 기준 (Packaging Standard)', blk('10-1. 구성품 및 포장재 규격', dtable([N, { label: '1차/2차', w: '7%', k: 'grade', c: 1 }, { label: '구성품명', w: '20%', k: 'name' }, { label: '구성품 코드', w: '12%', k: 'code', c: 1 }, { label: '재질', w: '12%', k: 'material' }, { label: '규격(치수·용량)', w: '14%', k: 'spec' }, { label: '공급사', w: '11%', k: 'supplier' }, { label: '수량', w: '6%', k: 'unit', c: 1 }, { label: '비고', k: 'note' }], p.packaging, { pad: 8, padH: 26 })) +
+    blk('10-2. 포장 방법', `<table class="h30"><colgroup><col style="width:20%"><col></colgroup><tr><th>LOT·사용기한 표시</th><td class="pre">${esc(pm.lotExp || 'LOT ○○○ / EXP YYYYMMDD까지 (위치 : 　　　)')}</td></tr><tr><th>1차 포장 (용기)</th><td class="pre">${esc(pm.primary)}</td></tr><tr><th>2차 포장 (단상자)</th><td class="pre">${esc(pm.secondary)}</td></tr><tr><th>아웃박스 · 라벨</th><td class="pre">${esc(pm.outbox)}</td></tr></table>`))); }
+  if (has('s11')) {
+    const groups = []; (p.equipment || []).forEach(e => { const k = (e.group || '제조') + '|' + (e.maker || ''); let g = groups.find(x => x.k === k); if (!g) groups.push(g = { k, group: e.group || '제조', maker: e.maker || '', rows: [] }); g.rows.push(e); });
+    const order = { '제조': 0, '충전·포장': 1, '품질관리': 2 }; groups.sort((a, b) => (order[a.group] ?? 9) - (order[b.group] ?? 9));
+    P.push(page(p, 's11', '11. 제조 및 품질관리에 필요한 시설 및 기구 (Facilities &amp; Equipment)', (groups.length ? groups : [{ group: '제조', maker: '', rows: [] }]).map((g, i) => {
+      const qc = g.group === '품질관리';
+      return blk(`11-${i + 1}. ${qc ? '품질관리(시험)' : g.group} 시설 및 기구${g.maker ? ` — ${qc ? '시험 수행처' : '제조사'} : ${esc(g.maker)}` : ''}`, dtable([{ label: '연번', w: '5%', c: 1, f: (r, j) => j + 1 }, { label: '설비 관리번호', w: '11%', k: 'mgmtNo', c: 1 }, { label: '시설 및 기구', w: '23%', k: 'name' }, { label: '규격', w: '16%', k: 'spec', c: 1 }, { label: '수량', w: '6%', k: 'qty', c: 1 }, { label: '구비', w: '6%', c: 1, f: r => r.have === '아니오' ? '✕' : '○' }, { label: qc ? '사용 시험항목' : '용도 / 사용 공정', w: '17%', k: 'use' }, { label: '비고', k: 'note' }], g.rows));
+    }).join('') + ((p.equipment || []).length ? '' : `<div class="note">※ 시설·기기: ${esc(p.toc['11'] || '근거 문서(제조업자 설비 목록 등) 이름·번호를 목차에 기재')}</div>`)));
+  }
+  // 보관조건·사용기한
+  P.push(page(p, 's12', `${NO.s12}. 보관조건 및 사용기한 (Storage Condition &amp; Shelf Life)`,
+    blk(`${NO.s12}-1. 보관조건`, dtable([{ label: '구분', w: '13%', k: 'type', c: 1 }, { label: '대상', w: '20%', k: 'target', c: 1 }, { label: '보관조건', k: 'condition', c: 1 }, { label: '최대 보관기간', w: '14%', k: 'maxStorage', c: 1 }, { label: '비고', w: '17%', k: 'note', c: 1 }], LITE ? p.storage.filter(s => !/원자재/.test(s.type)) : p.storage)) +
+    (LITE ? '' : '<div class="note">※ 벌크제품은 최대 보관기간을 정하고, 기간이 가까워지면 완제품 제조 전에 재평가한다(제17조③).</div>') +
+    blk(`${NO.s12}-2. 사용기한 또는 개봉 후 사용기간`, `<table class="h30"><colgroup><col style="width:16%"><col style="width:26%"><col style="width:28%"><col></colgroup><tr><th>구분</th><th>사용기한</th><th>기산점</th><th>비고</th></tr><tr><td class="c">완제품</td><td class="c">${esc(p.shelfLife.life)}</td><td class="c">${esc(p.shelfLife.basis)}</td><td>${nl(p.shelfLife.note)}</td></tr><tr><td class="c">개봉 후<br>사용기간</td><td class="c">${esc(p.openLife.life)}</td><td class="c">${esc(p.openLife.basis)}</td><td>${nl(p.openLife.note)}</td></tr></table>`)));
+  // 별첨 목록
+  // 올린 기능성 보고서 원본이 있으면 의약품안전나라 요약 쪽은 겹치므로 뺀다
+  const upReport = (extra || []).some(u => u.kind === '기능성보고서');
+  const infoLinks = upReport ? [] : links;
+  const att = [...infoLinks.map(it => ({ name: `기능성화장품 보고서 (심사제외품목) — ${it.name}`, no: `보고일련번호 ${it.seq}`, rev: it.date || '', location: pdfPages(it) ? `본 문서 뒤 별첨 (${pdfPages(it)}쪽)` : '의약품안전나라 / 본 문서 뒤 별첨', note: `부서접수번호 ${it.receiptNo || ''}` })), ...p.attachments];
+  P.push(page(p, 's13', `${NO.s13}. 별첨 목록 (Attachments)`, blk('', dtable([N, { label: '문서명', w: '34%', k: 'name' }, { label: '문서번호', w: '17%', k: 'no', c: 1 }, { label: '개정번호·일자', w: '13%', k: 'rev', c: 1 }, { label: '보관 위치', w: '15%', k: 'location', c: 1 }, { label: '비고', k: 'note' }], att, { pad: 10, padH: 28 }))));
+  // 별첨: 기능성 보고 자료
+  infoLinks.forEach((it, i) => {
+    P.push(page(p, 'f' + i, `별첨 ${i + 1}. 기능성화장품 보고 정보 (의약품안전나라)`, `<div class="blk"><table class="h26" style="margin-top:8px"><colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col></colgroup>
+      <tr><th>제품명 (보고 품목명)</th><td colspan="3">${esc(it.name)}</td></tr>
+      <tr><th>구분</th><td>기능성화장품 심사제외품목 (보고)</td><th>보고완료일자</th><td>${esc(it.date || '')}</td></tr>
+      <tr><th>보고일련번호</th><td>${esc(it.seq)}</td><th>부서접수번호</th><td>${esc(it.receiptNo || '')}</td></tr>
+      <tr><th>화장품책임판매업자</th><td>${esc(it.entp || '')}</td><th>제조판매업 등록번호</th><td>${esc(it.sellerRegNo || '')}</td></tr>
+      <tr><th style="height:50px">효능·효과</th><td colspan="3">${nl(String(it.effect || '').replace(/\(PA:\s*null\s*\)/, ''))}</td></tr>
+      <tr><th style="height:40px">용법·용량</th><td colspan="3">${nl(it.usage || '')}</td></tr>
+      <tr><th style="height:120px">사용상의 주의사항</th><td colspan="3">${nl(it.cautions || '')}</td></tr></table>
+      <div class="note">출처: 의약품안전나라 › 의약품등 정보 › 기능성화장품제품정보(보고) · ${esc(it.url || '')} · 자료 갱신 ${esc(FD.updatedAt || '')}</div>
+      ${pdfPages(it) ? `<div class="note">※ 보고서 원본 ${pdfPages(it)}쪽을 다음 쪽부터 붙임</div>` : '<div class="note">※ 보고서 원본 PDF는 의약품안전나라 로그인 후 받아 기능성자료\\보고서 폴더에 넣으면 이 뒤에 붙습니다.</div>'}</div>`));
+    (it.pdfs || []).forEach(f => f.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="fa${i}-${k}"><div class="cap"><span>별첨 ${i + 1}. 기능성화장품 보고서 — ${esc(it.name)} (${esc(f.file)})</span><span>${k + 1} / ${f.pages.length}</span></div><img src="${esc(src)}" alt="보고서 ${k + 1}쪽">${foot(p)}</section>`)));
+  });
+  // 별첨: 올린 근거 서류 (기능성 보고서·반제품성적서 등) 원본 쪽
+  (extra || []).forEach((u, i) => u.pages.forEach((src, k) => P.push(`<section class="page att nosplit" data-key="up${i}-${k}"><div class="cap"><span>별첨 ${infoLinks.length + i + 1}. ${esc(u.kind)}${u.comp ? ' (' + esc(u.comp) + ')' : ''} — ${esc(u.name)}</span><span>${k + 1} / ${u.pages.length}</span></div><img src="${src}" alt="${esc(u.kind)} ${k + 1}쪽">${foot(p)}</section>`)));
+  return P.join('');
+}
+async function uploadPages(p) {
+  const out = [];
+  for (const u of (p.uploads || [])) {
+    if (u.print === false) continue;
+    let pages = null;
+    try { const r = await window.IDB?.get(u.fileId); if (r && r.pages && r.pages.length) pages = r.pages; } catch (e) { }
+    // 이 브라우저에 원본이 없으면 공동 저장소에 올라간 쪽 그림으로
+    if (!pages && Cloud.art && (u.pageAssets || []).length) pages = u.pageAssets.map(id => '/_blob/' + id);
+    if (pages) out.push({ kind: u.kind, comp: u.comp, name: u.name, pages });
+  }
+  return out;
+}
+
+/* ================= 인쇄 문서: 성적서 ================= */
+function coaDoc(c) {
+  const p = prod(c.productId) || { nameKo: '', code: '', nameSub: '' };
+  const rows = c.results, dense = rows.length > 18, padN = Math.max(0, 17 - rows.length);
+  const ck = (v, t) => (v === t ? '☑' : '☐') + ' ' + t;
+  let b = 0; const B = s => `<div class="blk" data-id="c${++b}">${s}</div>`;
+  return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} · 시험번호 ${esc(c.testNo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
+  ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
+  <table class="info box"><colgroup><col style="width:13%"><col style="width:23%"><col style="width:13%"><col style="width:21%"><col style="width:13%"><col style="width:17%"></colgroup>
+   <tr><th>제품명</th><td colspan="5" style="height:40px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
+   <tr><th>LOT번호</th><td colspan="3">${c.lots.map(l => `${esc(l.label)} : ${esc(l.lot)}`).join('<br>')}</td><th>제품코드</th><td>${esc(p.code)}</td></tr>
+   <tr><th>제조사</th><td colspan="3">${c.lots.map(l => `${esc(l.label)} : ${esc(l.maker)}`).join('<br>')}</td><th>입고일</th><td>${esc(c.receiptDate)}</td></tr>
+   <tr><th>표시용량</th><td>${esc(c.labelQty)}</td><th>샘플채취량</th><td>${esc(c.sampleQty)} EA</td><th>입고량</th><td>${esc(c.receiptQty)} EA</td></tr>
+   <tr><th>제조일<br>(구성품별)</th><td colspan="3">${c.lots.map(l => `${esc(l.label)} : ${esc(l.mfgDate)}`).join('　')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr>
+   <tr><th>시험번호</th><td>${esc(c.testNo)}</td><th>시험의뢰일</th><td>${esc(c.requestDate)}</td><th>검체채취일</th><td>${esc(c.samplingDate)}</td></tr>
+   <tr><th>기준 근거</th><td colspan="5" class="left">제품표준서 번호 : ${esc(c.psRef.no)} / 개정번호 : ${esc(c.psRef.rev)} (「완제품 기준 및 시험방법」과 시험항목·기준 동일)</td></tr></table>`)}
+  ${B(`<table class="tests box mt dsplit"><colgroup><col style="width:5%"><col style="width:15%"><col style="width:6%"><col style="width:18%"><col style="width:11%"><col style="width:6%"><col style="width:18%"><col style="width:10%"><col style="width:11%"></colgroup>
+   <thead><tr><th>No.</th><th>시험항목</th><th>구분</th><th>시험기준</th><th>시험결과</th><th>판정</th><th>시험방법</th><th>시험자<br>(자사/제조사)</th><th>비고</th></tr></thead>
+   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td><td>${esc(r.sub)}</td><td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td>${esc(r.judge)}</td><td>${esc(r.method)}</td><td>${esc(r.tester)}</td><td>${esc(r.note)}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(9) + '</tr>').join('')}</tbody></table>`)}
+  ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
+  ${B(`<table class="box mt"><colgroup><col style="width:13%"><col style="width:17%"><col style="width:26%"><col></colgroup><tr><th>보관용 검체</th><td class="left">수량 : ${esc(c.retain.qty)} EA</td><td class="left">보관 위치 : ${esc(c.retain.location)}</td><td class="left">보관기한 : ${ck(c.retain.mode, '사용기한')}까지&nbsp; ${c.retain.mode === '제조일+3년' ? '☑' : '☐'} 제조일+3년 &nbsp;~ ${esc(c.retain.until)}</td></tr></table>`)}
+  ${B(`<table class="sign box mt"><colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:16%"><col style="width:24%"></colgroup>
+   <tr><th>작 성</th><th>확 인 (검토)</th><th>승 인</th><th>판정일자</th><th>판정결과</th></tr>
+   <tr><td>${esc(c.sign.writer)}</td><td>${esc(c.sign.reviewer)}</td><td>${esc(c.sign.approver)}</td><td>${esc(c.judgeDate)}</td><td>${c.verdict ? `<span class="big">${esc(c.verdict)}</span>` : ''}<br><span style="font-size:7.5pt">${['적합', '부적합', '보류'].map(t => (c.verdict === t ? '☑' : '☐') + ' ' + t).join('&nbsp; ')}</span></td></tr></table>`)}
+  ${B(`<table class="sign box mt"><colgroup><col style="width:20%"><col style="width:24%"><col style="width:20%"><col style="width:16%"><col style="width:20%"></colgroup>
+   <tr><th rowspan="2">출고(시장출하) 승인</th><th>승인 여부</th><th>승인자<br>(품질관리 책임자)</th><th>승인일</th><th>서명</th></tr>
+   <tr><td>${['출고 승인', '보류'].map(t => (c.release.status === t ? '☑' : '☐') + ' ' + t).join('&nbsp; ')}</td><td>${esc(c.release.approver)}</td><td>${esc(c.release.date)}</td><td></td></tr></table>`)}
+  </div><div class="foot"><span>완제품시험성적서 ${esc(c.testNo)}</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
+}
+
+/* ================= 미리보기 · 쪽 나누기 ================= */
+function makeCont(pg) {
+  const c = document.createElement('section'); c.className = 'page cont'; c.dataset.key = pg.dataset.key + 'c';
+  const ph = pg.querySelector(':scope > .ph'); if (ph) c.appendChild(ph.cloneNode(true));
+  const b = document.createElement('div'); b.className = pg.querySelector(':scope > .body')?.className || 'body'; c.appendChild(b);
+  const f = pg.querySelector(':scope > .foot'); if (f) c.appendChild(f.cloneNode(true));
+  return c;
+}
+function cloneBlk(b) {
+  const c = b.cloneNode(true);
+  [...c.children].forEach(x => { if (!x.classList.contains('bar') && !x.matches('table.dsplit')) x.remove(); });
+  const bar = c.querySelector('.bar'); if (bar && !/\(계속\)$/.test(bar.textContent)) bar.textContent += ' (계속)';
+  const tb = c.querySelector('tbody.data'); if (tb) tb.innerHTML = '';
+  return c;
+}
+const over = pg => pg.scrollHeight > pg.clientHeight + 2;
+function paginate(root) {
+  const pages = [...root.querySelectorAll('.page')];
+  for (let i = 0; i < pages.length; i++) {
+    const pg = pages[i]; if (pg.classList.contains('nosplit')) continue;
+    let g = 0;
+    while (over(pg) && g++ < 1500) {
+      const body = pg.querySelector(':scope > .body'); if (!body) break;
+      const pads = body.querySelectorAll('tr.pad'); if (pads.length) { pads[pads.length - 1].remove(); continue; }
+      const blks = [...body.children], last = blks[blks.length - 1]; if (!last) break;
+      let cont = pg.nextElementSibling;
+      if (!cont || cont.dataset.key !== pg.dataset.key + 'c') { cont = makeCont(pg); pg.after(cont); pages.splice(i + 1, 0, cont); }
+      const cb = cont.querySelector(':scope > .body');
+      const tb = last.querySelector('table.dsplit tbody.data'), rows = tb ? [...tb.rows] : [];
+      let first = cb.firstElementChild;
+      const same = first && first.dataset.id && first.dataset.id === last.dataset.id && first.querySelector('tbody.data');
+      if (tb && rows.length <= 3 && blks.length > 1) {
+        // 표 머리만 남는 것을 막기 위해 블록째 다음 쪽으로
+        if (same) { const ft = first.querySelector('tbody.data'); [...rows].reverse().forEach(r => ft.prepend(r)); const ob = last.querySelector('.bar'), fb = first.querySelector('.bar'); if (ob && fb) fb.textContent = ob.textContent; last.remove(); }
+        else cb.prepend(last);
+      } else if (tb && rows.length > 1) {
+        if (!same) { first = cloneBlk(last); last.querySelectorAll(':scope > .note').forEach(n => first.appendChild(n)); cb.prepend(first); }
+        first.querySelector('tbody.data').prepend(rows[rows.length - 1]);
+      } else if (blks.length > 1) cb.prepend(last);
+      else break;
+    }
+  }
+}
+function number(root) { const pgs = [...root.querySelectorAll('.page')]; pgs.forEach((pg, i) => { const pn = pg.querySelector('.pn'); if (pn) pn.textContent = `${i + 1} / ${pgs.length}`; }); return pgs.length; }
+function preview(title, html, onIssue) {
+  $('#preview')?.remove();
+  const ART = Cloud.art;
+  const ov = el(`<div id="preview"><div class="pbar"><b>${esc(title)}</b><span class="hint" id="pvInfo" style="color:#c3cfe3"></span>${ART
+    ? '<button class="btn" id="pvPrint" title="쪽마다 그림으로 만든 PDF를 받습니다">발행 (PDF 받기)</button><button class="btn ghost" id="pvHtml" title="글자를 고를 수 있는 원본 화질: 받은 파일을 열고 Ctrl+P → PDF로 저장">HTML 받기</button>'
+    : '<button class="btn" id="pvPrint">발행 (인쇄 / PDF 저장)</button><button class="btn ghost" id="pvHtml" title="쪽 나눔이 끝난 문서를 HTML 한 파일로 저장">HTML 저장</button>'}<button class="btn ghost" id="pvClose">닫기</button></div><div class="doc" id="doc">${html}</div></div>`);
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  const run = () => { paginate($('#doc')); const n = number($('#doc')); $('#pvInfo').textContent = ART ? `${n}쪽` : `${n}쪽 · 인쇄 창에서 '대상: PDF로 저장'을 고르면 PDF가 됩니다`; };
+  // 그림이 다 그려진 뒤 쪽 나누기 (창이 가려져 있어도 돌도록 setTimeout, 3초 안전장치)
+  let ran = false; const once = () => { if (ran) return; ran = true; setTimeout(run, 30); };
+  const imgs = [...ov.querySelectorAll('img')]; Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(once);
+  setTimeout(once, 3000);
+  $('#pvClose').onclick = () => { ov.remove(); document.body.style.overflow = ''; };
+  $('#pvPrint').onclick = async () => {
+    if (!ART) { onIssue && onIssue(); window.print(); return; }
+    const b = $('#pvPrint'); if (b.disabled) return; b.disabled = true; const info = $('#pvInfo'), keep = info.textContent;
+    try { const ok = await pagesToPdf([...$('#doc').querySelectorAll('.page')], docFileName(title, 'pdf'), (i, n) => { info.textContent = `PDF 만드는 중 ${i} / ${n}쪽`; }); if (ok) { onIssue && onIssue(); notify('PDF를 받았습니다. 발행 이력에 남겼습니다.', 'good'); } }
+    catch (e) { console.error(e); notify('PDF를 만들지 못했습니다: ' + e.message + '\n「HTML 받기」로 받아 Ctrl+P로 PDF 저장해 주세요.', 'bad', 9000); }
+    finally { b.disabled = false; info.textContent = keep; }
+  };
+  $('#pvHtml').onclick = () => exportDoc(title);
+}
+const docFileName = (title, ext) => (title.split(' — ')[0] + ' ' + (title.split(' — ')[1] || '')).replace(/\s*\(.*\)\s*$/, '').replace(/[\\/:*?"<>|]/g, '_').trim() + '.' + ext;
+async function exportDoc(title) {
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const box = document.createElement('div'); box.innerHTML = $('#doc').innerHTML;
+  if (Cloud.art) await inlineImages(box);
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${css}\n#preview{position:static;overflow:visible}</style></head><body><div id="preview"><div class="doc">${box.innerHTML}</div></div></body></html>`;
+  const name = docFileName(title, 'html');
+  if (!Cloud.art && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    try { const r = await fetch('save?name=' + encodeURIComponent(name), { method: 'POST', body: html }); if (r.ok) { notify(`내보내기 폴더에 저장했습니다: ${name}`, 'good'); return; } } catch (e) { }
+  }
+  if (await saveFile(name, html, 'text/html') && Cloud.art) notify('받은 HTML을 브라우저로 열고 Ctrl+P → 「PDF로 저장」을 고르면 원본 화질 PDF가 됩니다.', 'info', 9000);
+}
+async function previewPS(p) {
+  const req = psChecks(p).filter(x => x.lvl === '필수' && !x.ok).length;
+  const extra = await uploadPages(p);
+  preview(`제품표준서 ${p.psNo} Rev.${p.rev} — ${p.nameKo}${req ? ` (CGMP 필수 ${req}건 미충족)` : ''}`, psDoc(p, extra), () => logIssue({ type: '제품표준서', docNo: p.psNo, product: p.nameKo, ref: 'Rev.' + p.rev, state: req ? `필수 ${req}건 미충족 상태로 발행` : 'CGMP 필수 충족' }));
+}
+function previewCoa(c) {
+  const p = prod(c.productId), s = coaStatus(c);
+  preview(`완제품시험성적서 ${c.testNo} — ${p?.nameKo || ''} (${s[0]})`, coaDoc(c), () => logIssue({ type: '완제품성적서', docNo: c.testNo, product: p?.nameKo || '', ref: c.lots.map(l => l.lot).join(', '), state: s[0] }));
+}
+
+/* ================= 백업 ================= */
+$('#bkSave').onclick = () => saveFile(`품질문서발행센터_백업_${today()}.json`, JSON.stringify(S, null, 1), 'application/json');
+$('#bkLoad').onclick = () => $('#bkFile').click();
+$('#bkFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let d; try { d = JSON.parse(await f.text()); if (!d.products) throw new Error('발행센터 백업 파일이 아닙니다'); } catch (er) { notify('불러오기 실패: ' + er.message, 'bad'); return; }
+  const msg = `백업(제품 ${d.products.length}개, 성적서 ${(d.coas || []).length}건)으로 지금 데이터(제품 ${S.products.length}개, 성적서 ${S.coas.length}건)를 덮어씁니다.` + (Cloud.shared() ? '\n공동 저장소 전체가 바뀌어 다른 사람이 만든 문서도 백업에 없으면 사라집니다.' : '');
+  if (!await askConfirm(msg, { ok: '덮어쓰기', danger: true })) return;
+  const ingest = S.ingest; S = d; if (Cloud.art) S.ingest = d.ingest || ingest;
+  S.products.forEach(fixProduct); S.coas = S.coas || []; S.coas.forEach(fixCoa); S.issues = S.issues || []; save(); go('dash');
+};
+
+S = load();
+if (!Cloud.art) save();
+render();
+Cloud.start(cloudHooks());
+</script>
+<script src="js/ingest.js"></script>
+<script src="js/cgmp.js"></script>
+</body>
+</html>
