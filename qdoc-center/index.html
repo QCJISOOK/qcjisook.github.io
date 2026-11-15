@@ -116,9 +116,9 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .bar{background:#2b4a7e;color:#fff;font-weight:700;padding:4px 7px;font-size:9.5pt;margin-top:9px;border:1px solid #2b4a7e}
 .doc .bar.center{text-align:center}
 .doc .ph td{border-color:#9aa3ae}.doc .ph .phl{text-align:center;font-weight:700;font-size:8pt}
-.doc .ph .pht{text-align:center;font-weight:800;font-size:11.5pt;height:24px}.doc .ph .phs{text-align:center;font-size:7pt;color:#666;height:13px}
+.doc .ph .pht{text-align:center;font-weight:800;font-size:15pt;height:36px}.doc .ph .phs{text-align:center;font-size:7pt;color:#666;height:13px}
 .doc .ph .phm{text-align:center;font-size:6.8pt;color:#333;height:12px;background:#f6f8fb}
-.doc .ph .phn{text-align:center;height:17px}.doc .ph .phe{text-align:center;font-size:7pt;color:#666;height:13px}
+.doc .ph .phn{text-align:center;font-size:12.5pt;font-weight:700;height:28px}.doc .ph .phe{text-align:center;font-size:8.5pt;color:#555;height:18px}
 .doc .foot{position:absolute;left:11mm;right:11mm;bottom:6mm;display:flex;justify-content:space-between;font-size:7.5pt;color:#333}
 .doc .note{font-size:7.6pt;color:#333;margin-top:3px}
 .doc tbody.data td{height:19px}
@@ -1091,7 +1091,12 @@ function logIssue(o) { S.issues.unshift({ id: uid('i'), at: nowStr(), ...o }); s
 
 /* ================= 인쇄 문서: 제품표준서 ================= */
 let BID = 0;
-const hdr = (p, title, sub = '') => `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="2" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr><tr><td class="phs">${esc(sub)}</td></tr><tr><td rowspan="3" class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr><tr><td class="phe">${esc(p.nameEn)}</td></tr><tr><td class="phm">${(() => { const pu = String(p.packUnit || p.weight || '').split('\n').map(s => s.trim()).filter(s => s && !/^\[[^\]]*\]$/.test(s)).join(' / '); return [['표준서 번호', p.psNo], ['제품코드', p.code], ['벌크코드', p.bulkCode], ['', typeLine(p)], ['포장단위', pu]].filter(([, v]) => v).map(([k, v]) => (k ? k + ' ' : '') + esc(v)).join(' · '); })()}</td></tr></table>`;
+const hdr = (p, title, sub = '') => {
+  // 쪽 머리: 제목 크게, 제품명 크게. 부제·메타(번호·코드·포장단위)는 있을 때만 줄을 만든다 (유형은 넣지 않음)
+  const pu = String(p.packUnit || p.weight || '').split('\n').map(s => s.trim()).filter(s => s && !/^\[[^\]]*\]$/.test(s)).join(' / ');
+  const meta = [['표준서 번호', p.psNo], ['제품코드', p.code], ['벌크코드', p.bulkCode], ['포장단위', pu]].filter(([, v]) => v).map(([k, v]) => k + ' ' + esc(v)).join(' · ');
+  return `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td rowspan="${meta ? 3 : 2}" class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr><tr><td class="phe">${esc(p.nameEn)}</td></tr>${meta ? `<tr><td class="phm">${meta}</td></tr>` : ''}</table>`;
+};
 const foot = p => `<div class="foot"><span>${esc(p.psNo)} (Rev.${esc(p.rev)})</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div>`;
 const page = (p, key, title, body, sub = '') => `<section class="page" data-key="${key}">${hdr(p, title, sub)}<div class="body">${body}</div>${foot(p)}</section>`;
 const blk = (bar, inner) => `<div class="blk" data-id="b${++BID}">${bar ? `<div class="bar">${bar}</div>` : ''}${inner}</div>`;
@@ -1125,7 +1130,7 @@ function psDoc(p, extra) {
    ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>
   ${foot(p)}</section>`);
   // 개정내역
-  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 17, padH: 26 })), '본 통합 제품표준서의 개정 이력'));
+  P.push(page(p, 'rev', '개정내역 (Revision History)', blk('1. 통합 제품표준서 개정이력', dtable([{ label: '개정번호', w: '8%', k: 'rev', c: 1 }, { label: '개정일자', w: '12%', k: 'date', c: 1 }, { label: '시행일자', w: '12%', k: 'effDate', c: 1 }, { label: '개정 내용', k: 'content' }, { label: '개정 사유', w: '18%', k: 'reason' }, { label: '개정자', w: '11%', k: 'author', c: 1 }, { label: '승인자', w: '10%', k: 'approver', c: 1 }], p.revisions, { pad: 17, padH: 26 }))));
   // 작성 범위: 전체(CGMP 12개 항목, 양식 v2) / 간소(책임판매업자 6장)
   const LITE = isLite(p);
   const NO = LITE ? { s1: 1, s8: 2, s9: 3, s7: 4, s12: 5, s13: 6 } : { s1: 1, s2: 2, s3: 3, s4: 4, s5: 5, s6: 6, s7: 7, s8: 8, s9: 9, s10: 10, s11: 11, s12: 12, s13: 13 };
