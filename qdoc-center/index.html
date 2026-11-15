@@ -673,6 +673,8 @@ function renderPS(m) {
   if (!V.pid || !prod(V.pid)) V.pid = S.products[0]?.id || null;
   const sp = el(`<div class="split"><div class="side"><div class="card"><h3>제품 <span class="r"></span></h3><div class="plist" id="plist"></div></div><div class="card"><h3>항목</h3><div class="secnav" id="secnav"></div></div></div><div id="psmain"></div></div>`);
   m.appendChild(sp);
+  sp.querySelector('h3 .r').appendChild(button('빈 양식', previewBlankPS));
+  sp.querySelector('h3 .r').appendChild(document.createTextNode(' '));
   sp.querySelector('h3 .r').appendChild(button('+ 새 제품', () => { const p = newProduct(); p.psNo = nextPsNo(); p.nameKo = '새 제품'; S.products.push(p); save(); go('ps', { pid: p.id, sec: 's1' }); }));
   const pm = $('#psmain');
   if (!V.pid) { pm.appendChild(el('<div class="card empty">제품이 없습니다. 왼쪽 위 「+ 새 제품」을 누르세요.</div>')); refreshPS(); return; }
@@ -1046,6 +1048,7 @@ function refreshCoa() {
 }
 function coaList(m) {
   const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 별첨5 기준</small></div></div>');
+  tb.appendChild(button('빈 양식 보기', previewBlankCoa, 'btn'));
   tb.appendChild(button('+ 새 성적서', () => go('coa', { newCoa: true }), 'btn pri')); m.appendChild(tb);
   const card = el(`<div class="card"><div class="filt"><select id="cf"><option value="">전체 상태</option><option>작성 중</option><option>출고 승인 대기</option><option>출고 승인</option><option>부적합</option><option>보류</option></select></div><table class="list"><thead><tr><th>시험번호</th><th>제품코드</th><th>제품</th><th>LOT</th><th>입고일</th><th>판정일</th><th>판정</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
   m.appendChild(card);
@@ -1424,6 +1427,20 @@ async function exportDoc(title) {
     try { const r = await fetch('save?name=' + encodeURIComponent(name), { method: 'POST', body: html }); if (r.ok) { notify(`내보내기 폴더에 저장했습니다: ${name}`, 'good'); return; } } catch (e) { }
   }
   if (await saveFile(name, html, 'text/html') && Cloud.art) notify('받은 HTML을 브라우저로 열고 Ctrl+P → 「PDF로 저장」을 고르면 원본 화질 PDF가 됩니다.', 'info', 9000);
+}
+/* 빈 작성 양식: 지금 양식 그대로 빈칸으로 (저장·발행 이력 남기지 않음) */
+function blankProduct() {
+  const p = newProduct(); fixProduct(p);
+  Object.assign(p, { psNo: '', nameKo: '', nameEn: '', date: '' });
+  (p.revisions || []).forEach(r => { r.date = ''; r.effDate = ''; });
+  (p.components || []).forEach(c => { c.functional = '예'; c.fullName = ''; }); // 기능성 칸까지 보이게
+  return p;
+}
+function previewBlankPS() { preview('제품표준서 작성 양식 — 빈 양식', psDoc(blankProduct(), []), null); }
+function previewBlankCoa() {
+  const c = newCoa(blankProduct());
+  Object.assign(c, { productId: '', testNo: '', receiptDate: '', requestDate: '', createdAt: '', psRef: { no: '', rev: '' } });
+  preview('완제품시험성적서 작성 양식 — 빈 양식', coaDoc(c), null);
 }
 async function previewPS(p) {
   const req = psChecks(p).filter(x => x.lvl === '필수' && !x.ok).length;
