@@ -775,7 +775,7 @@ function secEditor(p, sec, ed) {
       const cd = inp(p, 'code', { ph: '코드나 제품명 일부' }), cdBox = document.createElement('div'); cdBox.appendChild(cd);
       const fromErp = o => { if (o.type !== 'erp') return; p.code = o.code; cd.value = o.code; if (!p.shelfLife.life && +o.life) { p.shelfLife.life = `제조일로부터 ${o.life}개월`; p.shelfLife.months = o.life; } if (!p.openLife.life && +o.open) p.openLife.life = `개봉 후 ${o.open}개월`; if (!p.nameEn && o.en) p.nameEn = o.en; changed(); };
       suggest(nk, fromErp); suggest(cd, fromErp, { mode: 'code' });
-      A(form([['제품명 (한글)', nkBox, true], ['제품명 (영문)', inp(p, 'nameEn'), true], ['구성 표기', inp(p, 'nameSub', { rows: 2, ph: '[볼] ...\n[세럼] ...' }), true],
+      A(form([['제품명', nkBox, true],['구성 표기', inp(p, 'nameSub', { rows: 2, ph: '[볼] ...\n[세럼] ...' }), true],
         ['제품코드', cdBox], ['벌크코드 (제조사)', inp(p, 'bulkCode')],
         ['유형분류', inp(p, 'typeClass', { ph: '예) 기초화장용 제품류' })], ['유형세분류', inp(p, 'typeSub', { ph: '예) 에센스·크림·로션' })],
         ['포장단위', inp(p, 'packUnit')], ['제품 중량', inp(p, 'weight', { rows: 2, ph: '표준서에는 안 나옴 · 완제품성적서 표시용량에 쓰임' })], ['성상', inp(p, 'appearance', { rows: 2 }), true]]));
@@ -1177,7 +1177,7 @@ function psDoc(p, extra) {
   // 표지 (간소본만 따로 — 전체본은 아래에서 1장과 합친 1쪽)
   if (LITE) P.push(`<section class="page nosplit" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div>
   <div class="bar center">통합 제품표준서 (Integrated Product Standard)</div>
-  <table class="h22" style="margin-top:6px"><colgroup><col style="width:42%"><col></colgroup><tr><th>제 품 명 (한글)</th><td>${esc(p.nameKo)}</td></tr><tr><th>제 품 명 (영문)</th><td>${esc(p.nameEn)}</td></tr></table>
+  <table class="h22" style="margin-top:6px"><colgroup><col style="width:42%"><col></colgroup><tr><th>제 품 명</th><td>${esc(p.nameKo)}</td></tr></table>
   <table class="h22" style="margin-top:8px"><colgroup><col style="width:22%"><col style="width:20%"><col style="width:20%"><col></colgroup>
    <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
    <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
@@ -1199,8 +1199,7 @@ function psDoc(p, extra) {
     const batch = comps.map(c => `${comps.length > 1 ? `[${esc(c.label)}] ` : ''}${esc(c.batchSize || '　　')} ${esc(c.batchUnit)} / batch`).join('　　');
     P.push(`<section class="page" data-key="cover"><div class="cov-top"><div class="logo"><div class="l1">OLIVE</div><div class="l2">INTERNATIONAL</div></div><div class="cov-title">제 품 표 준 서<br><span>(Product Standard)</span></div></div><div class="body">
     <div class="blk"><div class="bar">1-1. 제품 기본정보</div><table class="h22"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col></colgroup>
-      <tr><th>제품명 (한글)</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
-      <tr><th>제품명 (영문)</th><td colspan="3">${esc(p.nameEn)}</td></tr>
+      <tr><th>제품명</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
       <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
       <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>문서정보</th><td class="c">${esc(p.docInfo)}</td></tr>
       <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
@@ -1243,7 +1242,7 @@ function psDoc(p, extra) {
   const mk0 = p.makers[0] || {};
   if (LITE) P.push(page(p, 's1', `${NO.s1}. 제품 개요 및 표시사항 (Product Information &amp; Notation)`,
     `<div class="blk"><div class="bar">${NO.s1}-1. 제품 기본정보</div><table class="h26"><colgroup><col style="width:17%"><col style="width:33%"><col style="width:17%"><col></colgroup>
-      <tr><th>제품명 (한글)</th><td>${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td><th>제품명 (영문)</th><td>${esc(p.nameEn)}</td></tr>
+      <tr><th>제품명</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
       <tr><th>제품표준서 번호</th><td>${esc(p.psNo)}</td><th>제정연월일</th><td>${esc(p.date)}</td></tr>
       <tr><th>제품코드</th><td>${esc(p.code)}</td><th>개정번호</th><td>${esc(p.rev)}</td></tr>
       ${LITE ? `<tr><th>제품 유형</th><td>${nl(p.type)}</td><th>제품 중량</th><td>${nl(p.weight)}</td></tr>` : `<tr><th>벌크코드 (제조사)</th><td>${esc(p.bulkCode)}</td><th>유형구분</th><td>${esc(p.typeDiv)}</td></tr>

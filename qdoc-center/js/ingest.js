@@ -614,7 +614,7 @@ function renderIngest(m) {
     save(); draw();
   };
   suggest(nk, o => fromErp(o, true)); suggest(cd, o => fromErp(o, !I.info.nameKo), { mode: 'code' });
-  c2.appendChild(form([['제품명 (한글)', nkBox, true], ['제품명 (영문)', inp(I.info, 'nameEn'), true], ['제품코드', cdBox], ['화장품 유형', inp(I.info, 'type')],
+  c2.appendChild(form([['제품명', nkBox, true],['제품코드', cdBox], ['화장품 유형', inp(I.info, 'type')],
     ['사용기한 (개월)', inp(I.info, 'shelfMonths', { type: 'number', ph: '예) 30' })], ['개봉 후 사용기간 (개월)', inp(I.info, 'openMonths', { type: 'number', ph: '예) 12' })], ['포장단위', inp(I.info, 'packUnit', { ph: '예) 1제 30ml + 2제 30ml / 1세트' })], ['제조업체', sel]]));
   if (I.info.erp) c2.appendChild(el(`<div class="hint" style="margin-top:6px">ERP 품목: <b>${esc(I.info.erp.code)}</b> ${esc(I.info.erp.name)} · ${esc(I.info.erp.spec || '')} · ${esc(I.info.erp.brand || '')} · 기본구매처 ${esc(I.info.erp.vendor || '-')}</div>`));
   if (mk) c2.appendChild(el(`<div class="funcbox" style="margin-top:8px"><b>${esc(mk.company || mk.label)}</b> · 화장품 제조업 등록필증 ${esc(mk.regNo || '번호 판독 불가')} · 대표자 ${esc(mk.ceo || '-')} · ${esc(mk.issuer || '')}<br>소재지: ${esc((mk.sites || []).join(' / ') || '-')}<br>영업 범위: ${esc((mk.scope || []).join(' / ') || '-')} <span class="hint">· 판독 신뢰도 ${esc(mk.confidence || '-')}${mk.note ? ' · ' + esc(mk.note) : ''}</span>${mk.fileId ? ` · <a href="https://drive.google.com/file/d/${esc(mk.fileId)}/view" target="_blank" rel="noopener">필증 원본</a>` : ''}</div>`));
