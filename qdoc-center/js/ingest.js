@@ -466,7 +466,7 @@ function build(withCoa) {
       const comp = M.find(k => (single ? '' : k.key) === (r.sub || '')) || (single ? M[0] : null); const br = comp?.bulk?.rows || [];
       const key = KEYS.find(k => r.item.includes(k)); let hit = key && !/특정세균/.test(r.item) ? br.find(x => x.item.includes(key)) : null;
       if (!hit) hit = br.find(x => N(x.item) === N(r.item));
-      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; r.tester = makerShort(mk) || '제조사'; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
+      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
     c.remarks = `반제품(벌크) 시험성적서 인용: ${M.filter(k => k.bulk).map(k => `${single ? '' : k.key + ' '}${k.bulk.testNo} (제조번호 ${k.bulk.lot}, ${makerShort(mk)})`).join(' / ')}\n충전·포장 후 항목(표시기재사항·외관·포장사양·내용량·이물)은 자사 입고검사, 특정세균·기능성 주성분 함량은 위탁시험 또는 제조사 성적서로 기재`;
     const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
