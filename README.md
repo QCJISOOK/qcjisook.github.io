@@ -6,4 +6,6 @@
 - `disposition.html` — 화장품 행정처분 사례 (의약품안전나라 화장품 행정처분, 매일 10시 20분 자동 갱신 · 원본은 `10_화장품 행정처분 사례/`)
 - `coop-dashboard.html` — 협력사 협력도 대시보드 (성적서·관리품 제출속도, 클레임, 회신율 · 매일 10시 35분 자동 갱신 · 원본은 `06_협력업체 관리/`, Artifact 고정 주소: https://claude.ai/artifact/1cgj2SZb9UCR3X9yAhKUBs)
 
+- `qdoc-center/` — 품질문서 발행센터 (제품표준서·완제품성적서 작성·발행, 작성 내용은 각자 브라우저에 저장 · 원본은 `16_제품표준서·성적서 발행/`, `_tool/deploy_web.py` 로 갱신, Artifact 공동 작업 주소: https://claude.ai/artifact/XvZyQm1vsXoMiKxksT8Bd7)
+
 올리브인터내셔널 SCM본부 품질관리팀
