@@ -103,8 +103,8 @@ table.ed td.act .btn{padding:1px 6px}
 .btn:focus-visible,nav.tabs button:focus-visible{outline:2px solid #86b4ff;outline-offset:1px}
 .cloudnote{background:#fdf1dc;color:#6b4300;border:1px solid #f0d49c;border-radius:8px;padding:8px 12px;margin:12px 18px 0;font-size:12.5px}
 .cloudnote[hidden]{display:none}
-@media (max-width:1180px){.brand span,.saved{display:none}header.top{gap:10px;overflow-x:auto}}
-@media (max-width:1050px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.side{position:static;max-height:none}.form{grid-template-columns:110px 1fr}.form .w3{grid-column:auto}nav.tabs button{padding:0 8px}}
+@media (max-width:1180px){.brand span,.saved{display:none}header.top{gap:10px;height:auto;flex-wrap:wrap;row-gap:0;padding-top:6px}.top .right{margin-left:auto}nav.tabs{order:3;flex-basis:100%;flex-wrap:wrap;height:auto}nav.tabs button{padding:8px 10px 7px}.side{top:100px;max-height:calc(100vh - 116px)}}
+@media (max-width:1050px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.side{position:static;max-height:none}.form{grid-template-columns:110px 1fr}.form .w3{grid-column:auto}}
 
 /* ===== 인쇄 문서 ===== */
 .doc{font-family:"Malgun Gothic","맑은 고딕",sans-serif;color:#111;font-size:8.4pt}
@@ -317,7 +317,7 @@ function cloudHooks() {
     }
   };
 }
-const V = { tab: 'dash', pid: null, sec: 's1', cid: null, fq: '', cf: '' };
+const V = { tab: 'ps', pid: null, sec: 's1', cid: null, fq: '', cf: '' };
 function changed() { save(); if (V.tab === 'ps') refreshPS(); if (V.tab === 'coa') refreshCoa(); }
 const prod = id => S.products.find(p => p.id === id);
 
@@ -661,54 +661,15 @@ function tedit(rows, cols, { newRow, numbered = true, onchange, addLabel = '+ �
 }
 
 /* ================= 탭 ================= */
-const TABS = [['dash', '대시보드'], ['ingest', '자료로 작성'], ['ps', '제품표준서'], ['coa', '완제품성적서'], ['func', '기능성 자료'], ['log', '발행 이력'], ['cgmp', 'CGMP 기준']];
+const TABS = [['ingest', '자료로 작성'], ['ps', '제품표준서'], ['coa', '완제품성적서'], ['func', '기능성 자료'], ['log', '발행 이력'], ['cgmp', 'CGMP 기준']];
 const RENDER = window.RENDER = window.RENDER || {};
 function go(tab, opt = {}) { Object.assign(V, { tab }, opt); render(); window.scrollTo(0, 0); }
 function render() {
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="${V.tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.t));
   const m = $('#main'); m.innerHTML = '';
-  Object.assign(RENDER, { dash: renderDash, ps: renderPS, coa: renderCoa, func: renderFunc, log: renderLog });
+  Object.assign(RENDER, { ps: renderPS, coa: renderCoa, func: renderFunc, log: renderLog });
   (RENDER[V.tab] || (m => m.appendChild(el('<div class="card empty">불러오는 중…</div>'))))(m);
-}
-
-/* ================= 대시보드 ================= */
-function renderDash(m) {
-  const ps = S.products, pfail = ps.filter(p => psChecks(p).some(x => x.lvl === '필수' && !x.ok));
-  const st = S.coas.map(c => [c, coaStatus(c)]);
-  const wait = st.filter(([, s]) => s[0] === '출고 승인 대기'), draft = st.filter(([, s]) => s[0] === '작성 중');
-  const ym = today().slice(0, 7), month = S.coas.filter(c => (c.judgeDate || '').startsWith(ym));
-  const fnN = ps.filter(isFunctional).length, fnLinked = ps.filter(p => isFunctional(p) && funcLinks(p).length).length;
-  m.appendChild(el(`<div class="kpis">
-    <div class="kpi" data-go="ps"><div class="n">${ps.length}</div><div class="l">제품표준서</div><div class="s">기능성 ${fnN}개 · 의약품안전나라 연결 ${fnLinked}개</div></div>
-    <div class="kpi" data-go="ps"><div class="n" style="color:${pfail.length ? 'var(--bad)' : 'var(--good)'}">${pfail.length}</div><div class="l">필수 항목 미충족 제품</div><div class="s">${pfail.length ? chip('보완 필요', 'bad') : chip('모두 충족', 'good')}</div></div>
-    <div class="kpi" data-go="coa"><div class="n" style="color:${wait.length ? 'var(--warn)' : 'inherit'}">${wait.length}</div><div class="l">출고 승인 대기 성적서</div><div class="s">작성 중 ${draft.length}건 · 제19조② 출고 승인 필요</div></div>
-    <div class="kpi" data-go="coa"><div class="n">${month.length}</div><div class="l">이번 달 판정 성적서</div><div class="s">${ym} · 전체 ${S.coas.length}건</div></div>
-  </div>`));
-  m.querySelectorAll('.kpi').forEach(k => k.onclick = () => go(k.dataset.go));
-  const g = el('<div class="grid2"></div>'); m.appendChild(g);
-  // 확인 필요
-  const todo = [];
-  ps.forEach(p => psChecks(p).filter(x => x.lvl === '필수' && !x.ok).forEach(x => todo.push({ k: 'ps', id: p.id, sec: x.sec, who: p.code || p.nameKo, text: x.label, msg: x.msg })));
-  S.coas.forEach(c => { const p = prod(c.productId); coaChecks(c).filter(x => x.lvl === '필수' && !x.ok).forEach(x => todo.push({ k: 'coa', id: c.id, who: (c.testNo || '성적서') + ' · ' + (p?.code || ''), text: x.label, msg: x.msg })); });
-  const c1 = el(`<div class="card"><h3>확인 필요 (CGMP 필수) <span class="r hint">${todo.length}건 · 누르면 해당 화면으로</span></h3><div class="checks"></div></div>`);
-  const ck = c1.querySelector('.checks');
-  if (!todo.length) ck.innerHTML = '<div class="empty">필수 항목이 모두 채워져 있습니다.</div>';
-  todo.slice(0, 60).forEach(t => { const r = el(`<div class="row">${chip('필수', 'bad')}<div><a>${esc(t.who)}</a> — <b>${esc(t.text)}</b> <span class="m">${esc(t.msg)}</span></div></div>`); r.querySelector('a').onclick = () => t.k === 'ps' ? go('ps', { pid: t.id, sec: t.sec }) : go('coa', { cid: t.id }); ck.appendChild(r); });
-  g.appendChild(c1);
-  const right = el('<div></div>'); g.appendChild(right);
-  const c2 = el(`<div class="card"><h3>최근 성적서 <span class="r"></span></h3><table class="list"><thead><tr><th>시험번호</th><th>제품</th><th>LOT</th><th>판정일</th><th>상태</th></tr></thead><tbody></tbody></table></div>`);
-  c2.querySelector('.r').appendChild(button('+ 새 성적서', () => go('coa', { cid: null, newCoa: true })));
-  const tb = c2.querySelector('tbody');
-  [...S.coas].sort((a, b) => (b.judgeDate || b.createdAt || '').localeCompare(a.judgeDate || a.createdAt || '')).slice(0, 8).forEach(c => {
-    const p = prod(c.productId), s = coaStatus(c);
-    const tr = el(`<tr class="click"><td>${esc(c.testNo || '—')}</td><td>${esc(p?.nameKo || '(삭제된 제품)')}</td><td>${esc(c.lots.map(l => l.lot).filter(Boolean).join(', '))}</td><td>${esc(c.judgeDate)}</td><td>${chip(s[0], s[1])}</td></tr>`);
-    tr.onclick = () => go('coa', { cid: c.id }); tb.appendChild(tr);
-  });
-  if (!S.coas.length) tb.innerHTML = '<tr><td colspan="5" class="empty">성적서가 없습니다.</td></tr>';
-  right.appendChild(c2);
-  const c3 = el(`<div class="card"><h3>의약품안전나라 기능성 자료</h3><div style="line-height:1.7">${FD.missing ? chip('자료 파일 없음', 'warn') + ' 기능성자료\\기능성자료_갱신.bat 을 실행하세요.' : `${chip('연결됨', 'good')} 보고 품목 <b>${FD.items.length}</b>건 · 마지막 갱신 ${esc(FD.updatedAt)}<br>보고서 PDF 받은 품목 ${FD.items.filter(pdfPages).length}건`}</div></div>`);
-  c3.appendChild(button('기능성 자료 보기', () => go('func'))); right.appendChild(c3);
 }
 
 /* ================= 제품표준서 ================= */
@@ -1453,7 +1414,7 @@ $('#bkFile').onchange = async e => {
   const msg = `백업(제품 ${d.products.length}개, 성적서 ${(d.coas || []).length}건)으로 지금 데이터(제품 ${S.products.length}개, 성적서 ${S.coas.length}건)를 덮어씁니다.` + (Cloud.shared() ? '\n공동 저장소 전체가 바뀌어 다른 사람이 만든 문서도 백업에 없으면 사라집니다.' : '');
   if (!await askConfirm(msg, { ok: '덮어쓰기', danger: true })) return;
   const ingest = S.ingest; S = d; if (Cloud.art) S.ingest = d.ingest || ingest;
-  S.products.forEach(fixProduct); S.coas = S.coas || []; S.coas.forEach(fixCoa); S.issues = S.issues || []; save(); go('dash');
+  S.products.forEach(fixProduct); S.coas = S.coas || []; S.coas.forEach(fixCoa); S.issues = S.issues || []; save(); go('ps', { pid: null });
 };
 
 S = load();
