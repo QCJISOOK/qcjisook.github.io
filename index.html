@@ -2996,7 +2996,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-11-16 14:52</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-11-16 15:59</span></div>
 </div>
 
 
@@ -4044,7 +4044,8 @@ function phaseHeadHTML(n, title, key){
   if(!key) return head;
   return `<div class="ph-row">${head}<span class="ph-btns">`
     + `<button type="button" class="db-xl ph-pdf" data-aphpdf="${n}" data-aphkey="${esc(key)}"`
-    + ` title="${esc(title)} 칸을 보이는 그대로 PDF 로 뽑습니다">PDF</button></span></div>`;
+    + ` title="${n === 1 ? "보내 드린 「방문실사 일정 안내」 양식 그대로 PDF 로 뽑습니다"
+                         : esc(title) + " 칸을 보이는 그대로 PDF 로 뽑습니다"}">PDF</button></span></div>`;
 }
 
 /* ── 칸마다 PDF 로 뽑기 (2026-11-16 요청) ──────────────────────────
@@ -4183,7 +4184,14 @@ document.addEventListener("click", function(e){
   const body = ph && ph.querySelector('[data-phgrp="' + b.dataset.aphpdf + '"]');
   if(!body) return;
   const t = ph.querySelector(".ph-title");
-  aSecPdf(body, pdfSecName(b.dataset.aphkey, t ? t.textContent : "단계"), pdfSecSub(b.dataset.aphkey));
+  const key = b.dataset.aphkey;
+  if(b.dataset.aphpdf === "1"){               /* 방문일정은 보내 드린 양식 그대로 */
+    try {
+      const fb = visitFormBody(key);
+      if(fb) return aFormPdf(visitFormName(key), fb);
+    } catch(err){}
+  }
+  aSecPdf(body, pdfSecName(key, t ? t.textContent : "단계"), pdfSecSub(key));
 }, true);
 /* 점검시트 칸의 [PDF] */
 document.addEventListener("click", function(e){
@@ -7012,8 +7020,121 @@ function complaintBlockHTML(key, det){
 
 
 /* ===== 1단계 : 방문일정 (AUDIT 전 통보) ===== */
+/* ── 방문일정은 보내 드린 「방문실사 일정 안내」 양식 그대로 뽑는다 (2026-11-16 요청) ──
+   자료는 두 군데에 있다 : 지난 감사는 파일에 담긴 visitPlan, 새로 등록한 감사는
+   「AUDIT 준비」 창에서 적어 둔 것(aNote[열쇠].reg). 둘을 같은 꼴로 모아 쓰므로
+   화면의 방문일정 칸도 등록한 일정을 이제 그대로 보여 준다. */
+function visitWhoText(who){
+  if(typeof who === "string") return who;
+  const out = [];
+  (who || []).forEach(function(p){
+    const nm = String((p && p.name) || "").trim();
+    if(!nm) return;
+    const dept = String((p && p.dept) || "").trim();
+    const one = (nm + " " + String((p && p.rank) || "").trim()).trim();
+    let g = null;
+    for(let i = 0; i < out.length; i++) if(out[i].dept === dept){ g = out[i]; break; }
+    if(!g){ g = { dept: dept, who: [] }; out.push(g); }
+    g.who.push(one);
+  });
+  return out.map(function(g){ return (g.dept ? g.dept + " " : "") + g.who.join(", "); }).join(" · ");
+}
+/* 등록 창에서 적어 둔 것 — regOf 가 없는 화면(요약·합본)에서도 꺼내 쓴다 */
+function visitRegOf(key){
+  let bag = null;
+  try { bag = (aNote[key] || {}).reg || null; } catch(e){}
+  if(!bag) return null;
+  const get = function(f){ try { return JSON.parse(bag[f] || "null"); } catch(e){ return null; } };
+  const base = get("base");
+  if(!base) return null;
+  return { base: base, plan: get("plan") || [] };
+}
+function visitOf(key){
+  const p = String(key).split("|");
+  let v = null;
+  try { v = visitPlan[key] || null; } catch(e){}
+  if(v) return { date: v.date || "", time: v.time || "", place: v.place || "", staff: v.staff || "",
+                 agenda: v.agenda || [], note: v.note || "", co: p[2] || "" };
+  const r = visitRegOf(key);
+  if(!r) return null;
+  const b = r.base || {};
+  const ag = (r.plan || []).map(function(x){ return { t: (x && x[0]) || "", d: (x && x[1]) || "" }; })
+    .filter(function(x){ return x.t || x.d; });
+  const time = [b.t1, b.t2].filter(Boolean).join(" ~ ");
+  const place = [b.full || b.company || p[2], b.addr].filter(Boolean).join(" ");
+  if(!b.date && !time && !ag.length) return null;
+  return { date: b.date || "", time: time, place: place, staff: visitWhoText(b.who),
+           agenda: ag, note: "", co: b.full || b.company || p[2] || "" };
+}
+function visitFormName(key){
+  const p = String(key).split("|");
+  const v = visitOf(key) || {};
+  return (p[0] || "") + "년 " + (v.co || p[2] || "") + " 방문실사 일정 안내";
+}
+/* 보내 드린 양식 그대로 — 로고 · 제목칸 · 일시/장소/참석인원 · 일정표 · 꼬리말 */
+function visitFormCss(){
+  return '<style>'
+    + '@page{ size:A4 portrait; margin:18mm 16mm; }'
+    + 'body{ margin:0; background:#fff; color:#000; font-size:11pt;'
+    +   ' font-family:"맑은 고딕","Malgun Gothic",sans-serif; }'
+    + '.ar-p{ width:100%; }'
+    + '.ar-logo{ text-align:center; font-size:30pt; font-weight:900; letter-spacing:.18em; margin:6mm 0 2mm; }'
+    + '.ar-logo span{ display:block; font-size:10.5pt; font-weight:700; letter-spacing:.34em; margin-top:1mm; }'
+    + '.ar-ttl{ border:1.5pt solid #9bbb59; text-align:center; font-size:14pt; font-weight:800;'
+    +   ' padding:3mm 4mm; margin:8mm auto 9mm; width:fit-content; }'
+    + '.ar-li{ font-size:11pt; margin:0 0 5mm 2mm; }'
+    + '.ar-li b{ font-weight:800; }'
+    + '.ar-pt{ border-collapse:collapse; margin:8mm auto 0; width:105mm; }'
+    + '.ar-pt th,.ar-pt td{ border:.8pt solid #000; padding:1.8mm 2mm; text-align:center; font-size:10.5pt; }'
+    + '.ar-pt th{ font-weight:800; }'
+    + '.ar-foot{ margin:7mm 0 0 8mm; font-size:10.5pt; }'
+    + 'html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }'
+    + '</style>';
+}
+function visitFormBody(key){
+  const v = visitOf(key);
+  if(!v) return "";
+  const p = String(key).split("|");
+  const t = function(s){ return esc(s || ""); };
+  const d = String(v.date || "").replace(/[^0-9-]/g, "");
+  const when = ((d.length >= 10) ? (d.slice(0, 4) + "년 " + d.slice(5, 7) + "월 " + d.slice(8, 10) + "일 ") : "")
+    + t(v.time);
+  return '<div class="ar-p">'
+    + '<div class="ar-logo">OLIVE<span>INTERNATIONAL</span></div>'
+    + '<div class="ar-ttl">' + t(p[0]) + '년 ' + t(v.co) + ' 방문실사 일정 안내</div>'
+    + '<div class="ar-li"><b>일 시 :</b> ' + when + '</div>'
+    + '<div class="ar-li"><b>장 소 :</b> ' + t(v.place) + '</div>'
+    + '<div class="ar-li"><b>참석인원 :</b> ' + t(v.staff) + '</div>'
+    + ((v.agenda || []).length
+      ? '<table class="ar-pt"><thead><tr><th style="width:150px">시간</th><th>상세 일정</th></tr></thead><tbody>'
+        + v.agenda.map(function(a){ return '<tr><td>' + t(a.t) + '</td><td>' + t(a.d) + '</td></tr>'; }).join("")
+        + '</tbody></table>'
+      : "")
+    + '<div class="ar-foot">※ ' + t(v.note || "상황에 따라 인원 및 일정 변경 될 수 있음.") + '</div>'
+    + '</div>';
+}
+function aFormPdf(name, body){
+  const html = '<!doctype html><html lang="ko"><head><meta charset="utf-8" />'
+    + '<title>' + esc(name) + '</title>' + visitFormCss() + '</head><body>' + body + '</body></html>';
+  const gone = document.getElementById("a-form-pdf");
+  if(gone) gone.remove();
+  const fr = document.createElement("iframe");
+  fr.id = "a-form-pdf";
+  fr.setAttribute("aria-hidden", "true");
+  fr.style.cssText = "position:fixed; left:-20000px; top:0; width:710px; height:1032px; border:0;";
+  document.body.appendChild(fr);
+  const d = fr.contentWindow.document;
+  d.open(); d.write(html); d.close();
+  const was = document.title;
+  document.title = name;
+  setTimeout(function(){
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
+    catch(e){ alert("인쇄 화면을 열지 못했습니다 — " + e.message); }
+    setTimeout(function(){ document.title = was; }, 2500);
+  }, 350);
+}
 function visitPlanHTML(key){
-  const v = visitPlan[key];
+  const v = visitOf(key);
   if(!v) return `<div class="empty-note">방문일정 안내 자료 없음</div>`;
   return `<div class="vp">
     <div class="vp-facts">
