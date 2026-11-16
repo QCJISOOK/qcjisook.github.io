@@ -524,7 +524,7 @@ function newCoa(p) {
     id: uid('coa'), productId: p.id, testNo: nextTestNo(),
     lots: p.components.map(k => ({ label: k.label, lot: '', maker: k.maker, mfgDate: '' })),
     expiry: '', receiptDate: today(), labelQty: (p.weight || '').replace(/\n/g, ' / '), sampleQty: '', receiptQty: '',
-    requestDate: today(), samplingDate: '', psRef: { no: p.psNo, rev: p.rev },
+    requestDate: today(), samplingDate: today() /* 채취일 — 입고일과 같은 날로 시작, 고칠 수 있음 */, psRef: { no: p.psNo, rev: p.rev },
     results: coaRowsFor(p),
     remarks: '', retain: { qty: '', location: '', until: '', mode: '사용기한' }, judgeDate: today() /* 결재란 판정일 — 만든 날, 고칠 수 있음 */, verdict: '',
     sign: { writer: '', reviewer: '', approver: '' }, release: { status: '', approver: '', date: '' }, createdAt: today()
@@ -1209,7 +1209,9 @@ function renderCoa(m) {
   A(form([['제품', el(`<div><b>${esc(p?.nameKo || '')}</b> <span class="hint">${esc(p?.code || '')}</span></div>`), true],
     ['표시용량', inp(c, 'labelQty')],
     ['관리 번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['', el('<span class="hint">목록·파일 이름에만 쓰고 성적서에는 인쇄 안 됨</span>')]]));
-  A(subh('구성품별 제조번호(LOT) <span class="hint">제조일은 사용기한 자동 계산에만 쓰고 인쇄 안 됨</span>'));
+  // 성적서 머리표: 품번 · 채취일 · 입고일 · 검체수량 · 제조일 (사용자 요청 2026-11-16) — 품번은 제품표준서 제품코드
+  A(form([['채취일', inp(c, 'samplingDate', { type: 'date' })], ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['검체수량', inp(c, 'sampleQty', { ph: '예) 3 ea' })], ['품번', el(`<div class="hint" style="padding-top:8px">${esc(p?.code || '제품표준서에 제품코드 없음')} — 제품표준서 제품코드</div>`)]]));
+  A(subh('구성품별 제조번호(LOT) <span class="hint">제조일은 성적서에 찍히고 사용기한 자동 계산에도 씀</span>'));
   const ex = inp(c, 'expiry', { type: 'date' });
   A(tedit(c.lots, [{ k: 'label', label: '구성품', w: '14%' }, { k: 'lot', label: '제조번호(LOT)', w: '22%' }, { k: 'maker', label: '제조사', w: '24%' }, { k: 'mfgDate', label: '제조일', type: 'date' }], { numbered: false }));
   const autoExp = () => { const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); const mo = num(p?.shelfLife?.months) || (String(p?.shelfLife?.life || '').match(/(\d+)\s*개월/) || [])[1]; if (!ds.length || !mo) { notify('구성품 제조일과 제품표준서 12-2 사용기한(개월)이 있어야 계산됩니다.'); return; } c.expiry = addMonths(ds[0], mo); ex.value = c.expiry; changed(); };
@@ -1626,16 +1628,18 @@ async function uploadPages(p) {
 function coaDoc(c, pp) {
   const p = pp || prod(c.productId) || { nameKo: '', code: '', nameSub: '' };
   // 시험표는 20줄(빈 줄 채움), 한 쪽을 꽉 채우게 줄 높이를 맞춤 — 20줄 넘으면 줄 높이를 줄여 한 쪽 안에
-  const rows = c.results, padN = Math.max(0, 20 - rows.length), rowH = Math.max(18, Math.min(37, Math.floor(740 / Math.max(rows.length, 20)))), dense = rowH < 22;
+  const rows = c.results, padN = Math.max(0, 20 - rows.length), rowH = Math.max(18, Math.min(34, Math.floor(690 / Math.max(rows.length, 20)))) /* 머리표 4줄(품번·채취일·입고일·검체수량·제조일 추가)만큼 줄 높이를 줄임 */, dense = rowH < 22;
   const multi = rows.some(r => r.sub) || c.lots.length > 1; // 구성품이 여럿일 때만 「구분」 열
   const per = k => c.lots.map(l => `${c.lots.length > 1 ? esc(l.label) + ' : ' : ''}${esc(l[k])}`).join('<br>');
   const cols = [['No.', 5], ['시험항목', multi ? 20 : 22], ...(multi ? [['구분', 7]] : []), ['시험기준', multi ? 33 : 37], ['시험결과', 14], ['비고', 0]]; // 판정 열 없음 — 시험결과와 겹침 (사용자 요청) // 시험방법 대신 시험결과, 판정 오른쪽 비고 (사용자 요청) // 시험일자 열 없음 (사용자 요청)
   let b = 0; const B = s => `<div class="blk" data-id="c${++b}">${s}</div>`;
   return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
   ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
-  <table class="info box"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:20%"><col style="width:13%"><col></colgroup>
-   <tr><th>제품명</th><td colspan="3" class="left" style="height:30px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td><th>표시용량</th><td>${esc(c.labelQty)}</td></tr>
-   <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
+  <table class="info box"><colgroup><col style="width:13%"><col style="width:21%"><col style="width:13%"><col style="width:20%"><col style="width:13%"><col></colgroup>
+   <tr><th>제품명</th><td colspan="5" class="left" style="height:30px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
+   <tr><th>품번</th><td>${esc(p.code || '')}</td><th>제조원</th><td>${per('maker')}</td><th>표시용량</th><td>${esc(c.labelQty)}</td></tr>
+   <tr><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>제조일</th><td>${per('mfgDate')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr>
+   <tr><th>채취일</th><td>${esc(c.samplingDate || '')}</td><th>입고일</th><td>${esc(c.receiptDate || '')}</td><th>검체수량</th><td>${esc(c.sampleQty || '')}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit" style="--rh:${rowH}px"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
    <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td style="font-size:7.2pt">${nl(r.remark || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
@@ -1742,7 +1746,7 @@ function blankProduct() {
 function previewBlankPS() { preview('제품표준서 작성 양식 — 빈 양식', psDoc(blankProduct(), []), null); }
 function previewBlankCoa() {
   const c = newCoa(blankProduct());
-  Object.assign(c, { productId: '', testNo: '', receiptDate: '', requestDate: '', createdAt: '', judgeDate: '', psRef: { no: '', rev: '' } });
+  Object.assign(c, { productId: '', testNo: '', receiptDate: '', samplingDate: '', requestDate: '', createdAt: '', judgeDate: '', psRef: { no: '', rev: '' } });
   preview('완제품시험성적서 작성 양식 — 빈 양식', coaDoc(c), null);
 }
 async function previewPS(p) {
@@ -1773,7 +1777,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=e2f9444a"></script>
+<script src="js/ingest.js?v=a657e8c8"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>

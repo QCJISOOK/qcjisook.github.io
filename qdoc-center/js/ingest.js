@@ -864,7 +864,7 @@ function makeCoa(p, M, mk, mkName, single, mo) {
     c.remarks = String(ing().info.coaRemarks || '').trim(); // 특이사항은 「3. 만들기」에 쓴 내용만 (자동 문구 없음 — 사용자 요청)
     const micExp = M.map(micOf).find(x => x?.exp)?.exp;
     const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (micExp) c.expiry = micExp; else if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
-    c.requestDate = ''; c.receiptDate = today();
+    c.requestDate = ''; c.receiptDate = today(); c.samplingDate = c.receiptDate; // 채취일은 입고일과 같은 날로 시작 (고칠 수 있음)
     return c;
 }
 
