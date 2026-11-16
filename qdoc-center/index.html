@@ -231,6 +231,15 @@ const rawFor = name => (RAWI().get(norm(String(name || '').replace(/\s*\d\s*제$
 const rawIngs = it => (it?.ings || []).map(i => (window.RAW_REPORTS?.ing || [])[i]).filter(Boolean);
 const shortMaker = s => String(s || '').replace(/\(주\)|㈜|주식회사|\(유\)|유한회사/g, '').trim();
 const ownStd = (s, maker) => { const m = shortMaker(maker), t = String(s ?? ''); return m ? t.replace(/자사\s*(?=기준|미생물|시험|규격|관능)/g, m + ' ') : t; };
+/* 완제품성적서 미생물(미생물한도·특정세균) = 외부 시험기관 결과만 (사용자 요청 2026-11-16 「코스맥스꺼는 삭제」, 다시 넣지 말 것):
+   제조사 자체 미생물 시험 줄(반제품 결과 인용·제조사 이름·「자사」 시험법)은 성적서에 넣지 않음. No는 줄 순서라 자동으로 당겨짐 */
+const isMicroRow = r => /미생물|특정세균|총호기성|생균수|대장균|녹농균|황색포도상|병원성/.test(String(r?.item || ''));
+function makerMicro(r, makers = []) {
+  if (!isMicroRow(r) || /^외부 시험/.test(r.note || '')) return false;
+  const t = `${r.method || ''} ${r.tester || ''}`, ms = makers.map(shortMaker).filter(m => m.length >= 2);
+  return /벌크 시험자료/.test(r.note || '') || /자사|제조사/.test(t) || ms.some(m => t.includes(m));
+}
+const dropMakerMicro = c => { const n = (c.results || []).length; c.results = (c.results || []).filter(r => !makerMicro(r, (c.lots || []).map(l => l.maker))); return n - c.results.length; };
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 9);
 const norm = s => String(s || '').replace(/[^0-9A-Za-z가-힣]/g, '').toLowerCase();
 const num = s => { const v = parseFloat(String(s ?? '').replace(/,/g, '')); return isNaN(v) ? null : v; };
@@ -304,7 +313,10 @@ function upgradeV2(p) {
 const typeLine = p => [p.typeDiv, p.typeClass, p.typeSub].filter(Boolean).join(' / ') || String(p.type || '').split('\n')[0];
 function fixCoa(c) {
   c.lots = c.lots || []; c.results = c.results || [];
-  if (c.remarks) c.remarks = String(c.remarks).split('\n').filter(l => !/^(반제품\(벌크\) 시험성적서 인용:|미생물 시험\(외부\):|충전·포장 후 항목.*자사 입고검사$)/.test(l.trim())).join('\n').trim(); // 자동 특이사항 문구 없앰 (사용자 요청) c.results.forEach(r => { const lot = c.lots.find(l => (l.label || '') === (r.sub || '')) || c.lots[0] || {}; r.method = ownStd(cleanMethod(r.method), lot.maker); }); c.retain = c.retain || { qty: '', location: '', until: '', mode: '사용기한' };
+  if (c.remarks) c.remarks = String(c.remarks).split('\n').filter(l => !/^(반제품\(벌크\) 시험성적서 인용:|미생물 시험\(외부\):|충전·포장 후 항목.*자사 입고검사$)/.test(l.trim())).join('\n').trim(); // 자동 특이사항 문구 없앰 (사용자 요청)
+  c.results.forEach(r => { const lot = c.lots.find(l => (l.label || '') === (r.sub || '')) || c.lots[0] || {}; r.method = ownStd(cleanMethod(r.method), lot.maker); });
+  dropMakerMicro(c); // 미생물은 외부 시험기관 결과만 — 이미 만든 성적서의 제조사 미생물 줄도 뺌
+  c.retain = c.retain || { qty: '', location: '', until: '', mode: '사용기한' };
   c.sign = c.sign || { writer: '', reviewer: '', approver: '' }; c.release = c.release || { status: '', approver: '', date: '' }; c.psRef = c.psRef || { no: '', rev: '' };
 }
 let saveT;
@@ -436,6 +448,7 @@ function nextTestNo() {
 /* 별첨4 완제품 기준 한 줄 → 성적서 한 줄 (결과 적용에 따라 시험자 미리 채움) */
 function coaRowFrom(p, f) {
   const mk = ((p.components || []).find(k => k.label === f.sub) || (p.components || [])[0] || {}).maker || '제조사';
+  if (isMicroRow(f)) return { item: f.item, sub: f.sub, criterion: f.criterion, result: '', judge: '', method: f.method, tester: '외부 시험기관', apply: f.apply || '', note: '' }; // 미생물은 외부 시험기관 결과만
   const tester = f.apply === '입고검사' ? '자사 (입고검사)' : f.apply === '위탁시험 / 제조사' ? '위탁시험기관 / 제조사' : f.apply === '벌크 시험자료 적용' ? mk : f.apply === '완제품 시험' ? '자사' : '';
   return { item: f.item, sub: f.sub, criterion: f.criterion, result: '', judge: '', method: f.method, tester, apply: f.apply || '', note: f.apply === '벌크 시험자료 적용' ? '벌크 시험자료 적용' : '' };
 }
@@ -1177,7 +1190,7 @@ function newCoaDialog(m) {
   m.appendChild(card);
   const t = card.querySelector('.toolbar');
   t.appendChild(button('취소', () => go('coa', { cid: null }), 'btn'));
-  t.appendChild(button('만들기', () => { const p = prod(card.querySelector('#np').value); const c = newCoa(p); S.coas.push(c); save(); go('coa', { cid: c.id }); }, 'btn pri'));
+  t.appendChild(button('만들기', () => { const p = prod(card.querySelector('#np').value); const c = newCoa(p); dropMakerMicro(c); S.coas.push(c); save(); go('coa', { cid: c.id }); }, 'btn pri'));
 }
 
 /* ================= 기능성 자료 탭 ================= */
@@ -1643,7 +1656,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=528a6f51"></script>
+<script src="js/ingest.js?v=d4bd59c7"></script>
 <script src="js/cgmp.js?v=9c60d558"></script>
 </body>
 </html>

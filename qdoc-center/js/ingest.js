@@ -549,10 +549,10 @@ const FEAS = M => {
     ['제품표준서', '제조업자 (상호·소재지·등록번호)', A(mk, '자동', '입력'), '제조업 등록필증 + 보고서 제조소'],
     ['제품표준서', '전성분', A(M.some(c => c.single), '자동', '입력'), '전성분표(단일)'],
     ['완제품성적서', '제조번호·제조일', A(b, '자동', '입력'), '반제품성적서 (충전 LOT가 다르면 수정)'],
-    ['완제품성적서', '관능·이화학·미생물 결과', A(b, '자동', '입력'), '반제품성적서 결과 인용 (시험자=제조사)'],
+    ['완제품성적서', '관능·이화학 결과', A(b, '자동', '입력'), '반제품성적서 결과 인용 (시험자=제조사)'],
+    ['완제품성적서', '미생물 (미생물한도·특정세균)', A(has('micro'), '자동', '입력'), '외부 미생물시험성적서(KATRI 등) 결과만 — 제조사 자체 미생물 시험은 넣지 않음'],
     ['완제품성적서', '기능성 주성분 함량 결과', A(b && M.every(c => !c.report || c.report.actives.every(a => c.bulk?.rows.some(x => N(x.item + x.crit).includes(N(a.name))))), '자동', '제조사 요청'), '반제품성적서에 있어야 함'],
     ['완제품성적서', '표시기재사항·외관·포장사양·내용량·이물', '입력', '입고검사(자사) 결과 — 시험자 칸은 「자사 (입고검사)」로 미리 채움'],
-    ['완제품성적서', '특정세균 (대장균·녹농균·황색포도상구균)', A(M.some(c => c.bulk?.rows.some(x => /특정|대장|녹농|황색/.test(x.item))), '자동', '제조사 요청'), '반제품성적서에 없으면 위탁시험 또는 제조사 성적서'],
     ['완제품성적서', '판정·출고 승인', '입력', '품질관리 책임자']
   ];
 };
@@ -737,6 +737,8 @@ function makeCoa(p, M, mk, mkName, single, mo) {
       if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
       if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
+    // 미생물(미생물한도·특정세균)은 외부 시험기관 결과로 채운 줄만 남김 — 제조사(코스맥스 등) 자체 미생물 시험·빈 줄은 넣지 않음 (사용자 요청 2026-11-16)
+    c.results = c.results.filter(r => !isMicroRow(r) || /^외부 시험/.test(r.note || ''));
     c.remarks = String(ing().info.coaRemarks || '').trim(); // 특이사항은 「3. 만들기」에 쓴 내용만 (자동 문구 없음 — 사용자 요청)
     const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
     c.requestDate = ''; c.receiptDate = today();
@@ -836,7 +838,7 @@ function renderIngest(m) {
   c4.appendChild(inl(b1, b2, b3)); m.appendChild(c4);
 }
 RENDER.ingest = renderIngest;
-window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict,
+window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict, makeCoa,
   // 점검용: PDF 쪽별 줄 글자 (화면에는 안 씀)
   textOf: async (url, from = 1, to = 20) => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; const out = []; for (let i = from; i <= Math.min(to, doc.numPages); i++) out.push((await visualLines(await doc.getPage(i))).map(l => l.text)); return out; } };
 })();
