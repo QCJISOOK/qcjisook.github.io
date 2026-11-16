@@ -207,6 +207,28 @@ const nl = s => esc(s).replace(/\n/g, '<br>');
    끝에 붙은 「- 또는 : + 영문 대문자 코드(숫자 포함)」만 뺌 — 「- HPLC」처럼 숫자 없는 것은 그대로 */
 const cleanMethod = s => { const t = String(s ?? ''); const m = t.match(/\s*[-:：]\s*[A-Z][A-Z0-9]*(?:[\s-]+[A-Z0-9().]+)*\s*$/); return m && /\d/.test(m[0]) ? t.slice(0, m.index).trim() : t; };
 /* 시험방법의 「자사」는 제조사 입장 표현 → 제조사 이름으로 (사용자 요청): 자사기준(관능시험법) → 코스맥스 기준(관능시험법), 자사 미생물시험법 → 코스맥스 미생물시험법 */
+/* 화장품법 시행규칙 [별표 3] 화장품 유형 — 원료목록 보고 「유형표시」(예: 카8) 풀이 */
+const TYPE3 = {
+  가: ['영유아용 제품류', ['영유아용 샴푸, 린스', '영유아용 로션, 크림', '영유아용 오일', '영유아 인체 세정용 제품', '영유아 목욕용 제품']],
+  나: ['목욕용 제품류', ['목욕용 오일·정제·캡슐', '목욕용 소금류', '버블 배스', '그 밖의 목욕용 제품류']],
+  다: ['인체 세정용 제품류', ['폼 클렌저', '바디 클렌저', '액체 비누 및 화장 비누', '외음부 세정제', '물휴지', '그 밖의 인체 세정용 제품류']],
+  라: ['눈 화장용 제품류', ['아이브로 펜슬', '아이 라이너', '아이 섀도', '마스카라', '아이 메이크업 리무버', '그 밖의 눈 화장용 제품류']],
+  마: ['방향용 제품류', ['향수', '분말향', '향낭', '콜롱', '그 밖의 방향용 제품류']],
+  바: ['두발 염색용 제품류', ['헤어 틴트', '헤어 컬러스프레이', '염모제', '탈염·탈색용 제품', '그 밖의 두발 염색용 제품류']],
+  사: ['색조 화장용 제품류', ['볼연지', '페이스 파우더, 페이스 케이크', '리퀴드·크림·케이크 파운데이션', '메이크업 베이스', '메이크업 픽서티브', '립스틱, 립라이너', '립글로스, 립밤', '바디페인팅, 페이스페인팅, 분장용 제품', '그 밖의 색조 화장용 제품류']],
+  아: ['두발용 제품류', ['헤어 컨디셔너', '헤어 토닉', '헤어 그루밍 에이드', '헤어 크림·로션', '헤어 오일', '포마드', '헤어 스프레이·무스·왁스·젤', '샴푸, 린스', '퍼머넌트 웨이브', '헤어 스트레이트너', '흑채', '그 밖의 두발용 제품류']],
+  자: ['손발톱용 제품류', ['베이스코트, 언더코트', '네일폴리시, 네일에나멜', '탑코트', '네일 크림·로션·에센스', '네일폴리시·네일에나멜 리무버', '그 밖의 손발톱용 제품류']],
+  차: ['면도용 제품류', ['애프터셰이브 로션', '남성용 탤컴', '프리셰이브 로션', '셰이빙 크림', '셰이빙 폼', '그 밖의 면도용 제품류']],
+  카: ['기초화장용 제품류', ['수렴·유연·영양 화장수', '마사지 크림', '에센스, 오일', '파우더', '바디 제품', '팩, 마스크', '눈 주위 제품', '로션, 크림', '손·발의 피부연화 제품', '클렌징 워터, 클렌징 오일, 클렌징 로션, 클렌징 크림 등 메이크업 리무버', '그 밖의 기초화장용 제품류']],
+  타: ['체취 방지용 제품류', ['데오도런트', '그 밖의 체취 방지용 제품류']],
+  파: ['체모 제거용 제품류', ['제모제', '제모왁스', '그 밖의 체모 제거용 제품류']]
+};
+const typeOf = code => { const m = String(code || '').trim().match(/^([가-힣])\s*(\d+)?$/), t = m && TYPE3[m[1]]; if (!t) return null; const sub = m[2] ? t[1][+m[2] - 1] || '' : ''; return { cls: t[0], sub: sub ? `${sub} (${m[1]}${m[2]})` : '' }; };
+/* 원료목록 보고 품목 찾기 (이름 같으면) — 제조업자·유형·원료 목록 */
+let RAWI_ = null; // 처음 쓸 때 만듦 (norm 선언 뒤)
+const RAWI = () => RAWI_ || (RAWI_ = (() => { const R = window.RAW_REPORTS || {}, m = new Map(); (R.items || []).forEach(it => { const k = norm(String(it.name).replace(/\s*\d\s*제$/, '')); if (!m.has(k)) m.set(k, []); m.get(k).push(it); }); return m; })());
+const rawFor = name => (RAWI().get(norm(String(name || '').replace(/\s*\d\s*제$/, ''))) || [])[0] || null;
+const rawIngs = it => (it?.ings || []).map(i => (window.RAW_REPORTS?.ing || [])[i]).filter(Boolean);
 const shortMaker = s => String(s || '').replace(/\(주\)|㈜|주식회사|\(유\)|유한회사/g, '').trim();
 const ownStd = (s, maker) => { const m = shortMaker(maker), t = String(s ?? ''); return m ? t.replace(/자사\s*(?=기준|미생물|시험|규격|관능)/g, m + ' ') : t; };
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 9);
@@ -536,7 +558,6 @@ function psChecksFull(p) {
   add('rev', '필수', (p.revisions || []).length, '변경이력');
   add('cover', '권장', p.approvals.approver.name, '승인자 성명');
   add('s1', '권장', p.appearance && p.packUnit, '성상·포장단위');
-  add('s1', '권장', p.typeClass, '유형 (화장품법 시행규칙 [별표 3] 유형)');
   if (fn) add('s8', '권장', p.efficacy.reviewNo || links.length, '기능성 보고(심사) 번호', '의약품안전나라 자료와 연결되지 않음');
   if (fn) add('s13', '권장', links.some(it => pdfPages(it)) || (p.uploads || []).some(u => u.kind === '기능성보고서'), '기능성 보고서 원본(PDF) 첨부', '공개 정보만 연결됨 — 보고서 PDF를 「자료로 작성」에 올리거나 기능성자료\\보고서에 넣기');
   add('s7', '권장', (p.finishedSpecs || []).length && p.finishedSpecs.every(f => f.apply), '완제품 기준 — 결과 적용 (벌크 인용 / 입고검사 / 위탁)', '결과 적용 칸이 빈 항목 있음');
@@ -983,6 +1004,8 @@ const LITE_REF = ['성분 및 함량 (처방) · 제조단위', '제조공정흐
 const LITE_LABEL = { s1: '1. 제품 개요·표시사항', s8: '2. 효능·효과·주의사항', s9: '3. 성분 (전성분·관리 성분)', s7: '4. 기준 및 시험방법', s12: '5. 보관조건·사용기한', s13: '6. 별첨' };
 const FULLNUM = { s1: '1', s2: '2', s3: '3', s4: '4', s5: '5', s6: '6', s7: '7', s8: '8', s9: '9', s10: '10', s11: '11', s12: '12', s13: '13' };
 const isLite = p => p.scope === '책임판매';
+/* 표지 「기능성 보고(심사) 번호」 = 보고일련번호만 (사용자 요청) — 부서접수번호 등은 빼고 */
+const reportSeqs = p => { const s = String(p.efficacy?.reviewNo || ''), m = [...s.matchAll(/보고일련번호\s*[:：]?\s*(\d{6,})/g)].map(x => x[1]); if (m.length) return [...new Set(m)].join(', '); const l = funcLinks(p).map(it => it.seq).filter(Boolean); return l.length ? l.join(', ') : s; };
 /* 별첨2 제조지시 및 공정 기록서는 자료(문서명·번호, 비고, 올린 원본)가 있을 때만 → 없으면 빼고 뒤 별첨 번호를 당김 */
 const hasMfg = p => !!(String(p.mfgDoc || '').trim() || String(p.mfgNote || '').trim() || (p.uploads || []).some(u => /제조지시/.test(u.kind) && u.print !== false));
 function annexNo(p) { const ks = ['s2', ...(hasMfg(p) ? ['sMfg'] : []), 's7b', 's7f', ...(isFunctional(p) ? ['sFn'] : [])]; return Object.fromEntries(ks.map((k, i) => [k, i + 1])); }
@@ -1255,7 +1278,7 @@ function psDoc(p, extra) {
    <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
    <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
    <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>포장단위</th><td class="c">${nl(p.packUnit || p.weight)}</td></tr>
-   ${isFunctional(p) ? `<tr><th>기능성 보고(심사) 번호</th><td class="c" style="font-size:7.5pt">${esc(p.efficacy.reviewNo || funcLinks(p).map(it => it.seq).join(', '))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (funcLinks(p)[0] || {}).date || '')}</td></tr>` : ''}
+   ${isFunctional(p) ? `<tr><th>기능성 보고(심사) 번호</th><td class="c">${esc(reportSeqs(p))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (funcLinks(p)[0] || {}).date || '')}</td></tr>` : ''}
    <tr><th>문서정보</th><td class="c" colspan="3">${esc(p.docInfo)}</td></tr></table>
   <div class="bar center" style="margin-top:12px">제조 및 책임판매 주체</div>
   <table class="h30"><colgroup><col style="width:22%"><col style="width:24%"><col></colgroup><tr><th>구 분</th><th>업체명</th><th>역 할</th></tr>
@@ -1273,9 +1296,7 @@ function psDoc(p, extra) {
       <tr><th>제품명</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
       <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
       <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>문서정보</th><td class="c">${esc(p.docInfo)}</td></tr>
-      <tr><th>제품코드</th><td class="c">${esc(p.code)}</td><th>벌크코드</th><td class="c">${esc(p.bulkCode)}</td></tr>
-      <tr><th>유형분류</th><td class="c">${esc(p.typeClass)}</td><th>유형세분류</th><td class="c">${esc(p.typeSub)}</td></tr>
-      ${fn ? `<tr><th>기능성 보고(심사) 번호</th><td class="c" style="font-size:7.5pt">${esc(p.efficacy.reviewNo || links.map(it => it.seq).join(', '))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (links[0] || {}).date || '')}</td></tr>` : ''}
+      ${fn ? `<tr><th>기능성 보고(심사) 번호</th><td class="c">${esc(reportSeqs(p))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (links[0] || {}).date || '')}</td></tr>` : ''}
       <tr><th>포장단위</th><td colspan="3">${nl(p.packUnit)}</td></tr>
       <tr><th>성상</th><td colspan="3">${nl(p.appearance)}</td></tr></table></div>
     <div class="blk"><div class="bar">1-2. 제조 및 책임판매 주체</div><table class="h22"><colgroup><col style="width:18%"><col style="width:40%"><col></colgroup><tr><th>구 분</th><th>업체명 (소재지)</th><th>역 할</th></tr>
