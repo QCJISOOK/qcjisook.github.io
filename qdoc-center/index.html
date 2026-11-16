@@ -467,7 +467,10 @@ function coaRowsFor(p) {
   const bulk = (p.components || []).flatMap(k => (k.bulkSpecs || []).filter(s => !isMicroRow(s) && !have.has(norm(cleanItem(s.item)) + '|' + (multi ? k.label : '')))
     .map(s => ({ item: cleanItem(s.item), sub: multi ? k.label : '', criterion: s.criterion, result: '', judge: '', method: s.method, tester: k.maker || '제조사', apply: '벌크 시험자료 적용', note: '', remark: '벌크시험성적서로 부터 연계', src: 'bulk' })));
   const micro = fin.filter(r => isMicroRow(r)), other = fin.filter(r => !isMicroRow(r));
-  return [...other, ...bulk, ...micro];
+  // 성상·색상·향취는 맨 위 (내용량 위, 사용자 요청)
+  const all = [...other, ...bulk, ...micro], SENSE = ['성상', '색상', '향취'];
+  const rank = r => { const i = SENSE.findIndex(k => cleanItem(r.item).startsWith(k)); return i < 0 ? SENSE.length : i; };
+  return all.map((r, i) => [r, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
 }
 function newCoa(p) {
   return {
