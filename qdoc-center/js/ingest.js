@@ -670,8 +670,8 @@ function build(withCoa, coaOnly = false) {
     const en = (c.single?.single || c.names?.names || []).map(x => String(x.en || '').trim());
     if (en.some(Boolean)) k.fullIngredientsEn = en;
     k.composition = (c.single?.single || []).map(x => ({ ko: x.ko, pct: x.pct }));
-    if (!(b?.rows || []).length && M.length === 1 && (mps0?.specs?.bulk || []).length) b = { rows: mps0.specs.bulk.map(x => ({ item: x.item, crit: x.spec, method: x.basis })) }; // 반제품성적서가 없으면 제조사 벌크시험기준서
-    k.bulkSpecs = (b?.rows || []).map(x => ({ item: x.item, criterion: x.crit, method: ownStd(cleanMethod(x.method), makerShort(mk) || mkName), basis: (String(x.method || '').match(/「[^」]+」/) || [''])[0] || (/미생물|세균/.test(x.item) ? '화장품 안전기준 등에 관한 규정' : ''), specType: '자가 규격', freq: '매 배치', note: '' }));
+    const bspec = M.length === 1 && (mps0?.specs?.bulk || []).length ? { rows: mps0.specs.bulk.map(x => ({ item: x.item, crit: x.spec, method: x.basis })) } : null; // 제조사 벌크시험기준서 (관리규격)
+    k.bulkSpecs = ((bspec || b)?.rows || []).map(x => ({ item: cleanItem(x.item), criterion: x.crit, method: ownStd(cleanMethod(x.method), makerShort(mk) || mkName), basis: (String(x.method || '').match(/「[^」]+」/) || [''])[0] || (/미생물|세균/.test(x.item) ? '화장품 안전기준 등에 관한 규정' : ''), specType: '자가 규격', freq: '매 배치', note: '' }));
     (r?.actives || []).forEach(a => { if (!k.bulkSpecs.some(x => N(x.item).includes(N(a.name)))) { const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4); k.bulkSpecs.push({ item: `${a.name} 확인시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: '주피크의 유지시간은 표준품과 같다', basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }, { item: `${a.name} 함량시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: `표시량의 90.0% 이상 (${pct}%)`, basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }); } });
     return k;
   });
@@ -790,7 +790,7 @@ function makeCoa(p, M, mk, mkName, single, mo) {
       const comp = M.find(k => (single ? '' : k.key) === (r.sub || '')) || (single ? M[0] : null); const br = comp?.bulk?.rows || [];
       const isSpec = /특정세균|병원성/.test(r.item), isTotal = !isSpec && /미생물|총호기성/.test(r.item); // 미생물2(병원성균) = 특정세균, 미생물1(총호기성생균수) = 미생물한도
       const key = KEYS.find(k => r.item.includes(k)); let hit = key && !isSpec && !isTotal ? br.find(x => x.item.includes(key)) : null;
-      if (!hit) hit = br.find(x => N(x.item) === N(r.item));
+      if (!hit) hit = br.find(x => N(x.item) === N(r.item) || N(cleanItem(x.item)) === N(cleanItem(r.item)));
       const act = (r.item.match(/^(.+?)\s*(확인시험|함량시험)$/) || []);
       if (!hit && act[1]) hit = br.find(x => N(x.item).includes(N(act[1])) && x.item.includes(act[2].replace('시험', '')));
       if (!hit && isTotal) hit = br.find(x => /총호기성|미생물1|미생물한도/.test(N(x.item)));
@@ -798,8 +798,8 @@ function makeCoa(p, M, mk, mkName, single, mo) {
       // 외부 미생물시험성적서가 있으면 미생물·특정세균은 그것을 우선
       const mic = comp?.micro || M.find(k => k.micro)?.micro;
       const mrows = mic ? (isTotal ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : isSpec ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
-      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
-      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
+      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); r.remark = `${/KATRI/i.test(mic.lab || '') ? 'KATRI' : (mic.lab || '외부 시험기관').replace(/시험연구원$|연구원$/, '')} 외부 시험`; return; }
+      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; r.remark = r.remark || '벌크시험성적서로 부터 연계'; }
     });
     // 미생물(미생물한도·특정세균)은 외부 시험기관 결과로 채운 줄만 남김 — 제조사(코스맥스 등) 자체 미생물 시험·빈 줄은 넣지 않음 (사용자 요청 2026-11-16)
     c.results = c.results.filter(r => !isMicroRow(r) || /^외부 시험/.test(r.note || ''));
