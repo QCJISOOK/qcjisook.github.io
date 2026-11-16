@@ -43,6 +43,7 @@ table.list tr.click{cursor:pointer}table.list tr.click:hover td{background:var(-
 .lgh .nm{font-weight:700;font-size:14px}
 .lgh .sub{font-size:12px;color:var(--ink2)}
 .lgh .cnt{margin-left:auto;font-size:12px;color:var(--ink2);white-space:nowrap}
+.lgh .lgc{margin:0;width:16px;height:16px;flex:none;cursor:pointer}
 .lgb{border-top:1px solid var(--line);padding:10px 14px 12px;background:#fbfcfe}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
 .seg button{border:0;background:#fff;padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}
@@ -1278,9 +1279,24 @@ function renderFunc(m) {
 }
 
 /* ================= 발행 이력 ================= */
+/* 발행 이력 지우기 (사용자 요청 2026-11-16 「테스트 한 거 삭제, 수동으로 삭제할 수 있게 버튼」)
+   항목(제품) 지우기 = 그 제품의 제품표준서 · 완제품성적서 · 발행 기록 모두 / 기록 한 건 지우기 = 그 발행 기록만 */
+async function delLogGroups(gs) {
+  if (!gs.length) return false;
+  const pids = new Set(gs.map(g => g.p?.id).filter(Boolean)), recs = new Set(gs.flatMap(g => [...g.ps, ...g.coa]));
+  const nc = S.coas.filter(c => pids.has(c.productId)).length;
+  const who = gs.length === 1 ? `「${gs[0].p?.nameKo || gs[0].name || '(제품명 없음)'}」` : `선택한 ${gs.length}개 항목`;
+  const msg = `${who}을(를) 지웁니다.\n· 제품표준서 ${pids.size}건\n· 완제품성적서 ${nc}건\n· 발행 기록 ${recs.size}건\n\n지우면 되돌릴 수 없습니다. 남겨 둘 것이 있으면 먼저 「백업 저장」을 해 두세요.${Cloud.shared() ? '\n공동 저장소에서도 지워져 다른 사람에게서도 사라집니다.' : ''}`;
+  if (!await askConfirm(msg, { ok: '지우기', danger: true })) return false;
+  S.products = S.products.filter(p => !pids.has(p.id)); S.coas = S.coas.filter(c => !pids.has(c.productId)); S.issues = S.issues.filter(x => !recs.has(x));
+  gs.forEach(g => { delete (V.logOpen || {})[g.k]; delete (V.logSel || {})[g.k]; });
+  save(); render(); notify(`지웠습니다 — 제품표준서 ${pids.size} · 완제품성적서 ${nc} · 발행 기록 ${recs.size}`, 'good');
+  return true;
+}
 function renderLog(m) {
-  m.appendChild(el('<div class="toolbar"><div class="ttl">발행 이력<small>제품을 누르면 그 제품의 완제품성적서 · 제품표준서 발행본을 볼 수 있습니다</small></div></div>'));
-  const open = V.logOpen = V.logOpen || {};
+  const tbar = el('<div class="toolbar"><div class="ttl">발행 이력<small>제품을 누르면 그 제품의 완제품성적서 · 제품표준서 발행본을 볼 수 있습니다 · 왼쪽 칸을 골라 여러 개를 한꺼번에 지울 수 있습니다</small></div></div>');
+  m.appendChild(tbar);
+  const open = V.logOpen = V.logOpen || {}, sel = V.logSel = V.logSel || {};
   // 제품별로 묶기 (예전 기록은 문서번호·제품명으로 제품을 찾음)
   const G = new Map();
   const keyOf = x => x.pid || (x.type === '제품표준서' && S.products.find(p => p.psNo === x.docNo) || S.products.find(p => p.nameKo === x.product))?.id || 'n:' + x.product;
@@ -1289,20 +1305,33 @@ function renderLog(m) {
   S.products.forEach(p => { grp(p.id).p = p; });
   const list = [...G.values()].sort((a, b) => b.last.localeCompare(a.last) || String(a.p?.nameKo || a.name).localeCompare(String(b.p?.nameKo || b.name), 'ko'));
   if (!list.length) { m.appendChild(el('<div class="card empty">아직 만든 문서가 없습니다. 「자료로 작성」에서 만드세요.</div>')); return; }
+  // 고른 항목 한꺼번에 지우기 · 모두 고르기
+  Object.keys(sel).forEach(k => { if (!list.some(g => g.k === k)) delete sel[k]; });
+  const nSel = list.filter(g => sel[g.k]).length;
+  tbar.appendChild(button(nSel === list.length ? '모두 풀기' : '모두 고르기', () => { const all = nSel !== list.length; list.forEach(g => { if (all) sel[g.k] = 1; else delete sel[g.k]; }); render(); }, 'btn'));
+  const bDel = button(`고른 항목 지우기${nSel ? ` (${nSel})` : ''}`, () => delLogGroups(list.filter(g => sel[g.k])), 'btn danger'); bDel.disabled = !nSel; tbar.appendChild(bDel);
   const wrap = el('<div></div>'); m.appendChild(wrap);
   list.forEach(g => {
     const p = g.p, nm = p?.nameKo || g.name || '(제품명 없음)', n = g.ps.length + g.coa.length;
-    const box = el(`<div class="lg ${open[g.k] ? 'open' : ''}"><div class="lgh"><span class="ar">▶</span><div><div class="nm">${esc(nm)}</div><div class="sub">${esc([p?.code, p ? `${p.psNo} Rev.${p.rev}` : '(삭제된 제품)'].filter(Boolean).join(' · '))}</div></div><div class="cnt">${n ? `완제품성적서 ${g.coa.length} · 제품표준서 ${g.ps.length}<br>최근 발행 ${esc(g.last)}` : chip('아직 발행 안 함', 'mute')}</div></div></div>`);
+    const box = el(`<div class="lg ${open[g.k] ? 'open' : ''}"><div class="lgh"><input type="checkbox" class="lgc" title="여러 개를 한꺼번에 지울 때 고르기" ${sel[g.k] ? 'checked' : ''}><span class="ar">▶</span><div><div class="nm">${esc(nm)}</div><div class="sub">${esc([p?.code, p ? `${p.psNo} Rev.${p.rev}` : '(삭제된 제품)'].filter(Boolean).join(' · '))}</div></div><div class="cnt">${n ? `완제품성적서 ${g.coa.length} · 제품표준서 ${g.ps.length}<br>최근 발행 ${esc(g.last)}` : chip('아직 발행 안 함', 'mute')}</div></div></div>`);
+    const cb = box.querySelector('.lgc'); cb.onclick = e => { e.stopPropagation(); if (cb.checked) sel[g.k] = 1; else delete sel[g.k]; render(); };
+    const bx = button('삭제', e => { e.stopPropagation(); delLogGroups([g]); }, 'btn sm danger'); bx.title = '이 제품의 제품표준서 · 완제품성적서 · 발행 기록을 모두 지웁니다';
+    box.querySelector('.lgh').appendChild(bx);
     box.querySelector('.lgh').onclick = () => { if (open[g.k]) delete open[g.k]; else open[g.k] = open[g.k] || (g.coa.length || !g.ps.length ? 'coa' : 'ps'); render(); };
     if (open[g.k]) {
       const kind = open[g.k], rows = kind === 'coa' ? g.coa : g.ps;
       const body = el(`<div class="lgb"><div class="seg"><button data-k="coa" class="${kind === 'coa' ? 'on' : ''}">완제품성적서 (${g.coa.length})</button><button data-k="ps" class="${kind === 'ps' ? 'on' : ''}">제품표준서 (${g.ps.length})</button></div>
-        <table class="list"><thead><tr><th style="width:150px">발행 일시</th><th>문서번호</th><th>${kind === 'coa' ? '제조번호 (LOT)' : '개정'}</th><th>상태</th><th style="width:70px"></th></tr></thead><tbody></tbody></table><div class="lgf"></div></div>`);
+        <table class="list"><thead><tr><th style="width:150px">발행 일시</th><th>문서번호</th><th>${kind === 'coa' ? '제조번호 (LOT)' : '개정'}</th><th>상태</th><th style="width:120px"></th></tr></thead><tbody></tbody></table><div class="lgf"></div></div>`);
       body.querySelectorAll('.seg button').forEach(bt => bt.onclick = () => { open[g.k] = bt.dataset.k; render(); });
       const tb = body.querySelector('tbody');
       rows.forEach(x => {
-        const tr = el(`<tr class="click" title="발행한 문서 보기"><td>${esc(x.at)}</td><td>${esc(x.docNo || '—')}</td><td>${esc(x.ref || '')}</td><td>${esc(x.state || '')}</td><td></td></tr>`);
+        const tr = el(`<tr class="click" title="발행한 문서 보기"><td>${esc(x.at)}</td><td>${esc(x.docNo || '—')}</td><td>${esc(x.ref || '')}</td><td>${esc(x.state || '')}</td><td style="white-space:nowrap"></td></tr>`);
         tr.lastElementChild.appendChild(button('보기', () => { }, 'btn sm'));
+        tr.lastElementChild.appendChild(button('지우기', async e => {
+          e.stopPropagation();
+          if (!await askConfirm(`이 발행 기록 한 건을 지울까요?\n${x.type} ${x.docNo || ''} · ${x.at}\n(문서 자체는 남고 발행 기록만 지워집니다)${Cloud.shared() ? '\n공동 저장소에서도 지워집니다.' : ''}`, { ok: '지우기', danger: true })) return;
+          S.issues = S.issues.filter(y => y !== x); save(); render();
+        }, 'btn sm danger'));
         tr.onclick = () => viewIssue(x);
         tb.appendChild(tr);
       });
@@ -1715,7 +1744,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=8f9613b1"></script>
+<script src="js/ingest.js?v=0579cf82"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>

@@ -499,7 +499,12 @@ function nameFromFile(n) {
   return parts.map(x => x.trim()).filter(x => /[가-힣]{3,}/.test(x)).sort((a, b) => b.replace(/[^가-힣]/g, '').length - a.replace(/[^가-힣]/g, '').length)[0] || '';
 }
 const capOf = s => { const m = String(s || '').match(/(\d+(?:\.\d+)?)\s*(ml|g|매)(?![a-z])/i); return m ? m[1] + m[2].toLowerCase() : ''; }; // 표시용량 (예: 2ml)
-const cleanName = s => String(s || '').replace(/\([^)]*\)/g, ' ').replace(/\d+(\.\d+)?\s*(ml|g|매|ea|개입?)\b.*$/i, '').replace(/\s*\d\s*제\s*$/, '').replace(/rev\.?\s*\d+/i, '').trim();
+/* 제품명 앞에 붙는 「INGREDIENT-」(영문 브랜드 표기)는 뗌 (사용자 요청 2026-11-16) */
+const dropPrefix = s => String(s || '').replace(/^\s*INGREDIENT\s*[-_:·]?\s*/i, '');
+/* 영문 약자를 한글 읽기로 (IPMP → 아이피엠피) — 원료목록 보고명은 한글로 적혀 있어 벌크 품목명과 맞출 때 씀 */
+const LETTER_KO = { A: '에이', B: '비', C: '씨', D: '디', E: '이', F: '에프', G: '지', H: '에이치', I: '아이', J: '제이', K: '케이', L: '엘', M: '엠', N: '엔', O: '오', P: '피', Q: '큐', R: '알', S: '에스', T: '티', U: '유', V: '브이', W: '더블유', X: '엑스', Y: '와이', Z: '지' };
+const koRead = s => dropPrefix(s).replace(/[A-Za-z]+/g, w => w.toUpperCase().split('').map(ch => LETTER_KO[ch] || ch).join(''));
+const cleanName = s => dropPrefix(s).replace(/\([^)]*\)/g, ' ').replace(/\d+(\.\d+)?\s*(ml|g|매|ea|개입?)\b.*$/i, '').replace(/\s*\d\s*제\s*$/, '').replace(/rev\.?\s*\d+/i, '').trim();
 function dice(a, b) {
   const bg = s => { const k = norm(s), o = new Map(); for (let i = 0; i < k.length - 1; i++) { const g = k.slice(i, i + 2); o.set(g, (o.get(g) || 0) + 1); } return o; };
   const A = bg(a), B = bg(b); let n = 0, ta = 0, tb = 0; A.forEach(v => ta += v); B.forEach(v => tb += v); A.forEach((v, g) => n += Math.min(v, B.get(g) || 0));
@@ -509,6 +514,15 @@ function bestFunc(cands) {
   const list = productNames().filter(o => (o.seqs || []).length || o.raw); let best = null; // 기능성 보고 + 원료목록 보고(비기능성)
   cands.forEach((c, ci) => { const q = cleanName(c); if (norm(q).length < 4) return; list.forEach(o => { const sc = dice(q, o.name) - ci * 0.002; if (!best || sc > best.sc) best = { sc, o }; }); });
   return best && best.sc >= 0.72 ? best.o : null;
+}
+/* 벌크(반제품)시험성적서 품목명 → 원료목록 보고 제품명 (사용자 요청 2026-11-16) — 영문 약자는 한글 읽기로도 비교 */
+function bestRaw(cands) {
+  const items = (window.RAW_REPORTS || {}).items || []; let best = null;
+  cands.forEach(c => {
+    const q = cleanName(c); if (norm(q).length < 4) return; const qs = [q, koRead(q)];
+    items.forEach(it => { const nm = dropPrefix(String(it.name || '').replace(/\s*\d\s*제$/, '').trim()); if (!nm) return; const sc = Math.max(...qs.map(x => dice(x, nm))); if (!best || sc > best.sc) best = { sc, name: nm }; });
+  });
+  return best && best.sc >= 0.8 ? best : null;
 }
 function parseMakerPS(txt, tight, pages) {
   const t = txt.replace(/\s*\|\s*/g, ' ');
@@ -553,10 +567,14 @@ function autoInfo() {
   const I = ing(), M = model(), info = I.info, done = I.files.filter(f => f.status === '완료' && f.data);
   const r = M.find(c => c.report)?.report, b = M.find(c => c.bulk)?.bulk, mic = M.find(c => c.micro)?.micro, ps = done.find(f => f.kind === PSK)?.data;
   const cands = [r?.productName, ...(ps?.names || []), b?.productName, mic?.productName, ...done.map(f => nameFromFile(f.name))].filter(Boolean);
-  if (!info.nameKo) {
-    const hit = bestFunc(cands);
-    if (hit) { info.nameKo = hit.name; info.pickedSeqs = hit.seqs || []; }
-    else { const n = cleanName(cands[0]); if (n) info.nameKo = n; }
+  // 제품명: 벌크시험성적서 품목명으로 찾은 원료목록 보고명이 먼저 (사용자 요청 2026-11-16) → 기능성 보고명 → 자료에 적힌 이름. 「INGREDIENT-」는 뗌.
+  // 직접 고친 이름(nameAuto=false)은 건드리지 않음. 예전에 자동으로 들어간 「INGREDIENT-…」 이름은 다시 맞춤.
+  if (!info.nameKo || info.nameAuto || /^\s*INGREDIENT/i.test(info.nameKo)) {
+    const rh = b?.productName ? bestRaw([b.productName]) : null, hit = bestFunc(cands);
+    if (rh) { info.nameKo = rh.name; info.pickedSeqs = hit?.seqs || []; }
+    else if (hit) { info.nameKo = dropPrefix(hit.name); info.pickedSeqs = hit.seqs || []; }
+    else { const n = cleanName(cands[0]); info.nameKo = n || dropPrefix(info.nameKo); }
+    info.nameAuto = true;
   }
   applyRaw(info); // 원료목록 보고: 제조업체·유형
   if (!info.code) { const c = [...done.filter(f => f.kind === PSK), ...done].flatMap(f => f.codes || []).find(c => ITEMS.some(it => it.c === c)); if (c) info.code = c; }
@@ -606,7 +624,7 @@ const FEAS = M => {
     ['제품표준서', '변경이력', '자동', '신규 제정 1줄'],
     ['제품표준서', '제조업자 (상호·소재지·등록번호)', A(mk, '자동', '입력'), '제조업 등록필증 + 보고서 제조소'],
     ['제품표준서', '전성분', A(M.some(c => c.single), '자동', '입력'), '전성분표(단일)'],
-    ['완제품성적서', '제조번호·제조일', A(b, '자동', '입력'), '반제품성적서 (충전 LOT가 다르면 수정)'],
+    ['완제품성적서', '제조번호(LOT)·사용기한', A(has('micro') || b, '자동', '입력'), '외부 미생물시험성적서(KATRI 등)에 적힌 제조번호·사용기한 — 없으면 반제품성적서 LOT·제조일+사용기한'],
     ['완제품성적서', '관능·이화학 결과', A(b, '자동', '입력'), '반제품성적서 결과 인용 (시험자=제조사)'],
     ['완제품성적서', '미생물 (미생물한도·특정세균)', A(has('micro'), '자동', '입력'), '외부 미생물시험성적서(KATRI 등) 결과만 — 제조사 자체 미생물 시험은 넣지 않음'],
     ['완제품성적서', '기능성 주성분 함량 결과', A(b && M.every(c => !c.report || c.report.actives.every(a => c.bulk?.rows.some(x => N(x.item + x.crit).includes(N(a.name))))), '자동', '제조사 요청'), '반제품성적서에 있어야 함'],
@@ -647,7 +665,7 @@ function build(withCoa, coaOnly = false) {
   const mkSite = site.replace(/^\d공장:\s*/, '') || M.find(c => c.report)?.report?.makers?.[0]?.address || '';
   const rep = M.find(c => c.report)?.report;
   const mps0 = I.files.find(f => f.kind === PSK && f.status === '완료')?.data; // 제조사 제품표준서 (전성분·함량, 문서 번호)
-  p.nameKo = info.nameKo || (rep?.productName || '').replace(/\d제$/, ''); p.nameEn = info.nameEn; p.code = info.code;
+  p.nameKo = dropPrefix(info.nameKo || (rep?.productName || '').replace(/\d제$/, '')); p.nameEn = info.nameEn; p.code = info.code;
   p.nameSub = single ? '' : M.map(c => `[${c.key}] ${c.bulk?.productName || c.report?.productName || ''}`).join('\n');
   p.author = '품질관리팀';
   p.typeClass = info.type || '기초화장용 제품류'; p.typeDiv = rep ? '기능성화장품' : '화장품'; p.typeSub = info.typeSub || '';
@@ -796,7 +814,9 @@ function build(withCoa, coaOnly = false) {
 /* 완제품성적서 한 건: 제품표준서(p)의 완제품 기준을 시험항목으로, 올린 반제품·미생물 성적서 결과를 채움 */
 function makeCoa(p, M, mk, mkName, single, mo) {
     const c = newCoa(p);
-    c.lots = M.map(k => ({ label: single ? '' : k.key, lot: k.bulk?.lot || '', maker: makerShort(mk), mfgDate: k.bulk?.mfgDate || '' }));
+    // 제조번호(LOT)·사용기한은 외부(KATRI 등) 미생물시험성적서에 적힌 것 — 완제품 시료의 번호 (사용자 요청 2026-11-16). 없으면 반제품 LOT·제조일+사용기한
+    const micOf = k => k.micro || M.find(x => x.micro)?.micro;
+    c.lots = M.map(k => ({ label: single ? '' : k.key, lot: micOf(k)?.lot || k.bulk?.lot || '', maker: makerShort(mk), mfgDate: k.bulk?.mfgDate || '' }));
     c.labelQty = p.weight.replace(/\n/g, ' / ');
     const KEYS = ['성상', '향', 'pH', '점도', '비중', '미생물', '이물'];
     c.results.forEach(r => {
@@ -820,7 +840,8 @@ function makeCoa(p, M, mk, mkName, single, mo) {
     // 미생물(미생물한도·특정세균)은 외부 시험기관 결과로 채운 줄만 남김 — 제조사(코스맥스 등) 자체 미생물 시험·빈 줄은 넣지 않음 (사용자 요청 2026-11-16)
     c.results = c.results.filter(r => !isMicroRow(r) || /^외부 시험/.test(r.note || ''));
     c.remarks = String(ing().info.coaRemarks || '').trim(); // 특이사항은 「3. 만들기」에 쓴 내용만 (자동 문구 없음 — 사용자 요청)
-    const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
+    const micExp = M.map(micOf).find(x => x?.exp)?.exp;
+    const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (micExp) c.expiry = micExp; else if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
     c.requestDate = ''; c.receiptDate = today();
     return c;
 }
@@ -840,7 +861,7 @@ function fileTable() {
   I.files.forEach(f => {
     const d = f.data || {};
     const sum = f.status !== '완료' ? esc(f.err || '') : f.kind === '기능성보고서' ? `${esc(d.productName)} · 보고일련번호 ${esc(d.seq)} · ${esc(d.reportDate)} · pH ${esc(d.ph)} · ${esc((d.actives || []).map(a => a.name + ' ' + a.amount + a.unit).join(', '))}`
-      : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
+      : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''}${d.exp ? ' · 사용기한 ' + esc(d.exp) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
       : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === PSK ? `${esc(d.productName)}${(f.codes || []).length ? ' · 품번 ' + esc(f.codes.join(', ')) : ''}${d.shelfMonths ? ' · 사용기한 ' + esc(d.shelfMonths) + '개월' : ''}${d.packUnit ? ' · 포장단위 ' + esc(d.packUnit) : ''}${d.appearance ? ' · 성상 ' + esc(d.appearance) : ''}${(d.ingredients || []).length ? ` · 전성분 ${d.ingredients.length}종` : ''}${d.report ? ` · 기능성 보고 ${esc(d.report.seq || '')} (${esc((d.report.actives || []).map(a => a.name).join('·'))})` : ''} · ${d.pages || 0}쪽 (값만 읽고 원본은 넣지 않음)` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''}${d.names ? ` 전성분(문안) ${d.names.length}종 · 함량 없음` : ''}${(() => { const xs = [...(d.single || []), ...(d.names || []), ...(d.rms || []).flatMap(r => r.parts)], n = xs.filter(x => x.std && x.std !== '국문·영문 대조표').length, m = xs.filter(x => x.std === '국문·영문 대조표').length; return (m ? ` · 국문·영문 대조표로 국문명 ${m}건` : '') + (n ? ` · 성분사전으로 표준명 ${n}건` : ''); })()} · ${esc(d.date)}`
       : `${esc(d.productName)} · 제조번호 ${esc(d.lot)} · 제조일 ${esc(d.mfgDate)} · 제조량 ${esc(d.batch)} · ${esc(d.testNo)} · ${(d.rows || []).length}항목${d.ocr ? ' <span class="pill">글자 인식</span>' : ''}`;
     const st = f.status === '완료' ? chip('완료', 'good') : f.status === '오류' ? chip('오류', 'bad') : chip(f.status, 'warn');
@@ -883,10 +904,10 @@ function renderIngest(m) {
   const c2 = el('<div class="card"><h3>2. 제품 정보 <span class="r hint">자료에서 읽은 값이 먼저 들어갑니다 · 고쳐 쓰면 그 값으로 만듭니다</span></h3></div>');
   const sel = el(`<select><option value="">— 제조업체 선택 —</option>${MK.map(x => `<option value="${esc(x.name)}" ${x.name === I.info.makerName ? 'selected' : ''}>${esc(x.label || x.name)}${x.regNo ? ' · ' + esc(x.regNo) : ''}</option>`).join('')}</select>`);
   sel.onchange = () => { I.info.makerName = sel.value; save(); draw(); };
-  if (I.files.some(f => f.status === '완료') && !I.info.nameKo && !I.info.autoTried) { autoInfo(); I.info.autoTried = true; save(); } // 예전에 올려 둔 자료도 한 번 채움
-  const nk = inp(I.info, 'nameKo', { ph: '기능성·원료목록 보고 제품명 일부 — 예) 들깨', onch: v => { const it = FDmap.get((I.info.pickedSeqs || [])[0]); if (it && norm(String(it.name).replace(/\s*\d\s*제$/, '')) !== norm(v)) I.info.pickedSeqs = []; } });
+  if (I.files.some(f => f.status === '완료') && ((!I.info.nameKo && !I.info.autoTried) || /^\s*INGREDIENT/i.test(I.info.nameKo || ''))) { autoInfo(); I.info.autoTried = true; save(); } // 예전에 올려 둔 자료도 한 번 채움 · 예전에 들어간 「INGREDIENT-」 이름은 다시 맞춤
+  const nk = inp(I.info, 'nameKo', { ph: '기능성·원료목록 보고 제품명 일부 — 예) 들깨', onch: v => { I.info.nameAuto = false; const it = FDmap.get((I.info.pickedSeqs || [])[0]); if (it && norm(String(it.name).replace(/\s*\d\s*제$/, '')) !== norm(v)) I.info.pickedSeqs = []; } });
   const nkBox = document.createElement('div'); nkBox.appendChild(nk);
-  suggest(nk, o => { I.info.pickedSeqs = o.seqs || []; I.info.typeAuto = I.info.typeAuto ?? true; applyRaw(I.info); save(); draw(); }, { mode: 'func' }); // 제품명은 기능성 자료(의약품안전나라 보고 품목)에서
+  suggest(nk, o => { I.info.nameAuto = false; I.info.pickedSeqs = o.seqs || []; I.info.typeAuto = I.info.typeAuto ?? true; applyRaw(I.info); save(); draw(); }, { mode: 'func' }); // 제품명은 기능성 자료(의약품안전나라 보고 품목)에서
   c2.appendChild(form([['제품명', nkBox, true], ['화장품 유형', inp(I.info, 'type', { onch: () => { I.info.typeAuto = false; } })],    ['사용기한 (개월)', inp(I.info, 'shelfMonths', { type: 'number', ph: '예) 30' })], ['개봉 후 사용기간 (개월)', inp(I.info, 'openMonths', { type: 'number', ph: '예) 12' })], ['포장단위', inp(I.info, 'packUnit', { ph: '예) 1제 30ml + 2제 30ml / 1세트' })], ['제조업체', sel]]));
   { const fd = (I.info.pickedSeqs || []).map(q => FDmap.get(q)).filter(Boolean), it = I.info.code ? ITEMS.find(x => x.c === I.info.code) : null, ri = rawFor(I.info.nameKo);
     if (ri) c2.appendChild(el(`<div class="hint" style="margin-top:6px">원료목록 보고: <b>${esc(ri.name)}</b> · 유형 ${esc(ri.type || '-')}${typeOf(ri.type)?.sub ? ' ' + esc(typeOf(ri.type).sub.replace(/\s*\(.*\)$/, '')) : ''} · 제조업자 ${esc(ri.maker || '-')} · 원료 ${(ri.ings || []).length}종${ri.func ? ' · 기능성 ' + esc(ri.func) : ''}</div>`));
