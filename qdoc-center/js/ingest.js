@@ -292,11 +292,13 @@ const microOk = x => !/^(검출|양성)$/.test(x.result) && !(/^[\d,]+$/.test(x.
 function ing() { if (!S.ingest) S.ingest = { info: { nameKo: '', nameEn: '', code: '', type: '기초화장용 제품류', shelfMonths: '', packUnit: '', weights: {}, makerName: '' }, files: [] }; return S.ingest; }
 const SPECIFIC = /대장균|녹농균|황색포도상|특정세균|병원성/; // 특정세균 항목 (외부 미생물성적서의 '세균'·'진균' 수는 총호기성생균수 쪽)
 const MFGK = '제조지시 및 공정 기록서'; // 선택 자료: 있으면 제품표준서 별첨2로
-function kindByName(n) { return /제조지시|공정\s*기록|제조\s*기록|BMR/i.test(n) ? MFGK : /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
+const PSK = '제조사 제품표준서'; // 선택 자료: 제품명·품번·사용기한·포장단위를 읽고, 원본은 뒤에 첨부
+const CODE_RE = /(?<![A-Za-z0-9])(?:SB|MC|MT)\d{4}(?!\d)/g; // ERP 품번 (성분에디터 SB · 마미케어 MC · 밀크터치 MT)
+function kindByName(n) { return /제품표준서/.test(n) ? PSK : /제조지시|공정\s*기록|제조\s*기록|BMR/i.test(n) ? MFGK : /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
 async function processRec(rec, blob, forceKind) {
   rec.status = '읽는 중'; rec.err = ''; draw();
   if (/\.xlsx?$/i.test(rec.name)) {
-    rec.kind = '전성분표'; rec.data = await parseIngredientXlsx(blob);
+    rec.kind = '전성분표'; rec.data = await parseIngredientXlsx(blob); rec.codes = rec.name.match(CODE_RE) || [];
     await IDB.put({ id: rec.id, name: rec.name, blob, pages: [] });
     rec.comp = rec.comp || compOf(rec.data.productName) || compOf(rec.name) || '단품';
     rec.status = '완료'; return;
@@ -310,10 +312,13 @@ async function processRec(rec, blob, forceKind) {
   // 공유 페이지: 별첨으로 찍힐 쪽 그림을 공동 저장소에 올려 다른 사람도 보게
   if (window.Cloud && Cloud.art && Cloud.shared()) { rec.status = '쪽 그림 공유'; draw(); const ids = await Cloud.uploadImages(imgs); if (ids) rec.pageAssets = ids; }
   const tight = txt.replace(/\s+/g, '');
+  rec.codes = [...new Set([...(rec.name.match(CODE_RE) || []), ...(tight.match(CODE_RE) || [])])]; // 파일 이름·본문에 적힌 ERP 품번
   const isMicro = /시험연구원|연구원장|KATRI|KTR|KCL/.test(tight) && /호기성생균수|미생물한도/.test(tight) && !/벌크/.test(tight);
-  let kind = forceKind || (kindByName(rec.name) === MFGK || /제조지시/.test(tight) && /기록서/.test(tight) && !/시험성적서/.test(tight) ? MFGK : /기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : isMicro || kindByName(rec.name) === '미생물시험성적서' ? '미생물시험성적서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
+  const isMakerPS = /제품표준서/.test(tight) && /제품코드|벌크코드|품목코드/.test(tight) && !/시험성적서/.test(tight);
+  let kind = forceKind || (kindByName(rec.name) === PSK || isMakerPS ? PSK : kindByName(rec.name) === MFGK || /제조지시/.test(tight) && /기록서/.test(tight) && !/시험성적서/.test(tight) ? MFGK : /기능성화장품/.test(txt) && /보고|심사/.test(txt) ? '기능성보고서' : isMicro || kindByName(rec.name) === '미생물시험성적서' ? '미생물시험성적서' : (kindByName(rec.name) === '기능성보고서' && txt.length < 50 ? '기능성보고서' : '반제품성적서'));
   rec.kind = kind;
   if (kind === MFGK) { rec.data = { pages: imgs.length }; rec.comp = rec.comp || compOf(rec.name) || '단품'; rec.status = '완료'; return; }
+  if (kind === PSK) { rec.data = parseMakerPS(txt, tight, imgs.length); rec.comp = rec.comp || compOf(rec.name) || '단품'; rec.status = '완료'; return; }
   if (kind === '미생물시험성적서') rec.data = parseMicroReport(pages);
   else if (kind === '기능성보고서') { rec.data = parseFuncReport(pages); if (!rec.data.productName && !rec.data.actives.length) throw new Error('보고서 글자를 읽지 못했습니다 (스캔본이면 의약품안전나라에서 받은 원본 PDF를 올려 주세요)'); }
   else {
@@ -342,7 +347,7 @@ window.ingestFromUrls = async urls => { const fs = []; for (const u of urls) { c
 /* ---------- 모으기 · 교차 점검 ---------- */
 function model() {
   const I = ing(), comps = {};
-  I.files.filter(f => f.status === '완료' && f.data && f.kind !== MFGK).forEach(f => {
+  I.files.filter(f => f.status === '완료' && f.data && f.kind !== MFGK && f.kind !== PSK).forEach(f => {
     const k = f.comp || '단품'; const c = comps[k] = comps[k] || { key: k, report: null, single: null, comp: null, bulk: null, micro: null, files: [] };
     c.files.push(f);
     if (f.kind === '기능성보고서') c.report = f.data;
@@ -356,12 +361,53 @@ const mfgFiles = () => ing().files.filter(f => f.kind === MFGK && f.status === '
 /* 별첨2 넣기: 올린 원본이 있으면 기본으로 켬, 끄거나 문서명·번호만 적어 켤 수도 있음 — 자료가 하나도 없으면 빠짐 */
 const mfgOption = () => { const I = ing(); const on = I.info.mfgOn ?? mfgFiles().length > 0; return !!on && (mfgFiles().length > 0 || !!String(I.info.mfgDoc || '').trim()); };
 function maker() { const I = ing(); return MK.find(m => m.name === I.info.makerName) || null; }
+/* 2. 제품 정보 자동 기입 — 빈 칸만 채움 (사용자가 쓴 값은 그대로)
+   제품명: 올린 자료에서 읽은 이름과 가장 닮은 기능성 자료(의약품안전나라 보고 품목) 이름 → 없으면 읽은 이름 그대로
+   품번(제품코드): 문서·파일 이름의 ERP 품번 (칸 없이 표준서·성적서 제품코드에 들어감)
+   사용기한·개봉 후·표시용량·제조업체: 제조사 제품표준서 → 반제품성적서 → 기능성 보고서 → ERP 품목 순 */
+function nameFromFile(n) {
+  const parts = String(n || '').replace(/(\.pdf|\.xlsx?)+$/i, '').replace(/TalkFile_?/i, '').replace(/\((성적서|사본|최종)\)/g, '').split(/[_]/);
+  return parts.map(x => x.trim()).filter(x => /[가-힣]{3,}/.test(x)).sort((a, b) => b.replace(/[^가-힣]/g, '').length - a.replace(/[^가-힣]/g, '').length)[0] || '';
+}
+const capOf = s => { const m = String(s || '').match(/(\d+(?:\.\d+)?)\s*(ml|g|매)(?![a-z])/i); return m ? m[1] + m[2].toLowerCase() : ''; }; // 표시용량 (예: 2ml)
+const cleanName = s => String(s || '').replace(/\([^)]*\)/g, ' ').replace(/\d+(\.\d+)?\s*(ml|g|매|ea|개입?)\b.*$/i, '').replace(/\s*\d\s*제\s*$/, '').replace(/rev\.?\s*\d+/i, '').trim();
+function dice(a, b) {
+  const bg = s => { const k = norm(s), o = new Map(); for (let i = 0; i < k.length - 1; i++) { const g = k.slice(i, i + 2); o.set(g, (o.get(g) || 0) + 1); } return o; };
+  const A = bg(a), B = bg(b); let n = 0, ta = 0, tb = 0; A.forEach(v => ta += v); B.forEach(v => tb += v); A.forEach((v, g) => n += Math.min(v, B.get(g) || 0));
+  return ta + tb ? 2 * n / (ta + tb) : 0;
+}
+function bestFunc(cands) {
+  const list = productNames().filter(o => (o.seqs || []).length); let best = null;
+  cands.forEach((c, ci) => { const q = cleanName(c); if (norm(q).length < 4) return; list.forEach(o => { const sc = dice(q, o.name) - ci * 0.002; if (!best || sc > best.sc) best = { sc, o }; }); });
+  return best && best.sc >= 0.72 ? best.o : null;
+}
+function parseMakerPS(txt, tight, pages) {
+  const t = txt.replace(/\s*\|\s*/g, ' ');
+  const brands = (typeof BRAND_CODE !== 'undefined' ? BRAND_CODE.map(x => x[0]) : ['성분에디터', '마미케어', '밀크터치']).join('|');
+  const names = [...new Set((t.match(new RegExp(`(?:${brands})[가-힣A-Za-z0-9]{3,40}`, 'g')) || []).map(cleanName).filter(n => norm(n).length >= 6))]; // 칸 사이 공백에서 끊김
+  const mk = MK.find(m => { const k = mkey(m.label || m.name); return k.length >= 2 && tight.includes(k); });
+  return {
+    names, productName: names[0] || '', makerHint: mk ? mk.name : '', pages,
+    shelfMonths: (t.match(/사용\s*기한\s*[:：]?\s*(\d{1,3})\s*개월/) || [])[1] || '',
+    packUnit: ((t.match(/포장\s*단위\s*[:：]?\s*(\d+(?:\.\d+)?\s*(?:ml|mL|ML|g|G))/) || [])[1] || '').replace(/\s+/g, '').replace(/ML$/i, 'ml'),
+    psCode: (t.match(/제품\s*코드\s*[:：]?\s*([0-9A-Z]{6,})/) || [])[1] || ''
+  };
+}
 function autoInfo() {
-  const I = ing(), M = model();
-  const r = M.find(c => c.report)?.report, b = M.find(c => c.bulk)?.bulk, x = M.find(c => c.single || c.comp);
-  if (!I.info.makerName) { const mk = (b?.makerHint && MK.find(m => m.name === b.makerHint)) || findMaker(r?.makers?.[0]?.name || ''); if (mk) I.info.makerName = mk.name; }
-  if (!I.info.nameKo) { const n = (b?.productName || r?.productName || '').replace(/\s*\d\s*제\s*$/, '').trim(); if (n) I.info.nameKo = n; }
-  if (!I.info.nameEn) { const e = ((x?.single || x?.comp)?.productName || '').replace(/\(\s*step\s*\d\s*\)/i, '').trim(); if (e) I.info.nameEn = e; }
+  const I = ing(), M = model(), info = I.info, done = I.files.filter(f => f.status === '완료' && f.data);
+  const r = M.find(c => c.report)?.report, b = M.find(c => c.bulk)?.bulk, mic = M.find(c => c.micro)?.micro, ps = done.find(f => f.kind === PSK)?.data;
+  const cands = [r?.productName, ...(ps?.names || []), b?.productName, mic?.productName, ...done.map(f => nameFromFile(f.name))].filter(Boolean);
+  if (!info.nameKo) {
+    const hit = bestFunc(cands);
+    if (hit) { info.nameKo = hit.name; info.pickedSeqs = hit.seqs; }
+    else { const n = cleanName(cands[0]); if (n) info.nameKo = n; }
+  }
+  if (!info.code) { const c = [...done.filter(f => f.kind === PSK), ...done].flatMap(f => f.codes || []).find(c => ITEMS.some(it => it.c === c)); if (c) info.code = c; }
+  const it = info.code ? ITEMS.find(x => x.c === info.code) : null;
+  if (!info.shelfMonths) info.shelfMonths = ps?.shelfMonths || (+(it?.life) ? it.life : '');
+  if (!info.openMonths && +(it?.open)) info.openMonths = it.open;
+  if (M.length === 1) { info.weights = info.weights || {}; const k = M[0].key; if (!info.weights[k]) info.weights[k] = ps?.packUnit || capOf(it?.s) || capOf(it?.n) || ''; }
+  if (!info.makerName) { const mk = (b?.makerHint && MK.find(m => m.name === b.makerHint)) || (ps?.makerHint && MK.find(m => m.name === ps.makerHint)) || findMaker(r?.makers?.[0]?.name || '') || (it?.v ? findMaker(it.v) : null); if (mk) info.makerName = mk.name; }
 }
 function checks(M) {
   const out = [], add = (k, lvl, ok, t, m = '') => out.push({ k, lvl, ok, t, m });
@@ -458,7 +504,15 @@ function build(withCoa) {
   p.efficacy.reviewNo = M.filter(c => c.report).map(c => `${single ? '' : `[${c.key}] `}보고일련번호 ${c.report.seq} · 부서접수번호 ${c.report.receiptNo}`).join(' / ');
   p.efficacy.reviewDate = rep?.reportDate || '';
   p.cautionsCommon = rep?.cautions || '';
-  p.funcLinks = M.map(c => c.report?.seq).filter(s => s && FDmap.has(s));
+  p.funcLinks = [...new Set([...M.map(c => c.report?.seq), ...(info.pickedSeqs || [])])].filter(s => s && FDmap.has(s));
+  const fdi = !rep && p.funcLinks.length ? FDmap.get(p.funcLinks[0]) : null; // 보고서 원본이 없으면 기능성 자료(공개 정보)로
+  if (fdi) {
+    p.efficacy.effect = fdi.effect || ''; p.usage = p.usage || fdi.usage || ''; p.labeling.cautions = p.cautionsCommon = fdi.cautions || '';
+    p.efficacy.reviewNo = p.funcLinks.map(q => FDmap.get(q)).map(x => `보고일련번호 ${x.seq} · 부서접수번호 ${x.receiptNo || ''}`).join(' / '); p.efficacy.reviewDate = fdi.date || '';
+    p.typeDiv = '기능성화장품'; p.funcClass = /미백/.test(fdi.effect) && /주름/.test(fdi.effect) ? '미백 + 주름개선' : /미백/.test(fdi.effect) ? '미백' : /주름/.test(fdi.effect) ? '주름개선' : /자외선/.test(fdi.effect) ? '자외선 차단' : '';
+    p.components.forEach(k => { k.functional = '예'; });
+  }
+  const mps = I.files.find(f => f.kind === PSK && f.status === '완료')?.data; // 제조사 제품표준서 번호
   // 공정·주의·기준 템플릿
   p.precautions = [
     { name: '일반사항', content: '1. 제조 계획된 제품의 제조 공정도인지 확인\n2. 각 제조에 따른 기계시설의 이상유무 확인\n3. 작업장의 청결상태, 작업원의 복장상태(장갑·마스크·두건), 기계·기구의 세척상태 및 보관상태를 작업 전 점검한다.' },
@@ -523,7 +577,7 @@ function build(withCoa) {
   ];
   p.toc = { '1': '기능성 보고서 · 제조업 등록필증', '2': '전성분표(복합) · 반제품성적서(제조량)', '7': '반제품성적서 · 기능성 보고서', '8': rep ? `기능성 보고서 ${M.filter(c => c.report).map(c => c.report.seq).join(', ')}` : '', '9': '전성분표(단일) · 기능성 보고서', '6': '자사 표준 문구 (제조사 기준 확인)', '10': '포장재 규격서 · 자재 표준품', '12': '사용기한: ERP 품목 · 안정성 자료' };
   p.sourceIngest = { at: nowStr(), files: I.files.map(f => f.name) };
-  p.scope = '전체'; p.makerRef = [...new Set(p.components.map(c => c.makerPsNo).filter(Boolean))].join(', ');
+  p.scope = '전체'; p.makerRef = [...new Set([...p.components.map(c => c.makerPsNo), mps?.psCode ? `${makerShort(mk) || '제조사'} 제품표준서 ${mps.psCode}` : ''].filter(Boolean))].join(', ');
   p.keyIngredients = []; keyCandidates(p);
   p.psNo = nextPsNo(p); // OI-브랜드-연도-순번 (제품명·품번이 정해진 뒤)
   p.v2m = false; S.products.push(p); fixProduct(p);
@@ -575,12 +629,12 @@ function fileTable() {
     const d = f.data || {};
     const sum = f.status !== '완료' ? esc(f.err || '') : f.kind === '기능성보고서' ? `${esc(d.productName)} · 보고일련번호 ${esc(d.seq)} · ${esc(d.reportDate)} · pH ${esc(d.ph)} · ${esc((d.actives || []).map(a => a.name + ' ' + a.amount + a.unit).join(', '))}`
       : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
-      : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
+      : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === PSK ? `${esc(d.productName)}${(f.codes || []).length ? ' · 품번 ' + esc(f.codes.join(', ')) : ''}${d.shelfMonths ? ' · 사용기한 ' + esc(d.shelfMonths) + '개월' : ''}${d.packUnit ? ' · 포장단위 ' + esc(d.packUnit) : ''} · ${d.pages || 0}쪽 (뒤에 첨부)` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
       : `${esc(d.productName)} · 제조번호 ${esc(d.lot)} · 제조일 ${esc(d.mfgDate)} · 제조량 ${esc(d.batch)} · ${esc(d.testNo)} · ${(d.rows || []).length}항목${d.ocr ? ' <span class="pill">글자 인식</span>' : ''}`;
     const st = f.status === '완료' ? chip('완료', 'good') : f.status === '오류' ? chip('오류', 'bad') : chip(f.status, 'warn');
     const tr = el(`<tr><td>${esc(f.name)}</td><td></td><td></td><td>${st}</td><td style="font-size:12px">${sum}</td><td></td></tr>`);
-    const ks = el(`<select>${['반제품성적서', '미생물시험성적서', '기능성보고서', '전성분표', MFGK].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
-    ks.onchange = async () => { const r = await IDB.get(f.id); if (!r) return; try { await processRec(f, r.blob, ks.value); } catch (e) { f.status = '오류'; f.err = e.message; } save(); draw(); };
+    const ks = el(`<select>${['반제품성적서', '미생물시험성적서', '기능성보고서', '전성분표', MFGK, PSK].map(k => `<option ${k === f.kind ? 'selected' : ''}>${k}</option>`).join('')}</select>`);
+    ks.onchange = async () => { const r = await IDB.get(f.id); if (!r) return; try { await processRec(f, r.blob, ks.value); } catch (e) { f.status = '오류'; f.err = e.message; } autoInfo(); save(); draw(); };
     tr.children[1].appendChild(ks);
     const cs = el(`<input value="${esc(f.comp)}" placeholder="1제·단품">`); cs.onchange = () => { f.comp = cs.value.trim() || '단품'; save(); draw(); }; tr.children[2].appendChild(cs);
     const act = tr.children[5];
@@ -606,7 +660,7 @@ function renderIngest(m) {
   m.appendChild(tb);
   // 1. 자료
   const c1 = el(`<div class="card"><h3>1. 자료 올리기 <span class="r hint">PDF · 엑셀 여러 개를 한 번에 · 파일 이름의 '1제/2제'로 구성품을 나눕니다</span></h3>
-    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">반제품성적서(PDF, 스캔본도 글자 인식) · 미생물시험성적서(외부 시험기관 PDF) · 기능성 보고서(의약품안전나라 PDF) · 전성분표(엑셀, 선택) · 제조지시 및 공정 기록서(PDF, 선택)</span></div>
+    <div id="drop" style="border:2px dashed #b9cbe6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#f7faff;margin-bottom:10px">여기에 끌어다 놓거나 <b>눌러서 파일 고르기</b><br><span class="hint">반제품성적서(PDF, 스캔본도 글자 인식) · 미생물시험성적서(외부 시험기관 PDF) · 기능성 보고서(의약품안전나라 PDF) · 전성분표(엑셀, 선택) · 제조지시 및 공정 기록서·제조사 제품표준서(PDF, 선택)</span></div>
     <input type="file" id="ingIn" multiple accept=".pdf,.xlsx,.xls" hidden></div>`);
   const drop = c1.querySelector('#drop'), fi = c1.querySelector('#ingIn');
   drop.onclick = () => fi.click(); fi.onchange = () => { addFiles([...fi.files]); fi.value = ''; };
@@ -617,32 +671,24 @@ function renderIngest(m) {
   const c2 = el('<div class="card"><h3>2. 제품 정보 <span class="r hint">자료에서 읽은 값이 먼저 들어갑니다 · 고쳐 쓰면 그 값으로 만듭니다</span></h3></div>');
   const sel = el(`<select><option value="">— 제조업체 선택 —</option>${MK.map(x => `<option value="${esc(x.name)}" ${x.name === I.info.makerName ? 'selected' : ''}>${esc(x.label || x.name)}${x.regNo ? ' · ' + esc(x.regNo) : ''}</option>`).join('')}</select>`);
   sel.onchange = () => { I.info.makerName = sel.value; save(); draw(); };
-  const nk = inp(I.info, 'nameKo', { ph: '일부만 쳐도 됩니다 — 예) 들깨' });
+  if (I.files.some(f => f.status === '완료') && !I.info.nameKo && !I.info.autoTried) { autoInfo(); I.info.autoTried = true; save(); } // 예전에 올려 둔 자료도 한 번 채움
+  const nk = inp(I.info, 'nameKo', { ph: '기능성 보고 품목 이름 일부 — 예) 들깨', onch: v => { const it = FDmap.get((I.info.pickedSeqs || [])[0]); if (it && norm(String(it.name).replace(/\s*\d\s*제$/, '')) !== norm(v)) I.info.pickedSeqs = []; } });
   const nkBox = document.createElement('div'); nkBox.appendChild(nk);
-  const cd = inp(I.info, 'code', { ph: '코드나 제품명 일부 — 예) MC00' });
-  const cdBox = document.createElement('div'); cdBox.appendChild(cd);
-  const fromErp = (o, setName) => {
-    if (o.type !== 'erp') { I.info.pickedSeqs = o.seqs || []; save(); return; }
-    I.info.code = o.code;
-    if (setName) I.info.nameKo = o.brand && !o.name.startsWith(o.brand) ? `${o.brand} ${o.name}` : o.name;
-    if (!I.info.shelfMonths && +o.life) I.info.shelfMonths = o.life;
-    if (!I.info.openMonths && +o.open) I.info.openMonths = o.open;
-    if (!I.info.nameEn && o.en) I.info.nameEn = o.en;
-    const M = model(); if (M.length === 1 && o.spec && !(I.info.weights || {})[M[0].key]) { I.info.weights = I.info.weights || {}; I.info.weights[M[0].key] = o.spec; }
-    I.info.erp = { code: o.code, name: o.name, spec: o.spec, brand: o.brand, vendor: o.vendor };
-    if (!I.info.makerName && o.vendor) { const mk = findMaker(o.vendor); if (mk) I.info.makerName = mk.name; }
-    save(); draw();
-  };
-  suggest(nk, o => fromErp(o, true)); suggest(cd, o => fromErp(o, !I.info.nameKo), { mode: 'code' });
-  c2.appendChild(form([['제품명', nkBox, true],['제품코드', cdBox], ['화장품 유형', inp(I.info, 'type')],
+  suggest(nk, o => { I.info.pickedSeqs = o.seqs || []; save(); draw(); }, { mode: 'func' }); // 제품명은 기능성 자료(의약품안전나라 보고 품목)에서
+  c2.appendChild(form([['제품명', nkBox, true], ['화장품 유형', inp(I.info, 'type')],
     ['사용기한 (개월)', inp(I.info, 'shelfMonths', { type: 'number', ph: '예) 30' })], ['개봉 후 사용기간 (개월)', inp(I.info, 'openMonths', { type: 'number', ph: '예) 12' })], ['포장단위', inp(I.info, 'packUnit', { ph: '예) 1제 30ml + 2제 30ml / 1세트' })], ['제조업체', sel]]));
-  if (I.info.erp) c2.appendChild(el(`<div class="hint" style="margin-top:6px">ERP 품목: <b>${esc(I.info.erp.code)}</b> ${esc(I.info.erp.name)} · ${esc(I.info.erp.spec || '')} · ${esc(I.info.erp.brand || '')} · 기본구매처 ${esc(I.info.erp.vendor || '-')}</div>`));
+  { const fd = (I.info.pickedSeqs || []).map(q => FDmap.get(q)).filter(Boolean), it = I.info.code ? ITEMS.find(x => x.c === I.info.code) : null;
+    if (fd.length || I.info.code) {
+      const h = el(`<div class="hint" style="margin-top:6px;line-height:1.7">${fd.length ? `기능성 자료: <b>${esc(fd[0].name.replace(/\s*\d\s*제$/, ''))}</b> · 보고일련번호 ${esc(fd.map(x => x.seq).join(', '))} · ${esc(fd[0].date || '')} <span class="pill">효능·용법·주의사항에 씀</span>` : ''}${fd.length && I.info.code ? '<br>' : ''}${I.info.code ? `읽은 품번: <b>${esc(I.info.code)}</b>${it ? ' ' + esc(it.n) : ''} — 제품표준서·성적서 제품코드 칸에 들어갑니다 ` : ''}</div>`);
+      if (I.info.code) h.appendChild(button('품번 빼기', () => { I.info.code = ''; save(); draw(); }, 'btn sm'));
+      c2.appendChild(h);
+    } }
   if (mk) c2.appendChild(el(`<div class="funcbox" style="margin-top:8px"><b>${esc(mk.company || mk.label)}</b> · 화장품 제조업 등록필증 ${esc(mk.regNo || '번호 판독 불가')} · 대표자 ${esc(mk.ceo || '-')} · ${esc(mk.issuer || '')}<br>소재지: ${esc((mk.sites || []).join(' / ') || '-')}<br>영업 범위: ${esc((mk.scope || []).join(' / ') || '-')} <span class="hint">· 판독 신뢰도 ${esc(mk.confidence || '-')}${mk.note ? ' · ' + esc(mk.note) : ''}</span>${mk.fileId ? ` · <a href="https://drive.google.com/file/d/${esc(mk.fileId)}/view" target="_blank" rel="noopener">필증 원본</a>` : ''}</div>`));
   if (M.length) { const w = el('<div class="form" style="margin-top:8px"></div>'); I.info.weights = I.info.weights || {}; M.forEach(c => { w.appendChild(el(`<label>표시용량 ${esc(c.key)}</label>`)); const d = document.createElement('div'); d.appendChild(inp(I.info.weights, c.key, { ph: '예) 30ml' })); w.appendChild(d); }); c2.appendChild(w); }
   m.appendChild(c2);
   // 3. 만들기
   const c4 = el(`<div class="card"><h3>3. 만들기</h3></div>`);
-  const ok = M.length && M.every(c => c.bulk || c.single || c.comp || c.report);
+  const ok = M.length && M.every(c => c.bulk || c.single || c.comp || c.report || c.micro);
   const b1 = button('제품표준서 + 완제품성적서 만들기', () => { const r = build(true); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn pri');
   const b2 = button('제품표준서만 만들기', () => { const r = build(false); if (r) go('ps', { pid: r.p.id, sec: 's1' }); }, 'btn');
   if (!ok) { b1.disabled = b2.disabled = true; }

@@ -594,8 +594,8 @@ function suggest(input, onPick, { mode = 'name' } = {}) {
   const pick = o => { box.hidden = true; input.value = mode === 'code' ? (o.code || '') : o.name; input.dispatchEvent(new Event('input')); onPick && onPick(o); };
   const show = () => {
     const toks = input.value.trim().split(/\s+/).map(norm).filter(Boolean); if (!toks.length) { box.hidden = true; return; }
-    const erp = erpMatches(toks, mode === 'code' ? 20 : 12).filter(o => o.code !== input.value.trim());
-    const docs = mode === 'code' ? [] : productNames().filter(o => { const k = norm(o.name); return toks.every(t => k.includes(t)) && k !== norm(input.value); })
+    const erp = mode === 'func' ? [] : erpMatches(toks, mode === 'code' ? 20 : 12).filter(o => o.code !== input.value.trim());
+    const docs = mode === 'code' ? [] : productNames().filter(o => { const k = norm(o.name); return (mode !== 'func' || o.seqs.length) && toks.every(t => k.includes(t)) && k !== norm(input.value); })
       .sort((a, b) => (b.type === 'ps') - (a.type === 'ps') || (b.date || '').localeCompare(a.date || '')).slice(0, 8);
     list = [...docs.filter(o => o.type === 'ps'), ...erp, ...docs.filter(o => o.type !== 'ps')];
     if (!list.length) { box.hidden = true; return; }
@@ -608,7 +608,7 @@ function suggest(input, onPick, { mode = 'name' } = {}) {
         ? `<code>${hi(o.code)}</code> <b>${hi(o.name)}</b><span class="hint"> · ${esc([o.spec, o.brand, o.asset, o.life && o.life !== '0' ? `사용기한 ${o.life}개월` : '', o.vendor].filter(Boolean).join(' · '))}</span>`
         : `<b>${hi(o.name)}</b>${o.parts?.length ? ` <span class="pill">${esc([...new Set(o.parts)].sort().join('·'))}</span>` : ''}<span class="hint"> · ${esc(o.src)}${o.date ? ' · ' + esc(o.date) : ''}</span>`;
       return `${h}<div class="si ${i === cur ? 'on' : ''}" data-i="${i}">${body}</div>`;
-    }).join('') + `<div class="hint" style="padding:4px 10px">${list.length}건 · ↑↓ Enter로 선택${mode === 'name' ? ' · ERP 품목을 고르면 제품코드도 함께 들어갑니다' : ''}</div>`;
+    }).join('') + `<div class="hint" style="padding:4px 10px">${list.length}건 · ↑↓ Enter로 선택${mode === 'name' ? ' · ERP 품목을 고르면 제품코드도 함께 들어갑니다' : mode === 'func' ? ' · 의약품안전나라 기능성 보고 품목 이름' : ''}</div>`;
     box.hidden = false;
     box.querySelectorAll('.si').forEach(d => d.onmousedown = e => { e.preventDefault(); pick(list[+d.dataset.i]); });
   };
