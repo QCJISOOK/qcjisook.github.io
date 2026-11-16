@@ -698,7 +698,7 @@ function build(withCoa, coaOnly = false) {
   // 별첨·근거
   const mfgOn = mfgOption();
   p.mfgDoc = mfgOn ? (String(info.mfgDoc || '').trim() || mfgFiles().map(f => f.name.replace(/\.pdf$/i, '')).join(', ')) : '';
-  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single || f.kind === MFGK ? '' : f.comp, name: f.name, print: f.kind !== '전성분표' && f.kind !== PSK && f.kind !== '반제품성적서' /* 제조사 제품표준서·반제품성적서 원본은 넣지 않음 (값만 읽음) */ && (f.kind !== MFGK || mfgOn), ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
+  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single || f.kind === MFGK ? '' : f.comp, name: f.name, print: f.kind !== '전성분표' && f.kind !== PSK && f.kind !== '반제품성적서' && f.kind !== '미생물시험성적서' /* 제조사 제품표준서·반제품·미생물 성적서 원본은 넣지 않음 (값만 읽음) */ && (f.kind !== MFGK || mfgOn), ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
   p.attachments = [
     ...M.filter(c => c.report).map(c => ({ name: `기능성화장품 보고서 (심사제외)${single ? '' : ' — ' + c.key}`, no: `보고일련번호 ${c.report.seq}`, rev: c.report.reportDate, location: '본 문서 뒤 첨부 (원본)', note: `부서접수번호 ${c.report.receiptNo}` })),
     ...M.filter(c => c.single || c.comp).map(c => ({ name: `전성분표 (함량 포함)${single ? '' : ' — ' + c.key}`, no: '', rev: (c.single || c.comp).date, location: '자료로 작성 · 원본 파일', note: makerShort(mk) })),

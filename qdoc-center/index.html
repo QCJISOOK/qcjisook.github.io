@@ -1490,7 +1490,7 @@ function psDoc(p, extra) {
 async function uploadPages(p) {
   const out = [];
   for (const u of (p.uploads || [])) {
-    if (u.print === false || u.kind === '반제품성적서') continue; // 반제품(벌크) 시험성적서 원본은 모든 제품표준서에 붙이지 않음 (사용자 요청)
+    if (u.print === false || u.kind === '반제품성적서' || u.kind === '미생물시험성적서') continue; // 반제품·미생물 시험성적서 원본은 모든 제품표준서에 붙이지 않음 (사용자 요청)
     let pages = null;
     try { const r = await window.IDB?.get(u.fileId); if (r && r.pages && r.pages.length) pages = r.pages; } catch (e) { }
     // 이 브라우저에 원본이 없으면 공동 저장소에 올라간 쪽 그림으로
@@ -1643,7 +1643,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=ae528dac"></script>
+<script src="js/ingest.js?v=528a6f51"></script>
 <script src="js/cgmp.js?v=9c60d558"></script>
 </body>
 </html>
