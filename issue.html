@@ -2539,7 +2539,7 @@
       <div class="sub">협력업체 감사 이력 · 제조업체 클레임 | 기준 2023.01 – 2026.07</div>
     </div>
   </div>
-  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-11-16 11:13</span></div>
+  <div class="topbar-meta"><span class="build-stamp" title="이 화면이 만들어진 시각입니다. 바뀐 것이 안 보이면 Ctrl+Shift+R 로 새로 고칩니다.">판 2026-11-16 16:09</span></div>
 </div>
 
 
@@ -12796,6 +12796,115 @@ showPage("issue");
         paint();
       });
     });
+    paint();
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
+})();
+</script>
+<style>
+/* ══ 클레임 상세 — 보기 쉽게 (2026-11-16 요청) ═════════════════════
+   ① 자주 안 보는 다섯 칸을 접는다 — 접힌 채로 열리고, 단추로 편다
+      (등록부서 · 등록자/처리자 · 고객 클레임 접수일자 · 제조사 클레임 접수일자 · 회신일자)
+      → 제품명이 넓어지고 가로로 밀리지 않는다
+   ② 거르개 줄과 집계·내보내기 줄 사이에 가는 줄을 그어 나눈다
+   ③ 날짜는 고정폭 한 줄, 빈칸(—)은 옅게, 줄무늬는 또렷하게            */
+
+/* 칸을 아예 없애면(display:none) colgroup 이 한 칸씩 밀려 엉뚱한 칸이 좁아진다.
+   그래서 칸은 그대로 두고 폭만 0 으로, 글씨는 숨긴다. */
+#issue-table.lean col.c-rdept,
+#issue-table.lean col.c-emp,
+#issue-table.lean col.c-dt0,
+#issue-table.lean col.c-dt2,
+#issue-table.lean col.c-dt{ width:0; }
+#issue-table.lean > thead > tr > th.rdept-th,
+#issue-table.lean > thead > tr > th.emp-th,
+#issue-table.lean > thead > tr > th.date:not(.first-th),
+#issue-table.lean > tbody > tr.irow > td.rdept-td,
+#issue-table.lean > tbody > tr.irow > td.emp-td,
+#issue-table.lean > tbody > tr.irow > td.date:not(.first-td),
+#issue-table.lean > thead > tr.hfil > td:nth-child(10),
+#issue-table.lean > thead > tr.hfil > td:nth-child(11),
+#issue-table.lean > thead > tr.hfil > td:nth-child(13),
+#issue-table.lean > thead > tr.hfil > td:nth-child(14),
+#issue-table.lean > thead > tr.hfil > td:nth-child(15){
+  visibility:hidden; padding:0; font-size:0; line-height:0;
+  border-left:0; border-right:0; max-width:0; overflow:hidden;
+}
+#issue-table.lean{ min-width:880px; }
+/* 다 펼친 때는 제품명 칸이 64px 밖에 안 남아 서너 줄로 접혔다 —
+   가로로 밀리더라도 제품명을 읽을 수 있게 넓힌다. */
+#issue-table:not(.lean){ min-width:1640px; }
+/* 접은 자리를 좁아서 글이 접히던 칸들에 나눠 준다 —
+   업체명·브랜드가 두세 줄로 접히면 줄 높이가 들쭉날쭉해 읽기 어렵다.
+   클레임유형 꼬리표도 칸보다 넓어 비어져 나왔다. */
+#issue-table.lean col.c-co{ width:136px; }
+#issue-table.lean col.c-br{ width:98px; }
+#issue-table.lean col.c-ty{ width:162px; }
+#issue-table.lean col.c-memo{ width:84px; }
+
+/* ② 거르개·집계 줄과 「함께 적기」 상태 줄을 가는 줄로 나눈다.
+   집계(귀책·협의체·건수)와 내보내기 단추는 거르개와 한 묶음이라 위에 두고,
+   함께 적기는 화면 상태라 줄 아래로 내린다. */
+.filter-bar .fb-br{
+  order:1; flex:0 0 100%; height:1px; margin:4px 0 2px; padding:0;
+  background:var(--border); border-radius:1px;
+}
+.filter-bar #asv-bar{ order:2; }
+/* 집계 셋이 서로 멀어지지 않게 — 오른쪽으로 미는 것은 맨 앞 하나만 */
+.filter-bar #cx-count, .filter-bar #issue-count{ margin-left:10px; }
+
+/* ③ 표 읽기 쉽게 */
+#issue-table > tbody > tr.irow > td{ vertical-align:middle; }
+#issue-table > tbody > tr.irow.alt{ background:color-mix(in srgb, var(--surface-2) 75%, transparent); }
+#issue-table > tbody > tr.irow > td.date{
+  font-family:var(--font-mono); font-size:14px; white-space:nowrap; text-align:center;
+}
+#issue-table > thead > tr > th.date{ text-align:center; }
+#issue-table > tbody > tr.irow > td.first-td{ font-weight:800; color:var(--ink); }
+#issue-table > tbody > tr.irow > td.title{ line-height:1.45; }
+#issue-table .td-none{ color:var(--muted); opacity:.42; }
+/* 머리 아래 고르는 줄은 자료줄로 안 보이게 한 단 낮춘다 */
+#issue-table > thead > tr.hfil > td{ background:color-mix(in srgb, var(--surface-2) 55%, transparent); }
+#issue-table > thead > tr.hfil select.hf{ font-size:13px; color:var(--muted); }
+</style>
+<script>
+/* 클레임 상세 — 「칸 간추리기」 단추와 거르개 줄 나누기.
+   있는 화면을 건드리지 않고 단추만 끼워 넣는다. 고른 것은 이 브라우저에 남는다. */
+(function(){
+  var LS = "oi-issue-lean-v1";
+  function on(){ try { return localStorage.getItem(LS) !== "0"; } catch(e){ return true; } }
+  function paint(){
+    var t = document.getElementById("issue-table");
+    var b = document.getElementById("issue-lean");
+    var v = on();
+    if(t) t.classList.toggle("lean", v);
+    if(b){
+      b.textContent = v ? "칸 더 보기" : "칸 간추리기";
+      b.setAttribute("aria-pressed", v ? "true" : "false");
+      b.title = v
+        ? "접어 둔 다섯 칸을 펼칩니다 — 등록부서 · 등록자/처리자 · 고객 클레임 접수일자 · 제조사 클레임 접수일자 · 제조사 클레임 회신일자"
+        : "자주 안 보는 다섯 칸을 접어 제품명을 넓게 봅니다";
+    }
+  }
+  function bind(){
+    var r = document.getElementById("issue-reset");
+    if(!r){ return; }
+    if(!document.getElementById("issue-lean")){
+      var b = document.createElement("button");
+      b.id = "issue-lean";
+      b.type = "button";
+      b.className = "filter-reset";
+      b.addEventListener("click", function(){
+        try { localStorage.setItem(LS, on() ? "0" : "1"); } catch(e){}
+        paint();
+      });
+      r.insertAdjacentElement("afterend", b);
+      var br = document.createElement("span");
+      br.className = "fb-br";
+      br.setAttribute("aria-hidden", "true");
+      b.insertAdjacentElement("afterend", br);
+    }
     paint();
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
