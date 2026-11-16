@@ -140,7 +140,11 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .note{font-size:7.6pt;color:#333;margin-top:3px}
 .doc tbody.data td{height:19px}
 .doc .h22 td,.doc .h22 th{height:22px}.doc .h26 td,.doc .h26 th{height:26px}.doc .h30 td,.doc .h30 th{height:30px}.doc .h34 td{height:34px}
-.doc table.sign-ps th{height:24px}.doc table.sign-ps td{height:50px;font-size:9.5pt}
+.doc table.sign-ps th{height:24px}.doc table.sign-ps td{height:58px;font-size:9.5pt}
+/* 서명 그림 — 도장(정사각)은 크게, 손 서명은 글씨 높이에 맞춰 */
+.doc img.sgn{display:inline-block;vertical-align:middle;max-width:100%;object-fit:contain}
+.doc img.sgn.seal{height:46px}.doc img.sgn.sign{height:38px}
+.doc .sgc{display:flex;align-items:center;justify-content:center;gap:12px}
 .doc .logo .l1{font-family:"Arial Black",Arial,sans-serif;font-weight:900;font-size:25pt;letter-spacing:6px;line-height:1}
 .doc .logo .l2{font-size:7.5pt;letter-spacing:4.5px;margin-top:2px}
 .doc .cov-top{display:flex;align-items:center;justify-content:space-between;margin:2mm 0 4mm}
@@ -162,7 +166,7 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .coa .tests td{height:20px}
 .doc .coa.dense .tests td{height:var(--rh,17px);font-size:7.8pt;padding:1px 3px}
 .doc .coa .left{text-align:left}
-.doc .coa .sign td{height:42px}
+.doc .coa .sign td{height:56px}
 .doc .coa .big{font-size:12pt;font-weight:800}
 .doc .coa-ph{font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #222;padding:0 0 3px;margin-bottom:6px}
 .doc .page:not(.cont) > .coa-ph{display:none}
@@ -884,7 +888,7 @@ function secEditor(p, sec, ed) {
       A(subh('제조 및 책임판매 주체'));
       A(tedit(p.makers, [{ k: 'type', label: '구분', w: '22%' }, { k: 'name', label: '업체명', w: '26%' }, { k: 'role', label: '역할' }], { numbered: false }));
       A(form([['책임판매업자', inp(p.seller, 'name')], ['주소', inp(p.seller, 'addr')], ['역할', inp(p.seller, 'role'), true]]));
-      A(subh('검토 및 승인 <span class="hint">서명은 인쇄 후 직접</span>'));
+      A(subh(`검토 및 승인 <span class="hint">${esc(signerHint() || '서명은 인쇄 후 직접')}</span>`));
       A(form([['작성 (담당자)', inp(p.approvals.writer, 'name')], ['작성일', inp(p.approvals.writer, 'date', { type: 'date' })],
         ['승인 (책임자)', inp(p.approvals.approver, 'name')], ['승인일', inp(p.approvals.approver, 'date', { type: 'date' })]]));
       break;
@@ -1215,7 +1219,7 @@ function renderCoa(m) {
   A(rt);
   A(subh('특이사항'));
   A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
-  A(subh('판정 및 서명'));
+  A(subh(`판정 및 서명${signerHint() ? ` <span class="hint">${esc(signerHint())}</span>` : ''}`));
   A(form([['작성', inp(c.sign, 'writer')], ['검토', inp(c.sign, 'reviewer')], ['승인 (품질관리 책임자)', inp(c.sign, 'approver')]]));
   refreshCoa();
 }
@@ -1382,8 +1386,14 @@ const hdr = (p, title, sub = '') =>
   // 쪽 머리: 제목 크게, 제품명은 한 줄(한글명). 영문명·번호는 표지와 쪽 아래에 있음. 부제는 있을 때만
   `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr></table>`;
 // 검토 및 승인: 한글 머리, 이름·서명·날짜는 손으로 쓸 수 있게 넉넉히
+/* 담당자 서명 (data/signs.js — 「서명」 폴더 → _tool/build_signs.py). 작성·검토·승인 칸에 등록된 이름을 적으면 문서에 서명 그림 (사용자 요청 2026-11-16)
+   실제 서명이라 이 PC 버전·Artifact에서만 — 공개 사이트에는 signs.js 를 올리지 않아 이름만 나옴 */
+const signOf = name => { const all = window.SIGNS || {}, n = String(name || '').replace(/\s/g, ''); if (!n) return null; const k = Object.keys(all).find(k => n.includes(k)); return k ? all[k] : null; };
+const signImg = name => { const s = signOf(name); return s ? `<img class="sgn ${s.kind === 'seal' ? 'seal' : 'sign'}" src="${s.src}" alt="${esc(name)} 서명">` : ''; };
+const signCell = name => { const img = signImg(name); return img ? `<div class="sgc"><span>${esc(name)}</span>${img}</div>` : esc(name); };
+const signerHint = () => { const ks = Object.keys(window.SIGNS || {}); return ks.length ? `등록된 서명: ${ks.join(' · ')} — 이 이름을 적으면 문서에 서명이 들어갑니다` : ''; };
 const signTable = p => `<table class="sign-ps"><colgroup><col style="width:11%"><col style="width:19%"><col style="width:22%"><col style="width:28%"><col></colgroup><tr><th>구분</th><th>직책</th><th>이름</th><th>서명</th><th>날짜</th></tr>
-  ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td></td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>`;
+  ${[['작성', '품질관리 담당자', 'writer'], ['승인', '품질관리 책임자', 'approver']].map(([a, b, k]) => `<tr><td class="c">${a}</td><td class="c">${b}</td><td class="c">${esc(p.approvals[k].name)}</td><td class="c">${signImg(p.approvals[k].name)}</td><td class="c">${esc(p.approvals[k].date)}</td></tr>`).join('')}</table>`;
 const foot = p => `<div class="foot"><span>${esc(p.psNo)} (Rev.${esc(p.rev)})</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div>`;
 const page = (p, key, title, body, sub = '') => `<section class="page" data-key="${key}">${hdr(p, title, sub)}<div class="body">${body}</div>${foot(p)}</section>`;
 const blk = (bar, inner) => `<div class="blk" data-id="b${++BID}">${bar ? `<div class="bar">${bar}</div>` : ''}${inner}</div>`;
@@ -1621,7 +1631,7 @@ function coaDoc(c, pp) {
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
   ${B(`<table class="sign box mt"><colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
    <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
-   <tr><td>${esc(c.sign.writer)}</td><td>${esc(c.sign.reviewer)}</td><td>${esc(c.sign.approver)}</td></tr></table>`)}
+   <tr><td>${signCell(c.sign.writer)}</td><td>${signCell(c.sign.reviewer)}</td><td>${signCell(c.sign.approver)}</td></tr></table>`)}
   </div><div class="foot"><span>완제품시험성적서</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
 }
 
