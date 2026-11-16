@@ -159,13 +159,15 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .coa .mt{margin-top:6px}
 .doc .coa .info td,.doc .coa .info th{height:22px}
 .doc .coa .tests td{height:20px}
-.doc .coa.dense .tests td{height:17px;font-size:7.8pt;padding:1px 3px}
+.doc .coa.dense .tests td{height:var(--rh,17px);font-size:7.8pt;padding:1px 3px}
 .doc .coa .left{text-align:left}
 .doc .coa .sign td{height:42px}
 .doc .coa .big{font-size:12pt;font-weight:800}
 .doc .coa-ph{font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #222;padding:0 0 3px;margin-bottom:6px}
 .doc .page:not(.cont) > .coa-ph{display:none}
-.doc .coa tbody.data td{height:20px}
+.doc .coa tbody.data td{height:var(--rh,20px)}
+/* 인쇄·PDF 저장에서도 칸 색(머리 칸 하늘색·띠 남색)이 그대로 나오게 — 브라우저 「배경 그래픽」을 안 켜도 */
+.doc,.doc *{-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}
 @media print{
   @page{size:A4;margin:0}
   body>*:not(#preview){display:none!important}
@@ -1536,7 +1538,8 @@ async function uploadPages(p) {
 /* ================= 인쇄 문서: 성적서 ================= */
 function coaDoc(c, pp) {
   const p = pp || prod(c.productId) || { nameKo: '', code: '', nameSub: '' };
-  const rows = c.results, dense = rows.length > 18, padN = Math.max(0, 16 - rows.length);
+  // 시험표는 20줄(빈 줄 채움), 한 쪽을 꽉 채우게 줄 높이를 맞춤 — 20줄 넘으면 줄 높이를 줄여 한 쪽 안에
+  const rows = c.results, padN = Math.max(0, 20 - rows.length), rowH = Math.max(18, Math.min(37, Math.floor(740 / Math.max(rows.length, 20)))), dense = rowH < 22;
   const multi = rows.some(r => r.sub) || c.lots.length > 1; // 구성품이 여럿일 때만 「구분」 열
   const per = k => c.lots.map(l => `${c.lots.length > 1 ? esc(l.label) + ' : ' : ''}${esc(l[k])}`).join('<br>');
   const cols = [['No.', 5], ['시험항목', multi ? 20 : 22], ...(multi ? [['구분', 7]] : []), ['시험기준', multi ? 33 : 37], ['시험결과', 14], ['비고', 0]]; // 판정 열 없음 — 시험결과와 겹침 (사용자 요청) // 시험방법 대신 시험결과, 판정 오른쪽 비고 (사용자 요청) // 시험일자 열 없음 (사용자 요청)
@@ -1546,7 +1549,7 @@ function coaDoc(c, pp) {
   <table class="info box"><colgroup><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:20%"><col style="width:13%"><col></colgroup>
    <tr><th>제품명</th><td colspan="3" class="left" style="height:30px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td><th>표시용량</th><td>${esc(c.labelQty)}</td></tr>
    <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
-  ${B(`<table class="tests box mt dsplit"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
+  ${B(`<table class="tests box mt dsplit" style="--rh:${rowH}px"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
    <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td style="font-size:7.2pt">${esc(r.remark || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
