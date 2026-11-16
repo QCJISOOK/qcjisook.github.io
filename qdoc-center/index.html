@@ -195,6 +195,7 @@ table.ed td.act .btn{padding:1px 6px}
 <script src="data/makers.js"></script>
 <script src="data/items.js"></script>
 <script src="data/funcdocs.js"></script>
+<script src="data/rawreports.js"></script>
 <script>
 'use strict';
 /* ================= 기본 도구 ================= */
@@ -516,14 +517,19 @@ function psChecksFull(p) {
     add('s2', '권장', ings.length && ings.every(r => r.code && r.purpose), L + '원료코드·배합목적');
   });
   if (nd.applies === '해당') add('s2', '필수', nd.company && nd.person, '원료 함량 미공개 확인 (제조업자 회사명·책임자)', '미공개 확인서의 제조업자·책임자 미기재');
-  add('sMfg', '권장', hasMfg(p) || tocRef(p, '2u') || tocRef(p, '3'), '제조지시 및 공정 기록서 (선택)', '자료가 있을 때만 별첨으로 들어감 — 문서명·번호를 적거나 자료로 작성에서 원본을 올리기');
+  // 5·7·9호(·8호 원자재)는 제조업자 문서: 별첨2(제조지시 및 공정 기록서)가 있거나 제조업자 제품표준서 번호(표지 「제조업자 제품표준서 (참조 문서)」)·목차 참조가 있으면 충족
+  const mref = hasMfg(p) || !!String(p.makerRef || '').trim(), mmsg = '제조지시 및 공정 기록서를 별첨하거나, 표지 「제조업자 제품표준서 (참조 문서)」에 제조사 문서 번호를 적기';
+  add('sMfg', '필수', mref || tocRef(p, 'proc') || tocRef(p, '3'), '공정별 상세 작업내용 및 제조공정흐름도 (5호)', mmsg);
+  add('sMfg', '필수', mref || tocRef(p, 'work'), '작업 중 주의사항 (7호)', mmsg);
+  add('sMfg', '필수', mref || tocRef(p, 'fac') || tocRef(p, '11'), '제조 및 품질관리 시설 및 기기 (9호)', mmsg);
+  add('s7', '필수', mref || tocRef(p, 'raw'), '원료·자재 기준 및 시험방법 (8호)', '제조업자 원료·자재 규격서 참조 — ' + mmsg);
   add('s7', '필수', (p.finishedSpecs || []).length, '완제품 기준 및 시험방법');
   add('rev', '필수', (p.revisions || []).length, '변경이력');
   add('cover', '권장', p.approvals.approver.name, '승인자 성명');
   add('s1', '권장', p.appearance && p.packUnit, '성상·포장단위');
   add('s1', '권장', p.typeClass, '유형 (화장품법 시행규칙 [별표 3] 유형)');
   if (fn) add('s8', '권장', p.efficacy.reviewNo || links.length, '기능성 보고(심사) 번호', '의약품안전나라 자료와 연결되지 않음');
-  if (fn) add('s13', '권장', links.some(it => pdfPages(it)) || (p.uploads || []).some(u => u.kind === '기능성보고서'), '기능성 보고서 원본(PDF) 첨부', '공개 정보만 연결됨 — 보고서 PDF를 「자료로 작성」에 올리거나 기능성자료\\보고서에 넣기');
+  if (fn) add('s13', '권장', links.some(it => pdfPages(it)) || (p.uploads || []).some(u => u.kind === '기능성보고서' || u.kind === '제조사 제품표준서'), '기능성 보고서 원본(PDF) 첨부', '공개 정보만 연결됨 — 보고서 PDF를 「자료로 작성」에 올리거나 기능성자료\\보고서에 넣기');
   add('s7', '권장', (p.finishedSpecs || []).length && p.finishedSpecs.every(f => f.apply), '완제품 기준 — 결과 적용 (벌크 인용 / 입고검사 / 위탁)', '결과 적용 칸이 빈 항목 있음');
   return R;
 }
@@ -575,8 +581,15 @@ function productNames() {
     const o = map.get(k) || { name: base, src: '의약품안전나라 보고', date: it.date, parts: [], seqs: [] };
     if (sub) o.parts.push(sub + '제'); o.seqs.push(it.seq); if ((it.date || '') > (o.date || '')) o.date = it.date; map.set(k, o);
   });
+  // 원료목록 보고 (대한화장품협회) — 비기능성 제품도 공식 제품명을 찾게. 기능성 보고와 이름이 같으면 한 줄로
+  ((window.RAW_REPORTS || {}).items || []).forEach(it => {
+    const base = String(it.name).replace(/\s*\d\s*제$/, '').trim(), k = norm(base); if (!k) return;
+    const o = map.get(k);
+    if (o) { o.raw = true; if (!/원료목록/.test(o.src)) o.src += ' · 원료목록 보고'; }
+    else map.set(k, { name: base, src: '원료목록 보고', date: it.date || '', parts: [], seqs: [], raw: true });
+  });
   S.products.forEach(p => { const k = norm(p.nameKo); if (!k) return; const o = map.get(k); if (o) { o.src = '등록된 제품표준서 · ' + o.src; o.name = p.nameKo; } else map.set(k, { name: p.nameKo, src: '등록된 제품표준서', date: p.date, parts: [], seqs: [] }); });
-  return [...map.values()].map(o => ({ ...o, type: o.src.startsWith('등록') ? 'ps' : 'report' }));
+  return [...map.values()].map(o => ({ ...o, type: o.src.startsWith('등록') ? 'ps' : o.seqs.length ? 'report' : o.raw ? 'raw' : 'report' }));
 }
 /* ERP 품목조회 (data/items.js) — 제품코드·규격·사용기한 */
 const ITEMS = (window.ITEMS && window.ITEMS.items) || [];
@@ -595,12 +608,12 @@ function suggest(input, onPick, { mode = 'name' } = {}) {
   const show = () => {
     const toks = input.value.trim().split(/\s+/).map(norm).filter(Boolean); if (!toks.length) { box.hidden = true; return; }
     const erp = mode === 'func' ? [] : erpMatches(toks, mode === 'code' ? 20 : 12).filter(o => o.code !== input.value.trim());
-    const docs = mode === 'code' ? [] : productNames().filter(o => { const k = norm(o.name); return (mode !== 'func' || o.seqs.length) && toks.every(t => k.includes(t)) && k !== norm(input.value); })
+    const docs = mode === 'code' ? [] : productNames().filter(o => { const k = norm(o.name); return (mode !== 'func' || o.seqs.length || o.raw) && toks.every(t => k.includes(t)) && k !== norm(input.value); })
       .sort((a, b) => (b.type === 'ps') - (a.type === 'ps') || (b.date || '').localeCompare(a.date || '')).slice(0, 8);
-    list = [...docs.filter(o => o.type === 'ps'), ...erp, ...docs.filter(o => o.type !== 'ps')];
+    list = [...docs.filter(o => o.type === 'ps'), ...erp, ...docs.filter(o => o.type === 'report'), ...docs.filter(o => o.type === 'raw')];
     if (!list.length) { box.hidden = true; return; }
     const hi = s => { let h = esc(s); toks.forEach(t => { h = h.replace(new RegExp(t.split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*'), 'i'), m => `<mark>${m}</mark>`); }); return h; };
-    const head = { ps: '등록된 제품표준서', erp: `ERP 품목 — 제품코드 (${esc(window.ITEMS?.source || '품목조회 없음')})`, report: '의약품안전나라 기능성 보고 품목' };
+    const head = { ps: '등록된 제품표준서', erp: `ERP 품목 — 제품코드 (${esc(window.ITEMS?.source || '품목조회 없음')})`, report: '의약품안전나라 기능성 보고 품목', raw: '대한화장품협회 원료목록 보고 품목' };
     let last = '';
     box.innerHTML = list.map((o, i) => {
       const h = o.type !== last ? `<div class="sh">${head[o.type]}</div>` : ''; last = o.type;
@@ -608,7 +621,7 @@ function suggest(input, onPick, { mode = 'name' } = {}) {
         ? `<code>${hi(o.code)}</code> <b>${hi(o.name)}</b><span class="hint"> · ${esc([o.spec, o.brand, o.asset, o.life && o.life !== '0' ? `사용기한 ${o.life}개월` : '', o.vendor].filter(Boolean).join(' · '))}</span>`
         : `<b>${hi(o.name)}</b>${o.parts?.length ? ` <span class="pill">${esc([...new Set(o.parts)].sort().join('·'))}</span>` : ''}<span class="hint"> · ${esc(o.src)}${o.date ? ' · ' + esc(o.date) : ''}</span>`;
       return `${h}<div class="si ${i === cur ? 'on' : ''}" data-i="${i}">${body}</div>`;
-    }).join('') + `<div class="hint" style="padding:4px 10px">${list.length}건 · ↑↓ Enter로 선택${mode === 'name' ? ' · ERP 품목을 고르면 제품코드도 함께 들어갑니다' : mode === 'func' ? ' · 의약품안전나라 기능성 보고 품목 이름' : ''}</div>`;
+    }).join('') + `<div class="hint" style="padding:4px 10px">${list.length}건 · ↑↓ Enter로 선택${mode === 'name' ? ' · ERP 품목을 고르면 제품코드도 함께 들어갑니다' : mode === 'func' ? ' · 기능성 보고 · 원료목록 보고 품목 이름' : ''}</div>`;
     box.hidden = false;
     box.querySelectorAll('.si').forEach(d => d.onmousedown = e => { e.preventDefault(); pick(list[+d.dataset.i]); });
   };
@@ -970,13 +983,26 @@ const secList = p => isLite(p) ? [['cover', '표지·승인'], ['rev', '개정�
 const TOC15 = [
   ['2', '성분 및 함량', '성분표', 's2'],
   ['2u', '제조 단위', '제조지시 및 공정 기록서', 'sMfg'],
+  ['proc', '공정별 상세 작업내용 및 제조공정흐름도', '제조지시 및 공정 기록서', 'sMfg'],
+  ['work', '작업 중 주의사항', '제조지시 및 공정 기록서', 'sMfg'],
+  ['raw', '원료·자재 기준 및 시험방법', '', ''],
   ['7b', '벌크제품 기준 및 시험방법', '벌크시험기준서', 's7b'],
   ['7f', '완제품 기준 및 시험방법', '완제품시험기준서', 's7f'],
+  ['fac', '제조 및 품질관리 시설 및 기기', '', ''],
   ['fn', '기능성화장품 심사(보고) 자료', '기능성보고서', 'sFn']
 ];
-/* 목차 기본값 「별첨N. 이름」 — 번호는 제품마다 (별첨2가 없으면 당겨짐), 「제조 단위」 줄은 별첨2가 있을 때만 */
-const tocDef = (p, k) => { const r = TOC15.find(x => x[0] === k), n = r && annexNo(p)[r[3]]; return n ? `별첨${n}. ${r[2]}` : ''; };
-const tocRows = p => TOC15.filter(([k]) => k !== '2u' || hasMfg(p));
+/* 목차 기본값: 별첨이 있으면 「별첨N. 이름」 (번호는 제품마다, 별첨2가 없으면 당겨짐)
+   별첨이 없는 필수 사항(5·7·9호, 8호 원자재)은 제조업자 문서 참조 — 제조업자 제품표준서 번호(makerRef)가 있으면 그 번호로.
+   제조 단위는 별첨2가 없으면 별첨1 성분표(아래 주에 제조단위 기재) */
+const TOC_REF = { '2u': '제조지시 및 기록서', proc: '제조지시 및 기록서', work: '제조지시 및 기록서', raw: '원료·자재 규격서', fac: '시설·기기 목록' };
+const tocDef = (p, k) => {
+  const r = TOC15.find(x => x[0] === k), N = annexNo(p), n = r && r[3] && N[r[3]];
+  if (n) return `별첨${n}. ${r[2]}`;
+  if (k === '2u') return `별첨${N.s2}. 성분표`;
+  if (TOC_REF[k]) { const ref = String(p.makerRef || '').trim(); return ref ? `제조업자 문서 참조 — ${ref} (${TOC_REF[k]})` : `제조업자 문서 참조 (${TOC_REF[k]} · 제조사 보관)`; }
+  return '';
+};
+const tocRows = p => TOC15;
 /* 목차 칸을 기본값과 다르게 적었거나(예: 별첨3. 제조지시 및 기록서) 예전 근거 문서가 있으면 → 참조로 인정 */
 const tocRef = (p, k) => { const v = String((p.tocLoc || {})[k] || '').trim(); return (v && v !== tocDef(p, k)) ? v : String((p.toc || {})[k] || '').trim(); };
 const TOC_REQ = ['1호 제품명 · 2호 작성연월일', '4호 원료명·분량·제조단위당 기준량', '5호 제조공정흐름도', '5호 공정별 상세 작업내용', '(6호 삭제 — 선택)', '7호 작업 중 주의사항', '8호 기준 및 시험방법', '3호 효능·효과 및 주의사항', '표시사항 근거 (14호)', '자재 규격 / 포장 사양 (14호)', '9호 시설 및 기기', '10호 보관조건 · 11호 사용기한', '14호 그 밖에 필요한 사항 · 12호 변경이력'];
@@ -1289,7 +1315,7 @@ function psDoc(p, extra) {
     // 구성품 띠(제품명·제조사)와 제조단위·함량 기준·제조사 표준서 표는 사용자 요청으로 뺌 — 구성품이 여럿일 때만 1제·2제 이름을 작게
     const cap = comps.length > 1 ? `<div style="font-weight:700;font-size:9pt;margin:${i ? 10 : 2}px 0 3px">${esc(c.label)}</div>` : '';
     return blk('', cap + dtable([{ label: '구분', w: '6%', c: 1, f: (r, j) => j + 1 }, { label: '성분명', f: r => esc(r.inci || r.name || '') }, { label: '배합목적', w: '18%', k: 'purpose', c: 1 }, { label: '규격', w: '8%', k: 'spec', c: 1 }, { label: '분량(%)', w: '10%', k: 'pct', c: 1 }, { label: '제조단위당<br>기준량', w: '12%', c: 1, f: r => esc(r.qty || calcQty(c, r)) }, { label: '비고', w: '11%', k: 'note' }], ings, { pad: 6, extra: tot }));
-  }).join('') + '<div class="note">※ 제조단위당 기준량 = 제조단위 × 분량(%) ÷ 100</div>'));
+  }).join('') + `<div class="note">※ 제조단위: ${comps.map(c => `${comps.length > 1 ? esc(c.label) + ' ' : ''}${esc(c.batchSize || '　　')} ${esc(c.batchUnit)} / batch`).join(' · ')}　·　제조단위당 기준량 = 제조단위 × 분량(%) ÷ 100</div>`));
   if (has('sMfg')) {
     const batch2 = comps.map(c => `${comps.length > 1 ? `[${esc(c.label)}] ` : ''}${esc(c.batchSize || '　　')} ${esc(c.batchUnit)} / batch`).join('　　');
     P.push(page(p, 'sMfg', `${H('sMfg')}제조지시 및 공정 기록서`, blk('', `<table class="h30" style="margin-top:4px"><colgroup><col style="width:22%"><col></colgroup>
