@@ -167,6 +167,11 @@ table.ed td.act .btn{padding:1px 6px}
 .doc .coa.dense .tests td{height:var(--rh,17px);font-size:7.8pt;padding:1px 3px}
 .doc .coa .left{text-align:left}
 .doc .coa .sign td{height:56px}
+/* 성적서 결재란 (사용자 요청 2026-11-16, 제조사 성적서 하단 형식): 결재 │ 담당자 · 검토자 · 책임자 │ 판정일 │ 날짜 │ 판정 │ 적합 */
+.doc .coa table.apr th{height:22px;padding:2px 4px}
+.doc .coa table.apr th.vt{line-height:1.3;font-size:8.5pt;padding:2px}
+.doc .coa table.apr td.vd{font-weight:700;font-size:10.5pt}
+.doc .coa table.apr .sgc{gap:6px}
 .doc .coa .big{font-size:12pt;font-weight:800}
 .doc .coa-ph{font-size:8.5pt;font-weight:700;border-bottom:1.5px solid #222;padding:0 0 3px;margin-bottom:6px}
 .doc .page:not(.cont) > .coa-ph{display:none}
@@ -521,7 +526,7 @@ function newCoa(p) {
     expiry: '', receiptDate: today(), labelQty: (p.weight || '').replace(/\n/g, ' / '), sampleQty: '', receiptQty: '',
     requestDate: today(), samplingDate: '', psRef: { no: p.psNo, rev: p.rev },
     results: coaRowsFor(p),
-    remarks: '', retain: { qty: '', location: '', until: '', mode: '사용기한' }, judgeDate: '', verdict: '',
+    remarks: '', retain: { qty: '', location: '', until: '', mode: '사용기한' }, judgeDate: today() /* 결재란 판정일 — 만든 날, 고칠 수 있음 */, verdict: '',
     sign: { writer: '', reviewer: '', approver: '' }, release: { status: '', approver: '', date: '' }, createdAt: today()
   };
 }
@@ -644,8 +649,8 @@ function coaChecks(c) {
   add('필수', c.lots.length && c.lots.every(l => l.lot), '제조번호(LOT)', '구성품별 LOT 미기재');
   const nj = c.results.filter(r => !String(r.result || '').trim()).length; // 판정 칸 없음 — 시험결과로 적합 여부를 적음 (사용자 요청)
   add('필수', c.results.length && !nj, '항목별 시험결과', nj ? `${nj}항목 시험결과 빈칸 — 제20조③` : '시험항목 없음');
-  add('필수', c.sign.reviewer, '검토 서명', '제20조⑥ 시험기록 검토');
-  add('필수', c.sign.approver, '승인 (품질관리 책임자)', '제19조② 품질부서 책임자 승인');
+  add('필수', c.sign.reviewer, '검토자 서명', '제20조⑥ 시험기록 검토');
+  add('필수', c.sign.approver, '책임자 승인 (품질관리 책임자)', '제19조② 품질부서 책임자 승인');
   add('권장', c.expiry, '사용기한');
   const p = prod(c.productId);
   if (p) {
@@ -661,10 +666,11 @@ function coaStatus(c) {
   return ['승인 완료', 'good'];
 }
 const chip = (t, k) => `<span class="st ${k}">${{ good: '✓', warn: '!', bad: '✕', mute: '•' }[k]} ${esc(t)}</span>`;
+/* 판정: 직접 고르지 않으면 시험결과로 — 부적합이 하나라도 있으면 부적합, 시험결과가 다 채워졌으면 적합 (판정 칸 없이 시험결과로 적음) */
 function suggestVerdict(c) {
   if (!c.results.length) return '';
-  if (c.results.some(r => r.judge === '부적합')) return '부적합';
-  if (c.results.every(r => r.judge === '적합')) return '적합';
+  if (c.results.some(r => r.judge === '부적합' || /부적합/.test(r.result || ''))) return '부적합';
+  if (c.results.every(r => String(r.result || '').trim() || r.judge === '적합')) return '적합';
   return '';
 }
 
@@ -1221,7 +1227,11 @@ function renderCoa(m) {
   A(subh('특이사항'));
   A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
   A(subh(`판정 및 서명${signerHint() ? ` <span class="hint">${esc(signerHint())}</span>` : ''}`));
-  A(form([['작성', inp(c.sign, 'writer')], ['검토', inp(c.sign, 'reviewer')], ['승인 (품질관리 책임자)', inp(c.sign, 'approver')]]));
+  // 결재란: 담당자 · 검토자 · 책임자 · 판정일 · 판정 (사용자 요청 2026-11-16)
+  const vb = document.createElement('div'); vb.style.cssText = 'display:flex;gap:10px;align-items:center';
+  vb.appendChild(inp(c, 'verdict', { opts: ['', '적합', '부적합'], onch: () => refreshCoa() })); vb.appendChild(el('<span class="hint" id="vsug"></span>'));
+  A(form([['담당자', inp(c.sign, 'writer')], ['검토자', inp(c.sign, 'reviewer')], ['책임자 (품질관리 책임자)', inp(c.sign, 'approver')],
+    ['판정일', inp(c, 'judgeDate', { type: 'date' })], ['판정', vb]]));
   refreshCoa();
 }
 function refreshCoa() {
@@ -1229,7 +1239,7 @@ function refreshCoa() {
   const ch = coaChecks(c), bad = ch.filter(x => !x.ok), s = coaStatus(c);
   box.innerHTML = `<div class="row"><b>상태</b>&nbsp;${chip(s[0], s[1])}&nbsp;<span class="m">필수 ${bad.filter(x => x.lvl === '필수').length}건 · 권장 ${bad.filter(x => x.lvl === '권장').length}건 미충족</span></div>`;
   bad.sort((a, b) => (a.lvl === '필수' ? 0 : 1) - (b.lvl === '필수' ? 0 : 1)).forEach(x => box.appendChild(el(`<div class="row">${chip(x.lvl, x.lvl === '필수' ? 'bad' : 'warn')}<div><b>${esc(x.label)}</b> <span class="m">${esc(x.msg)}</span></div></div>`)));
-  const sv = suggestVerdict(c), vs = $('#vsug'); if (vs) vs.textContent = sv && sv !== c.verdict ? `항목 판정으로 보면 「${sv}」` : '';
+  const sv = suggestVerdict(c), vs = $('#vsug'); if (vs) vs.textContent = !c.verdict ? (sv ? `비워 두면 시험결과로 「${sv}」` : '비워 두면 시험결과로 정함 (시험결과 빈칸 있음)') : (sv && sv !== c.verdict ? `시험결과로 보면 「${sv}」` : '');
 }
 function coaList(m) {
   const tb = el('<div class="toolbar"><div class="ttl">완제품시험성적서<small>입고 LOT마다 1장 · 시험항목은 제품표준서 완제품시험기준서 기준</small></div></div>');
@@ -1630,8 +1640,8 @@ function coaDoc(c, pp) {
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
    <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td style="font-size:7.2pt">${nl(r.remark || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
-  ${B(`<table class="sign box mt"><colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
-   <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
+  ${B(`<table class="sign apr box mt"><colgroup><col style="width:5%"><col style="width:17%"><col style="width:17%"><col style="width:17%"><col style="width:5%"><col style="width:15%"><col style="width:5%"><col></colgroup>
+   <tr><th rowspan="2" class="vt">결<br>재</th><th>담당자</th><th>검토자</th><th>책임자</th><th rowspan="2" class="vt">판<br>정<br>일</th><td rowspan="2">${esc(c.judgeDate || '')}</td><th rowspan="2" class="vt">판<br>정</th><td rowspan="2" class="vd">${esc(c.verdict || suggestVerdict(c))}</td></tr>
    <tr><td>${signCell(c.sign.writer)}</td><td>${signCell(c.sign.reviewer)}</td><td>${signCell(c.sign.approver)}</td></tr></table>`)}
   </div><div class="foot"><span>완제품시험성적서</span><span class="pn"></span><span>올리브인터내셔널(주)</span></div></section>`;
 }
@@ -1732,7 +1742,7 @@ function blankProduct() {
 function previewBlankPS() { preview('제품표준서 작성 양식 — 빈 양식', psDoc(blankProduct(), []), null); }
 function previewBlankCoa() {
   const c = newCoa(blankProduct());
-  Object.assign(c, { productId: '', testNo: '', receiptDate: '', requestDate: '', createdAt: '', psRef: { no: '', rev: '' } });
+  Object.assign(c, { productId: '', testNo: '', receiptDate: '', requestDate: '', createdAt: '', judgeDate: '', psRef: { no: '', rev: '' } });
   preview('완제품시험성적서 작성 양식 — 빈 양식', coaDoc(c), null);
 }
 async function previewPS(p) {
