@@ -517,6 +517,18 @@ function bestFunc(cands) {
   cands.forEach((c, ci) => { const q = cleanName(c); if (norm(q).length < 4) return; list.forEach(o => { const sc = dice(q, o.name) - ci * 0.002; if (!best || sc > best.sc) best = { sc, o }; }); });
   return best && best.sc >= 0.72 ? best.o : null;
 }
+/* 예전에 「INGREDIENT-…」(기능성 보고서 영문 표기)로 들어간 제품표준서 이름 → 원료목록 보고명 (사용자 요청 2026-11-16 「성적서에도 적용」 — 성적서 제품명은 표준서 이름)
+   찾는 순서: ERP 품번 품목명(브랜드+품명, 예 성분에디터+레드어성초IPMP릴리프스팟크림) → 지금 이름에서 INGREDIENT 뗀 것. 못 찾으면 INGREDIENT만 뗌 */
+function fixIngredientNames() {
+  let n = 0; if (!((window.RAW_REPORTS || {}).items || []).length) return 0; // 원료목록 보고 자료가 아직 없으면 다음에
+  (S.products || []).forEach(p => {
+    if (!/^\s*INGREDIENT/i.test(p.nameKo || '')) return;
+    const it = p.code ? ITEMS.find(x => x.c === p.code) : null;
+    const rh = bestRaw([it ? `${it.b || ''}${cleanName(it.n)}` : '', dropPrefix(p.nameKo)].filter(Boolean));
+    p.nameKo = rh ? rh.name : dropPrefix(p.nameKo).trim(); n++;
+  });
+  return n;
+}
 /* 벌크(반제품)시험성적서 품목명 → 원료목록 보고 제품명 (사용자 요청 2026-11-16) — 영문 약자는 한글 읽기로도 비교 */
 function bestRaw(cands) {
   const items = (window.RAW_REPORTS || {}).items || []; let best = null;
@@ -652,6 +664,7 @@ function build(withCoa, coaOnly = false) {
     const ex = findExistingPS(info);
     if (ex) {
       const mk0 = mk ? (mk.company || mk.label || mk.name) : '';
+      if (/^\s*INGREDIENT/i.test(ex.nameKo || '') && info.nameKo) ex.nameKo = dropPrefix(info.nameKo); // 예전 「INGREDIENT-」 이름이면 지금 제품명(원료목록 보고명)으로
       // 예전에 만든 표준서라 벌크 기준이 없으면, 이번에 올린 제조사 벌크시험기준서·반제품성적서로 성적서의 벌크 줄을 만듦 (등록된 표준서는 그대로 둠)
       const mpsX = I.files.find(f => f.kind === PSK && f.status === '완료')?.data;
       const px = (ex.components || []).some(k => (k.bulkSpecs || []).length) ? ex : { ...ex, components: (ex.components || []).map((k, i) => {
@@ -960,9 +973,10 @@ function renderIngest(m) {
   c4.appendChild(inl(b1, b2, b3)); m.appendChild(c4);
 }
 RENDER.ingest = renderIngest;
+try { if (fixIngredientNames()) save(); } catch (e) { console.warn('INGREDIENT 이름 고치기', e); }
 // 첫 화면이 「자료로 작성」이라, 본체가 먼저 그려 「불러오는 중…」으로 남아 있으면 이 파일이 들어온 뒤 바로 다시 그림
 if (typeof V !== 'undefined' && V.tab === 'ingest' && typeof render === 'function') render();
-window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict,
+window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict, fixNames: fixIngredientNames,
   specsOf: async url => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; return parseSpecPages(doc); }, makeCoa,
   // 점검용: PDF 쪽별 줄 글자 (화면에는 안 씀)
   textOf: async (url, from = 1, to = 20) => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; const out = []; for (let i = from; i <= Math.min(to, doc.numPages); i++) out.push((await visualLines(await doc.getPage(i))).map(l => l.text)); return out; } };

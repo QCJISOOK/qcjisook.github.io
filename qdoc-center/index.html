@@ -365,7 +365,7 @@ function cloudHooks() {
     firstSync() {
       // 늦게 연결됐으면 임시로 띄운 이 브라우저 자료는 버리고 공동 저장소 것만
       if (usedFallback) { ['products', 'coas', 'issues'].forEach(c => { S[c] = (S[c] || []).filter(x => Cloud.last[c].has(x.id)); }); usedFallback = false; }
-      if (migratePsNo() + fixRevStart() + fixEnactDates()) save();
+      if (migratePsNo() + fixRevStart() + fixEnactDates() + (window.__ingest?.fixNames?.() || 0)) save();
       rerenderSoon();
     },
     fallback() {
@@ -1745,7 +1745,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=d16e10cd"></script>
+<script src="js/ingest.js?v=e2f9444a"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>
