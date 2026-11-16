@@ -124,7 +124,7 @@ function parseFuncReport(pages) {
 let DICT = null;
 async function ingDict() {
   if (DICT) return DICT;
-  if (!window.ING_DICT) { try { await loadScript('data/ingdict.js'); } catch (e) { console.warn('성분사전 없음', e); } }
+  if (!window.ING_DICT) { try { await loadScript('data/ingdict.js?v=1571fc0b'); } catch (e) { console.warn('성분사전 없음', e); } }
   const D = window.ING_DICT || { rows: [], old: [] }, byEn = new Map(), byKo = new Map(), byCode = new Map(), byCas = new Map();
   const used = new Set(((window.RAW_REPORTS || {}).ing || []).map(norm));
   const add = (m, k, r) => { const key = norm(k); if (!key) return; if (!m.has(key)) m.set(key, []); if (!m.get(key).includes(r)) m.get(key).push(r); };
