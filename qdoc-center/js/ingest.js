@@ -63,6 +63,63 @@ async function visualLines(page) {
   lines.sort((a, b) => b.y - a.y);
   return lines.map(l => { l.i.sort((a, b) => a.x - b.x); const cells = l.i.map(t => t.s); return { cells, text: cells.join(' | ') }; });
 }
+/* 제조사 제품표준서 안의 「벌크(반제품)시험기준서」·「완제품시험기준서」 표 — 글자 위치로 칸을 나눔
+   (칸 안 글자가 여러 조각·여러 줄로 쪼개져 줄 단위로는 못 읽음) → { bulk: [...], finished: [...] }, 줄 = { code, item, basis, spec, note } */
+async function parseSpecPages(doc) {
+  const out = { bulk: [], finished: [] };
+  const joinCell = ts => {
+    const lines = []; ts.slice().sort((a, b) => b.y - a.y || a.x - b.x).forEach(t => { const L = lines.find(l => Math.abs(l.y - t.y) < 3); if (L) L.t.push(t); else lines.push({ y: t.y, t: [t] }); });
+    let s = '';
+    lines.sort((a, b) => b.y - a.y).forEach(l => {
+      let line = ''; let prev = null;
+      l.t.sort((a, b) => a.x - b.x).forEach(t => { if (prev) { const gap = t.x - (prev.x + prev.w); line += gap > 1.5 ? ' ' : ''; } line += t.s; prev = t; });
+      // 줄 바꿈 이음: 글자 중간에서 끊긴 줄(엑셀식 줄바꿈)은 붙이고, 「규정」「별표」 같은 낱말 경계는 띄움
+      const wordGap = /(규정|기준|시험법|방법)$/.test(s) && /^(별표|원료|제\d|\d+\.)/.test(line);
+      if (!s) s = line; else s += !wordGap && ((/[가-힣(\-/,]$/.test(s) && /^[가-힣)\d]/.test(line)) || /[-/]$/.test(s)) ? line : ' ' + line;
+    });
+    return s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
+  };
+  for (let i = 1; i <= Math.min(doc.numPages, 30); i++) {
+    const tc = await (await doc.getPage(i)).getTextContent();
+    const its = tc.items.filter(t => t.str.trim()).map(t => ({ s: t.str.trim(), x: t.transform[4], y: t.transform[5], w: t.width || 0 }));
+    const all = its.map(t => t.s).join('').replace(/\s+/g, '');
+    const kind = /완제품시험기준서/.test(all) ? 'finished' : /(벌크|반제품)시험기준서/.test(all) ? 'bulk' : null;
+    if (!kind) continue;
+    const lines = []; its.forEach(t => { const L = lines.find(l => Math.abs(l.y - t.y) < 4); if (L) L.t.push(t); else lines.push({ y: t.y, t: [t] }); });
+    const head = lines.find(l => { const t = l.t.map(x => x.s).join('').replace(/\s/g, ''); return /항목/.test(t) && /(규격|기준)/.test(t); });
+    if (!head) continue;
+    // 머리 칸: 가까운 글자끼리 묶음 (「관 리 규 격」처럼 한 글자씩 떨어져 있어도)
+    const H = []; head.t.sort((a, b) => a.x - b.x).forEach(t => { const L = H[H.length - 1]; if (L && t.x - L.x1 < 20) { L.s += t.s; L.x1 = t.x + t.w; } else H.push({ s: t.s, x0: t.x, x1: t.x + t.w }); });
+    const names = H.map(h => h.s.replace(/\s/g, ''));
+    const ci = re => names.findIndex(n => re.test(n));
+    const cCode = ci(/코드|^no\.?$/i), cItem = ci(/항목명|시험항목|^항목$/), cBasis = ci(/근거|방법/), cSpec = ci(/규격|기준$/), cNote = ci(/비고/);
+    if (cItem < 0 || cSpec < 0) continue;
+    const stopY = Math.max(-1e9, ...its.filter(t => /특이사항/.test(t.s) && t.y < head.y).map(t => t.y));
+    const B = its.filter(t => t.y < head.y - 3 && t.y > stopY + 3);
+    // 열 왼쪽 끝 = 머리 아래 글자 x 빈도 꼭지 → 어느 머리 칸 사이에 있는지로 열 정함
+    const cnt = new Map(); B.forEach(t => { const k = Math.round(t.x / 2) * 2; cnt.set(k, (cnt.get(k) || 0) + 1); });
+    // 열 j 의 왼쪽 끝: 앞 머리 끝 ~ 이 머리 시작 사이에서 가장 자주 나오는 글자 시작 위치 (줄마다 첫 글자가 왼쪽 끝에 붙음)
+    const L = H.map((h, j) => {
+      if (!j) return -1e9;
+      const lo = H[j - 1].x1 - 2, hi = h.x0 + 12, ps = [...cnt.entries()].filter(([x, n]) => n >= 2 && x > lo && x <= hi).sort((a, b) => b[1] - a[1] || a[0] - b[0]); // 2번 이상 나온 위치만 (앞 칸 긴 글의 꼬리 조각 제외)
+      return ps.length ? ps[0][0] : h.x0 - 4; // 빈 칸(예: 비고)은 머리 시작 바로 앞 — 앞 칸의 긴 글이 넘어오지 않게
+    });
+    const colOf = x => { let c = 0; for (let j = 0; j < H.length; j++) if (x >= L[j] - 3) c = j; return c; };
+    const anchors = B.filter(t => colOf(t.x) === cCode && /^\d{3,6}$/.test(t.s)).map(t => t.y).sort((a, b) => b - a); // 위에서 아래 순서
+    if (!anchors.length) continue;
+    const rows = anchors.map(() => H.map(() => []));
+    B.forEach(t => { if (colOf(t.x) === cCode && /^\d{3,6}$/.test(t.s)) return; let k = 0; anchors.forEach((y, j) => { if (Math.abs(y - t.y) < Math.abs(anchors[k] - t.y)) k = j; }); rows[k][colOf(t.x)].push(t); });
+    anchors.forEach((y, j) => {
+      const code = (B.find(t => t.y === y && colOf(t.x) === cCode) || {}).s || '';
+      const cell = c => c >= 0 ? joinCell(rows[j][c]) : '';
+      const item = cell(cItem).replace(/[-\s]*\(?\b(RSSC|KFCC|CSTM)\b\)?/g, '').replace(/-?\s*허가사항\s*\*?/g, '').replace(/\s*\*+\s*$/, '').trim();
+      // 관리규격 끝의 상·하한 숫자(예: 「5.200~ 7.200」)는 기계용 범위라 뺌
+      const spec = cell(cSpec).replace(/\s*-?\d+(\.\d+)?\s*~\s*-?\d+(\.\d+)?\s*$/, '').trim();
+      if (item) out[kind].push({ code, item, basis: cell(cBasis), spec, note: cell(cNote) });
+    });
+  }
+  return out;
+}
 async function pageImages(doc, maxW = 1240) {
   const out = [];
   for (let i = 1; i <= Math.min(doc.numPages, 30); i++) {
@@ -369,6 +426,7 @@ async function processRec(rec, blob, forceKind) {
   if (kind === MFGK) { rec.data = { pages: imgs.length }; rec.comp = rec.comp || compOf(rec.name) || '단품'; rec.status = '완료'; return; }
   if (kind === PSK) {
     rec.data = parseMakerPS(txt, tight, imgs.length);
+    try { rec.data.specs = await parseSpecPages(doc); } catch (e) { console.warn('시험기준서 표', e); } // 벌크·완제품 시험기준서 (항목·시험근거·관리규격)
     // 제조사 제품표준서에 기능성 보고서가 들어 있으면 그것도 읽음 (효능·효과·용법·주의사항·주성분·보고번호)
     if (/기능성화장품/.test(tight) && /보고서|심사/.test(tight)) { try { // 보고서 쪽만 (첫 「보고서」 쪽 ~ 「사용할 때의 주의사항」 쪽) — 뒤의 전성분·시험기준서가 섞이지 않게
       const si = pages.findIndex(pl => pl.some(l => /기능성화장품/.test(l.text)) && pl.some(l => /보고서|보고사항|심사/.test(l.text.replace(/\s+/g, ''))));
@@ -593,7 +651,7 @@ function build(withCoa, coaOnly = false) {
   { const first = M.map(c => c.bulk?.mfgDate).filter(Boolean).sort()[0], d = first ? dayBefore(first) : ''; // 제정일자는 제조일 전 (가장 이른 벌크 제조일 하루 전)
     if (d && d < today()) { p.date = d; p.revisions[0].date = p.revisions[0].effDate = d; } }
   p.components = M.map(c => {
-    const k = newComp(c.key); const r = c.report, b = c.bulk;
+    const k = newComp(c.key); const r = c.report; let b = c.bulk;
     k.fullName = b?.productName || r?.productName || c.key; k.maker = makerShort(mk) || mkName; k.functional = r ? '예' : '아니오';
     k.batchSize = b?.batchNum || ''; k.batchUnit = b?.batchUnit || 'kg';
     if (c.comp?.rms) k.ingredients = c.comp.rms.map(rm => ({ code: '', name: '', inci: rm.parts.map(x => x.ko).join(', '), purpose: (rm.parts[0].func || '').split(':')[0].trim(), spec: 'ICID', pct: fmtPct(rm.pct), qty: '', note: rm.parts.length > 1 ? '복합원료' : '' }));
@@ -612,6 +670,7 @@ function build(withCoa, coaOnly = false) {
     const en = (c.single?.single || c.names?.names || []).map(x => String(x.en || '').trim());
     if (en.some(Boolean)) k.fullIngredientsEn = en;
     k.composition = (c.single?.single || []).map(x => ({ ko: x.ko, pct: x.pct }));
+    if (!(b?.rows || []).length && M.length === 1 && (mps0?.specs?.bulk || []).length) b = { rows: mps0.specs.bulk.map(x => ({ item: x.item, crit: x.spec, method: x.basis })) }; // 반제품성적서가 없으면 제조사 벌크시험기준서
     k.bulkSpecs = (b?.rows || []).map(x => ({ item: x.item, criterion: x.crit, method: ownStd(cleanMethod(x.method), makerShort(mk) || mkName), basis: (String(x.method || '').match(/「[^」]+」/) || [''])[0] || (/미생물|세균/.test(x.item) ? '화장품 안전기준 등에 관한 규정' : ''), specType: '자가 규격', freq: '매 배치', note: '' }));
     (r?.actives || []).forEach(a => { if (!k.bulkSpecs.some(x => N(x.item).includes(N(a.name)))) { const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4); k.bulkSpecs.push({ item: `${a.name} 확인시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: '주피크의 유지시간은 표준품과 같다', basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }, { item: `${a.name} 함량시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: `표시량의 90.0% 이상 (${pct}%)`, basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }); } });
     return k;
@@ -681,6 +740,10 @@ function build(withCoa, coaOnly = false) {
   });
   fs.forEach(f => { if (/미생물|특정세균/.test(f.item)) f.basis = '화장품 안전기준 등에 관한 규정'; });
   p.finishedSpecs = fs;
+  if ((mps0?.specs?.finished || []).length) { // 제조사 제품표준서가 있으면 완제품 기준(성적서 시험항목)은 그 「완제품시험기준서」 항목·관리규격 그대로 (사용자 요청)
+    const mkS = makerShort(mk) || mkName;
+    p.finishedSpecs = mps0.specs.finished.map(r => ({ item: r.item, sub: '', stage: '완제품', criterion: r.spec, method: ownStd(cleanMethod(r.basis), mkS), basis: '', apply: /미생물|병원성|세균/.test(r.item) ? '위탁시험 / 제조사' : '입고검사', note: r.note || '' }));
+  }
   p.packMethod = { lotExp: '제조번호(LOT)·사용기한은 1차 용기와 2차 포장(단상자)에 표시 — 위치는 자재 표준품 기준', primary: '', secondary: '', outbox: '' };
   p.storage = [{ type: '원자재', target: '원료 및 자재', condition: '지정된 보관구역에서 원료·자재별 규격서에 정한 조건으로 보관', maxStorage: '', note: '선입선출' },
     ...M.map((c, i) => ({ type: `벌크제품 ${'①②③④'[i] || i + 1}`, target: c.bulk?.productName || c.key, condition: '밀폐 용기에 넣어 지정 장소에 보관, 고온·직사광선을 피함', maxStorage: '', note: `${makerShort(mk)} 기준` })),
@@ -725,15 +788,16 @@ function makeCoa(p, M, mk, mkName, single, mo) {
     const KEYS = ['성상', '향', 'pH', '점도', '비중', '미생물', '이물'];
     c.results.forEach(r => {
       const comp = M.find(k => (single ? '' : k.key) === (r.sub || '')) || (single ? M[0] : null); const br = comp?.bulk?.rows || [];
-      const key = KEYS.find(k => r.item.includes(k)); let hit = key && !/특정세균|미생물/.test(r.item) ? br.find(x => x.item.includes(key)) : null;
+      const isSpec = /특정세균|병원성/.test(r.item), isTotal = !isSpec && /미생물|총호기성/.test(r.item); // 미생물2(병원성균) = 특정세균, 미생물1(총호기성생균수) = 미생물한도
+      const key = KEYS.find(k => r.item.includes(k)); let hit = key && !isSpec && !isTotal ? br.find(x => x.item.includes(key)) : null;
       if (!hit) hit = br.find(x => N(x.item) === N(r.item));
       const act = (r.item.match(/^(.+?)\s*(확인시험|함량시험)$/) || []);
       if (!hit && act[1]) hit = br.find(x => N(x.item).includes(N(act[1])) && x.item.includes(act[2].replace('시험', '')));
-      if (!hit && /^미생물/.test(r.item)) hit = br.find(x => /총호기성|미생물1|미생물한도/.test(N(x.item)));
-      if (!hit && /특정세균/.test(r.item)) hit = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
+      if (!hit && isTotal) hit = br.find(x => /총호기성|미생물1|미생물한도/.test(N(x.item)));
+      if (!hit && isSpec) hit = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
       // 외부 미생물시험성적서가 있으면 미생물·특정세균은 그것을 우선
       const mic = comp?.micro || M.find(k => k.micro)?.micro;
-      const mrows = mic ? (/^미생물/.test(r.item) ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : /특정세균/.test(r.item) ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
+      const mrows = mic ? (isTotal ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : isSpec ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
       if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
       if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
@@ -838,7 +902,8 @@ function renderIngest(m) {
   c4.appendChild(inl(b1, b2, b3)); m.appendChild(c4);
 }
 RENDER.ingest = renderIngest;
-window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict, makeCoa,
+window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict,
+  specsOf: async url => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; return parseSpecPages(doc); }, makeCoa,
   // 점검용: PDF 쪽별 줄 글자 (화면에는 안 씀)
   textOf: async (url, from = 1, to = 20) => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; const out = []; for (let i = from; i <= Math.min(to, doc.numPages); i++) out.push((await visualLines(await doc.getPage(i))).map(l => l.text)); return out; } };
 })();

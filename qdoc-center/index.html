@@ -1154,7 +1154,7 @@ function renderCoa(m) {
     c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
   }), button('판정 빈칸 모두 적합', () => { c.results.forEach(r => { if (!r.judge) r.judge = '적합'; }); changed(); rt.rerender(); }));
   A(bar);
-  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'method', label: '시험방법', ta: 1 }, { k: 'judge', label: '판정', w: '10%', opts: ['', '적합', '부적합'] }]); // 시험일자 칸 없음 (사용자 요청)
+  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'result', label: '시험결과', w: '16%' }, { k: 'judge', label: '판정', w: '10%', opts: ['', '적합', '부적합'] }]); // 시험일자 칸 없음 · 시험방법 대신 시험결과 (사용자 요청)
   A(rt);
   A(subh('특이사항'));
   A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
@@ -1519,7 +1519,7 @@ function coaDoc(c, pp) {
   const rows = c.results, dense = rows.length > 18, padN = Math.max(0, 16 - rows.length);
   const multi = rows.some(r => r.sub) || c.lots.length > 1; // 구성품이 여럿일 때만 「구분」 열
   const per = k => c.lots.map(l => `${c.lots.length > 1 ? esc(l.label) + ' : ' : ''}${esc(l[k])}`).join('<br>');
-  const cols = [['No.', 6], ['시험항목', 22], ...(multi ? [['구분', 8]] : []), ['시험기준', multi ? 26 : 30], ['시험방법', multi ? 26 : 30], ['판정', 0]]; // 시험일자 열 없음 (사용자 요청)
+  const cols = [['No.', 6], ['시험항목', multi ? 22 : 24], ...(multi ? [['구분', 8]] : []), ['시험기준', multi ? 36 : 40], ['시험결과', 18], ['판정', 0]]; // 시험방법 대신 시험결과 (사용자 요청) // 시험일자 열 없음 (사용자 요청)
   let b = 0; const B = s => `<div class="blk" data-id="c${++b}">${s}</div>`;
   return `<section class="page" data-key="coa"><div class="ph coa-ph">완제품시험성적서 — ${esc(p.nameKo)} (계속)</div><div class="body coa ${dense ? 'dense' : ''}">
   ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
@@ -1528,7 +1528,7 @@ function coaDoc(c, pp) {
    <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
-   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.method)}</td><td>${esc(r.judge)}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
+   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td>${esc(r.judge)}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
   ${B(`<table class="sign box mt"><colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
    <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
@@ -1656,7 +1656,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=d4bd59c7"></script>
+<script src="js/ingest.js?v=d230babb"></script>
 <script src="js/cgmp.js?v=9c60d558"></script>
 </body>
 </html>
