@@ -710,7 +710,6 @@ function build(withCoa, coaOnly = false) {
   p.semiNA = true;
   const fs = [
     { item: '표시기재사항', sub: '', criterion: '표준품과 동일 (화장품법 제10조 기재사항)', method: '자재 표준품과 비교', note: '' },
-    { item: '외관 (자재 이상 유무)', sub: '', criterion: '표준품과 동일', method: '육안 비교', note: '' },
     { item: '포장사양', sub: '', criterion: '포장 기준서와 일치', method: '포장 기준서 대조', note: '' }];
   M.forEach(c => {
     const sub = single ? '' : c.key, br = c.bulk?.rows || [], r = c.report;
@@ -742,7 +741,7 @@ function build(withCoa, coaOnly = false) {
   p.finishedSpecs = fs;
   if ((mps0?.specs?.finished || []).length) { // 제조사 제품표준서가 있으면 완제품 기준(성적서 시험항목)은 그 「완제품시험기준서」 항목·관리규격 그대로 (사용자 요청)
     const mkS = makerShort(mk) || mkName;
-    p.finishedSpecs = mps0.specs.finished.map(r => ({ item: r.item, sub: '', stage: '완제품', criterion: r.spec, method: ownStd(cleanMethod(r.basis), mkS), basis: '', apply: /미생물|병원성|세균/.test(r.item) ? '위탁시험 / 제조사' : '입고검사', note: r.note || '' }));
+    p.finishedSpecs = mps0.specs.finished.filter(r => !/^외관/.test(r.item)) /* 외관은 뺌 (사용자 요청) */.map(r => ({ item: r.item, sub: '', stage: '완제품', criterion: r.spec, method: ownStd(cleanMethod(r.basis), mkS), basis: '', apply: /미생물|병원성|세균/.test(r.item) ? '위탁시험 / 제조사' : '입고검사', note: r.note || '' }));
   }
   p.packMethod = { lotExp: '제조번호(LOT)·사용기한은 1차 용기와 2차 포장(단상자)에 표시 — 위치는 자재 표준품 기준', primary: '', secondary: '', outbox: '' };
   p.storage = [{ type: '원자재', target: '원료 및 자재', condition: '지정된 보관구역에서 원료·자재별 규격서에 정한 조건으로 보관', maxStorage: '', note: '선입선출' },
