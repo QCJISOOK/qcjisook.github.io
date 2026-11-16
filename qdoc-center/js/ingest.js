@@ -125,24 +125,27 @@ let DICT = null;
 async function ingDict() {
   if (DICT) return DICT;
   if (!window.ING_DICT) { try { await loadScript('data/ingdict.js'); } catch (e) { console.warn('성분사전 없음', e); } }
-  const D = window.ING_DICT || { rows: [], old: [] }, byEn = new Map(), byKo = new Map(), byCode = new Map();
+  const D = window.ING_DICT || { rows: [], old: [] }, byEn = new Map(), byKo = new Map(), byCode = new Map(), byCas = new Map();
   const used = new Set(((window.RAW_REPORTS || {}).ing || []).map(norm));
   const add = (m, k, r) => { const key = norm(k); if (!key) return; if (!m.has(key)) m.set(key, []); if (!m.get(key).includes(r)) m.get(key).push(r); };
-  D.rows.forEach(r => { byCode.set(r[0], r); add(byKo, r[1], r); add(byEn, r[2], r); add(byKo, r[3], r); add(byEn, r[4], r); });
+  D.rows.forEach(r => { byCode.set(r[0], r); add(byKo, r[1], r); add(byEn, r[2], r); add(byKo, r[3], r); add(byEn, r[4], r); String(r[5] || '').split(/[\s,;/]+/).filter(c => /^\d{2,7}-\d{2}-\d$/.test(c)).forEach(c => add(byCas, c, r)); });
   (D.old || []).forEach(([code, oko, oen]) => { const r = byCode.get(code); if (r) { add(byKo, oko, r); add(byEn, oen, r); } });
   const pick = (list, exactIdx, key) => { if (!list || !list.length) return null; const ex = list.filter(r => norm(r[exactIdx]) === key); const L = ex.length ? ex : list; return L.find(r => used.has(norm(r[1]))) || L.slice().sort((a, b) => +a[0] - +b[0])[0]; };
   DICT = {
     version: D.version || '', size: D.rows.length,
     // 국문이 표준명/구명칭이면 표준명으로, 국문이 없거나 사전에 없으면 영문명으로 찾음
-    std(ko, en) {
-      const k = norm(ko), e = norm(en);
+    std(ko, en, cas) {
+      const k = norm(ko), e = norm(en), cs = String(cas || '').split(/[\s,;/]+/).filter(c => /^\d{2,7}-\d{2}-\d$/.test(c));
+      const byC = () => { for (const c of cs) { const L = byCas.get(norm(c)); if (L && L.length) return L.find(r => used.has(norm(r[1]))) || L.slice().sort((a, b) => +a[0] - +b[0])[0]; } return null; };
       if (/^(fragrance|parfum|perfume)$/.test(e) && !k) return { ko: '향료', en, code: '', how: '영문명으로 찾음' };
       const rk = k ? pick(byKo.get(k), 1, k) : null;
-      const re = e ? pick(byEn.get(e), 2, e) : null;
+      let re = e ? pick(byEn.get(e), 2, e) : null;
+      if (e && cs.length && (byEn.get(e) || []).length > 1) { const cr = (byEn.get(e) || []).find(r => cs.some(c => String(r[5] || '').includes(c))); if (cr) re = cr; } // 같은 영문명 여럿이면 CAS 로
       // 국문·영문이 서로 다른 성분을 가리키면 영문명(INCI)을 믿음 (예: 황련추출물 + Coptis Japonica Root Extract → 황련뿌리추출물)
       if (rk && re && e && norm(rk[2] || '') !== e && norm(rk[4] || '') !== e && rk !== re) return { ko: re[1], en: re[2] || en, code: re[0], how: '영문명 기준 표준명' };
       if (rk) return { ko: rk[1], en: rk[2] || en || '', code: rk[0], how: norm(rk[1]) === k ? '' : '구명칭→표준명' };
       if (re) return { ko: re[1], en: re[2] || en, code: re[0], how: ko ? '영문명으로 표준명' : '영문명으로 찾음' };
+      const rc = byC(); if (rc) return { ko: rc[1], en: rc[2] || en, code: rc[0], how: 'CAS No.로 찾음' };
       return { ko: String(ko || '').trim(), en: en || '', code: '', how: ko ? '' : '사전에 없음' };
     }
   };
@@ -162,12 +165,14 @@ async function parseIngredientXlsx(blob) {
     // 머리 줄: 「No.」와 성분명 칸이 같이 있는 줄 우선 (제목 줄 「전 성 분(문안) (한글명, 영문명)」을 머리로 잡지 않게)
     let h = rows.findIndex(r => r.some(v => /^no\.?$/i.test(String(v || '').trim())) && r.some(v => /한글명|성분명|원료명/.test(String(v || ''))));
     if (h < 0) h = rows.findIndex(r => r.some(v => /한글명|성분명|원료명/.test(String(v || ''))));
+    if (h < 0) h = rows.findIndex(r => r.some(v => /ingredient\s*name|^inci\b|^ingredients?$/i.test(String(v || '').trim())) && r.some(v => /%|cas|function/i.test(String(v || ''))));  // 영문 처방표 (예: 코스맥스 FORMULAR INGREDIENTS STATEMENT)
     if (h < 0) return;
     const H = rows[h].map(v => String(v || '').replace(/\s+/g, ' ').trim());
     const ci = re => H.findIndex(x => re.test(x));
     const cNo = ci(/^no\.?$/i), cKo = ci(/한글명|성분명|원료명/), cEn = ci(/^(ingredients?|inci|icid|영문)/i), cFn = ci(/function|기능|배합목적/i), cCas = ci(/cas/i);
     const cRm = ci(/rm or|in fla|배합량|원료.*%/i), cIn = ci(/in rm/i), cAct = ci(/actual/i), cPct = ci(/%\s*\(w\/w\)|^%$|함량|content/i);
-    const body = rows.slice(h + 1).filter(r => r.some(v => v != null) && !/^\*/.test(String(r[0] ?? '')));
+    const body = rows.slice(h + 1).filter(r => r.some(v => v != null) && !/^\*/.test(String(r[0] ?? '')) && !/^\s*(total|합\s*계)\s*$/i.test(String(r[0] ?? '')));
+    const cKey = cKo >= 0 ? cKo : cEn; // 국문 칸이 없으면 영문명 칸으로
     if (cRm >= 0 && cAct >= 0) {
       const rms = []; let cur = null;
       body.forEach(r => { const ko = r[cKo]; if (ko == null) return; const isNew = r[cNo] != null && String(r[cNo]).trim() !== ''; const part = { ko: String(ko).trim(), en: cEn >= 0 ? String(r[cEn] ?? '') : '', inRm: cIn >= 0 ? r[cIn] : null, actual: r[cAct], func: cFn >= 0 ? String(r[cFn] ?? '') : '' };
@@ -176,7 +181,7 @@ async function parseIngredientXlsx(blob) {
         if (isNew || !cur) { cur = { no: r[cNo], pct: own, parts: [part] }; rms.push(cur); } else cur.parts.push(part); });
       out.rms = rms;
     } else if (cPct >= 0) {
-      out.single = body.filter(r => r[cKo] != null).map(r => ({ no: r[cNo], ko: String(r[cKo]).trim(), en: cEn >= 0 ? String(r[cEn] ?? '') : '', pct: r[cPct], cas: cCas >= 0 ? String(r[cCas] ?? '') : '', func: cFn >= 0 ? String(r[cFn] ?? '') : '' }));
+      out.single = body.filter(r => r[cKey] != null && String(r[cKey]).trim()).map(r => ({ no: r[cNo], ko: cKo >= 0 ? String(r[cKo] ?? '').trim() : '', en: cEn >= 0 ? String(r[cEn] ?? '') : '', pct: r[cPct], cas: cCas >= 0 ? String(r[cCas] ?? '') : '', func: cFn >= 0 ? String(r[cFn] ?? '') : '' }));
     } else {
       // 전성분(문안): 함량 없이 순서대로 국문·영문명만 (예: 코스맥스 「전성분(문안)(알러젠)」) — 「한글명(new)」 칸이 있으면 그것
       const cNew = ci(/\(new\)|신규|표준/i), cK = cNew >= 0 ? cNew : cKo;
@@ -189,7 +194,7 @@ async function parseIngredientXlsx(blob) {
   if (!out.single && !out.rms && !out.names) throw new Error('엑셀에서 성분 표(한글명·영문명 열)를 찾지 못했습니다');
   // 성분사전으로 표준 성분명 맞추기 (구명칭 → 표준명, 영문명만 있으면 국문 찾기)
   const D = await ingDict();
-  const fix = x => { const s = D.std(x.ko, x.en); if (s.ko) { if (s.how) x.std = s.how; x.ko = s.ko; } if (!x.en && s.en) x.en = s.en; return x; };
+  const fix = x => { const s = D.std(x.ko, x.en, x.cas); if (s.ko) { if (s.how) x.std = s.how; x.ko = s.ko; } else if (!x.ko) x.nostd = true; if (!x.en && s.en) x.en = s.en; return x; };
   (out.single || []).forEach(fix); (out.names || []).forEach(fix); (out.rms || []).forEach(rm => rm.parts.forEach(fix));
   out.dict = D.version;
   return out;
@@ -582,7 +587,7 @@ function build(withCoa, coaOnly = false) {
     k.fullName = b?.productName || r?.productName || c.key; k.maker = makerShort(mk) || mkName; k.functional = r ? '예' : '아니오';
     k.batchSize = b?.batchNum || ''; k.batchUnit = b?.batchUnit || 'kg';
     if (c.comp?.rms) k.ingredients = c.comp.rms.map(rm => ({ code: '', name: '', inci: rm.parts.map(x => x.ko).join(', '), purpose: (rm.parts[0].func || '').split(':')[0].trim(), spec: 'ICID', pct: fmtPct(rm.pct), qty: '', note: rm.parts.length > 1 ? '복합원료' : '' }));
-    else if (c.single?.single) k.ingredients = c.single.single.map(x => ({ code: '', name: '', inci: x.ko, purpose: (x.func || '').split(':')[0].trim(), spec: 'ICID', pct: fmtPct(x.pct), qty: '', note: '' }));
+    else if (c.single?.single) k.ingredients = c.single.single.map(x => ({ code: '', name: '', inci: x.ko || x.en, purpose: (x.func || '').split(':')[0].trim(), spec: 'ICID', pct: fmtPct(x.pct), qty: '', note: x.ko ? '' : '표준명 없음 (영문)' }));
     // 전성분표가 없으면 제조사 제품표준서의 「전성분 및 함량」 (함량은 공개된 성분만, 나머지는 제조업자 제품표준서 참조)
     if (!k.ingredients.length && M.length === 1 && (mps0?.ingredients || []).length) {
       k.ingredients = mps0.ingredients.map(x => ({ code: '', name: '', inci: x.name, purpose: '', spec: '', pct: x.pct, qty: '', note: x.pct ? '' : '함량 비공개' }));
