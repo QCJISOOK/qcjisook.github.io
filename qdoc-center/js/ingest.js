@@ -582,6 +582,8 @@ function build(withCoa, coaOnly = false) {
   p.packUnit = info.packUnit || '';
   p.makers = [{ type: '화장품제조업자', name: mkName, role: (mk?.scope || []).some(s => /포장/.test(s)) ? '내용물(벌크) 제조 및 충전·1차 포장' : '내용물(벌크) 제조' }];
   p.revisions = [{ rev: '0', date: today(), effDate: today(), author: '', content: '신규 제정', reason: '', approver: '' }];
+  { const first = M.map(c => c.bulk?.mfgDate).filter(Boolean).sort()[0], d = first ? dayBefore(first) : ''; // 제정일자는 제조일 전 (가장 이른 벌크 제조일 하루 전)
+    if (d && d < today()) { p.date = d; p.revisions[0].date = p.revisions[0].effDate = d; } }
   p.components = M.map(c => {
     const k = newComp(c.key); const r = c.report, b = c.bulk;
     k.fullName = b?.productName || r?.productName || c.key; k.maker = makerShort(mk) || mkName; k.functional = r ? '예' : '아니오';

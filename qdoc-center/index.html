@@ -349,7 +349,7 @@ function cloudHooks() {
     firstSync() {
       // 늦게 연결됐으면 임시로 띄운 이 브라우저 자료는 버리고 공동 저장소 것만
       if (usedFallback) { ['products', 'coas', 'issues'].forEach(c => { S[c] = (S[c] || []).filter(x => Cloud.last[c].has(x.id)); }); usedFallback = false; }
-      if (migratePsNo()) save();
+      if (migratePsNo() + fixEnactDates()) save();
       rerenderSoon();
     },
     fallback() {
@@ -1005,6 +1005,21 @@ const LITE_LABEL = { s1: '1. 제품 개요·표시사항', s8: '2. 효능·효�
 const FULLNUM = { s1: '1', s2: '2', s3: '3', s4: '4', s5: '5', s6: '6', s7: '7', s8: '8', s9: '9', s10: '10', s11: '11', s12: '12', s13: '13' };
 const isLite = p => p.scope === '책임판매';
 /* 표지 「기능성 보고(심사) 번호」 = 보고일련번호만 (사용자 요청) — 부서접수번호 등은 빼고 */
+/* 제정일자 = Rev.0(신규 제정) 날짜 — 개정해도 그대로 */
+const enactDate = p => ((p.revisions || []).find(r => String(r.rev) === '0') || {}).date || p.date || '';
+const dayBefore = d => { const t = new Date(String(d).slice(0, 10) + 'T00:00:00'); if (isNaN(t)) return ''; t.setDate(t.getDate() - 1); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
+/* 제품표준서는 최초 생산 이전에 작성 (해설서) → 자료로 작성으로 만든 Rev.0 은 제정일자를 가장 이른 제조일(성적서 LOT 제조일) 하루 전으로 */
+function fixEnactDates() {
+  let n = 0;
+  S.products.forEach(p => {
+    if (!p.sourceIngest || String(p.rev) !== '0') return;
+    const first = S.coas.filter(c => c.productId === p.id).flatMap(c => (c.lots || []).map(l => l.mfgDate)).filter(Boolean).sort()[0];
+    if (!first || (enactDate(p) && enactDate(p) < first)) return;
+    const d = dayBefore(first); if (!d) return;
+    p.date = d; (p.revisions || []).forEach(r => { if (String(r.rev) === '0') { r.date = d; r.effDate = d; } }); n++;
+  });
+  return n;
+}
 const reportSeqs = p => { const s = String(p.efficacy?.reviewNo || ''), m = [...s.matchAll(/보고일련번호\s*[:：]?\s*(\d{6,})/g)].map(x => x[1]); if (m.length) return [...new Set(m)].join(', '); const l = funcLinks(p).map(it => it.seq).filter(Boolean); return l.length ? l.join(', ') : s; };
 /* 별첨2 제조지시 및 공정 기록서는 자료(문서명·번호, 비고, 올린 원본)가 있을 때만 → 없으면 빼고 뒤 별첨 번호를 당김 */
 const hasMfg = p => !!(String(p.mfgDoc || '').trim() || String(p.mfgNote || '').trim() || (p.uploads || []).some(u => /제조지시/.test(u.kind) && u.print !== false));
@@ -1295,7 +1310,7 @@ function psDoc(p, extra) {
     <div class="blk"><div class="bar">1-1. 제품 기본정보</div><table class="h22"><colgroup><col style="width:18%"><col style="width:32%"><col style="width:18%"><col></colgroup>
       <tr><th>제품명</th><td colspan="3">${esc(p.nameKo)}${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
       <tr><th>제품표준서 번호</th><td class="c">${esc(p.psNo)}</td><th>개정번호</th><td class="c">${esc(p.rev)}</td></tr>
-      <tr><th>제·개정일</th><td class="c">${esc(p.date)}</td><th>문서정보</th><td class="c">${esc(p.docInfo)}</td></tr>
+      <tr><th>제정일자</th><td class="c">${esc(enactDate(p))}</td><th>문서정보</th><td class="c">${esc(p.docInfo)}</td></tr>
       ${fn ? `<tr><th>기능성 보고(심사) 번호</th><td class="c">${esc(reportSeqs(p))}</td><th>보고(심사)일</th><td class="c">${esc(p.efficacy.reviewDate || (links[0] || {}).date || '')}</td></tr>` : ''}
       <tr><th>포장단위</th><td colspan="3">${nl(p.packUnit)}</td></tr>
       <tr><th>성상</th><td colspan="3">${nl(p.appearance)}</td></tr></table></div>
@@ -1611,12 +1626,12 @@ $('#bkFile').onchange = async e => {
 };
 
 S = load();
-migratePsNo();
+migratePsNo(); fixEnactDates();
 if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=30d4bc39"></script>
+<script src="js/ingest.js?v=8722f4d6"></script>
 <script src="js/cgmp.js?v=9c60d558"></script>
 </body>
 </html>
