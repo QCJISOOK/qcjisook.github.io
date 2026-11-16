@@ -902,6 +902,8 @@ function renderIngest(m) {
   c4.appendChild(inl(b1, b2, b3)); m.appendChild(c4);
 }
 RENDER.ingest = renderIngest;
+// 첫 화면이 「자료로 작성」이라, 본체가 먼저 그려 「불러오는 중…」으로 남아 있으면 이 파일이 들어온 뒤 바로 다시 그림
+if (typeof V !== 'undefined' && V.tab === 'ingest' && typeof render === 'function') render();
 window.__ingest = { parseFuncReport, parseIngredientXlsx, interpretGrid, model, checks, build, parseMakerPS, ingDict,
   specsOf: async url => { const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await (await fetch(url)).arrayBuffer()) }).promise; return parseSpecPages(doc); }, makeCoa,
   // 점검용: PDF 쪽별 줄 글자 (화면에는 안 씀)
