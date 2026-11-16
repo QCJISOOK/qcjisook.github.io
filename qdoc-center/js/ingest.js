@@ -292,7 +292,7 @@ const microOk = x => !/^(검출|양성)$/.test(x.result) && !(/^[\d,]+$/.test(x.
 function ing() { if (!S.ingest) S.ingest = { info: { nameKo: '', nameEn: '', code: '', type: '기초화장용 제품류', shelfMonths: '', packUnit: '', weights: {}, makerName: '' }, files: [] }; return S.ingest; }
 const SPECIFIC = /대장균|녹농균|황색포도상|특정세균|병원성/; // 특정세균 항목 (외부 미생물성적서의 '세균'·'진균' 수는 총호기성생균수 쪽)
 const MFGK = '제조지시 및 공정 기록서'; // 선택 자료: 있으면 제품표준서 별첨2로
-const PSK = '제조사 제품표준서'; // 선택 자료: 제품명·품번·사용기한·포장단위를 읽고, 원본은 뒤에 첨부
+const PSK = '제조사 제품표준서'; // 선택 자료: 제품명·품번·성상·보관·용법·전성분·기능성 보고 내용을 읽음 — 원본은 제품표준서에 넣지 않음 (사용자 요청)
 const CODE_RE = /(?<![A-Za-z0-9])(?:SB|MC|MT)\d{4}(?!\d)/g; // ERP 품번 (성분에디터 SB · 마미케어 MC · 밀크터치 MT)
 function kindByName(n) { return /제품표준서/.test(n) ? PSK : /제조지시|공정\s*기록|제조\s*기록|BMR/i.test(n) ? MFGK : /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
 async function processRec(rec, blob, forceKind) {
@@ -321,7 +321,11 @@ async function processRec(rec, blob, forceKind) {
   if (kind === PSK) {
     rec.data = parseMakerPS(txt, tight, imgs.length);
     // 제조사 제품표준서에 기능성 보고서가 들어 있으면 그것도 읽음 (효능·효과·용법·주의사항·주성분·보고번호)
-    if (/기능성화장품/.test(tight) && /보고서|심사/.test(tight)) { try { const fr = parseFuncReport(pages); if ((fr.actives || []).length || fr.effect) rec.data.report = fr; } catch (e) { console.warn(e); } }
+    if (/기능성화장품/.test(tight) && /보고서|심사/.test(tight)) { try { // 보고서 쪽만 (첫 「보고서」 쪽 ~ 「사용할 때의 주의사항」 쪽) — 뒤의 전성분·시험기준서가 섞이지 않게
+      const si = pages.findIndex(pl => pl.some(l => /기능성화장품/.test(l.text)) && pl.some(l => /보고서|보고사항|심사/.test(l.text.replace(/\s+/g, ''))));
+      const ei = si < 0 ? -1 : pages.findIndex((pl, i) => i >= si && pl.some(l => /\[사용할\s*때의\s*주의사항\]/.test(l.text)));
+      const rp = si < 0 ? [] : pages.slice(si, (ei >= 0 ? ei : Math.min(si + 4, pages.length - 1)) + 1);
+      const fr = parseFuncReport(rp); if ((fr.actives || []).length || fr.effect) rec.data.report = fr; } catch (e) { console.warn(e); } }
     rec.comp = rec.comp || compOf(rec.name) || '단품'; rec.status = '완료'; return;
   }
   if (kind === '미생물시험성적서') rec.data = parseMicroReport(pages);
@@ -608,7 +612,7 @@ function build(withCoa) {
   // 별첨·근거
   const mfgOn = mfgOption();
   p.mfgDoc = mfgOn ? (String(info.mfgDoc || '').trim() || mfgFiles().map(f => f.name.replace(/\.pdf$/i, '')).join(', ')) : '';
-  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single || f.kind === MFGK ? '' : f.comp, name: f.name, print: f.kind !== '전성분표' && (f.kind !== MFGK || mfgOn), ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
+  p.uploads = I.files.filter(f => f.status === '완료').map(f => ({ fileId: f.id, kind: f.kind, comp: single || f.kind === MFGK ? '' : f.comp, name: f.name, print: f.kind !== '전성분표' && f.kind !== PSK /* 제조사 제품표준서 원본은 넣지 않음 (값만 읽음) */ && (f.kind !== MFGK || mfgOn), ...(f.pageAssets ? { pageAssets: f.pageAssets } : {}) }));
   p.attachments = [
     ...M.filter(c => c.report).map(c => ({ name: `기능성화장품 보고서 (심사제외)${single ? '' : ' — ' + c.key}`, no: `보고일련번호 ${c.report.seq}`, rev: c.report.reportDate, location: '본 문서 뒤 첨부 (원본)', note: `부서접수번호 ${c.report.receiptNo}` })),
     ...M.filter(c => c.single || c.comp).map(c => ({ name: `전성분표 (함량 포함)${single ? '' : ' — ' + c.key}`, no: '', rev: (c.single || c.comp).date, location: '자료로 작성 · 원본 파일', note: makerShort(mk) })),
@@ -618,7 +622,7 @@ function build(withCoa) {
   ];
   p.toc = { '1': '기능성 보고서 · 제조업 등록필증', '2': '전성분표(복합) · 반제품성적서(제조량)', '7': '반제품성적서 · 기능성 보고서', '8': rep ? `기능성 보고서 ${M.filter(c => c.report).map(c => c.report.seq).join(', ')}` : '', '9': '전성분표(단일) · 기능성 보고서', '6': '자사 표준 문구 (제조사 기준 확인)', '10': '포장재 규격서 · 자재 표준품', '12': '사용기한: ERP 품목 · 안정성 자료' };
   p.sourceIngest = { at: nowStr(), files: I.files.map(f => f.name) };
-  p.scope = '전체'; p.makerRef = [...new Set([...p.components.map(c => c.makerPsNo), mps?.psCode ? `${makerShort(mk) || '제조사'} 제품표준서 ${mps.psCode}` : ''].filter(Boolean))].join(', ');
+  p.scope = '전체'; p.makerRef = [...new Set([...p.components.map(c => c.makerPsNo).filter(x => x !== mps?.psCode), mps?.psCode ? `${makerShort(mk) || '제조사'} 제품표준서 ${mps.psCode}` : ''].filter(Boolean))].join(', ');
   p.keyIngredients = []; keyCandidates(p);
   p.psNo = nextPsNo(p); // OI-브랜드-연도-순번 (제품명·품번이 정해진 뒤)
   p.v2m = false; S.products.push(p); fixProduct(p);
@@ -670,7 +674,7 @@ function fileTable() {
     const d = f.data || {};
     const sum = f.status !== '완료' ? esc(f.err || '') : f.kind === '기능성보고서' ? `${esc(d.productName)} · 보고일련번호 ${esc(d.seq)} · ${esc(d.reportDate)} · pH ${esc(d.ph)} · ${esc((d.actives || []).map(a => a.name + ' ' + a.amount + a.unit).join(', '))}`
       : f.kind === '미생물시험성적서' ? `${esc(d.lab)} · ${esc(d.reportNo)} · 발급 ${esc(d.issueDate)} · ${esc(d.productName)}${d.lot ? ' · 제조번호 ' + esc(d.lot) : ''} · ${esc((d.rows || []).map(x => x.item + ' ' + x.result).join(', '))}`
-      : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === PSK ? `${esc(d.productName)}${(f.codes || []).length ? ' · 품번 ' + esc(f.codes.join(', ')) : ''}${d.shelfMonths ? ' · 사용기한 ' + esc(d.shelfMonths) + '개월' : ''}${d.packUnit ? ' · 포장단위 ' + esc(d.packUnit) : ''}${d.appearance ? ' · 성상 ' + esc(d.appearance) : ''}${(d.ingredients || []).length ? ` · 전성분 ${d.ingredients.length}종` : ''}${d.report ? ` · 기능성 보고 ${esc(d.report.seq || '')} (${esc((d.report.actives || []).map(a => a.name).join('·'))})` : ''} · ${d.pages || 0}쪽 (뒤에 첨부)` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
+      : f.kind === MFGK ? `${d.pages || 0}쪽 — 제품표준서 별첨2로 붙음` : f.kind === PSK ? `${esc(d.productName)}${(f.codes || []).length ? ' · 품번 ' + esc(f.codes.join(', ')) : ''}${d.shelfMonths ? ' · 사용기한 ' + esc(d.shelfMonths) + '개월' : ''}${d.packUnit ? ' · 포장단위 ' + esc(d.packUnit) : ''}${d.appearance ? ' · 성상 ' + esc(d.appearance) : ''}${(d.ingredients || []).length ? ` · 전성분 ${d.ingredients.length}종` : ''}${d.report ? ` · 기능성 보고 ${esc(d.report.seq || '')} (${esc((d.report.actives || []).map(a => a.name).join('·'))})` : ''} · ${d.pages || 0}쪽 (값만 읽고 원본은 넣지 않음)` : f.kind === '전성분표' ? `${esc(d.productName)} · ${d.single ? `단일 ${d.single.length}종` : ''}${d.rms ? ` 복합원료 ${d.rms.length}종` : ''} · ${esc(d.date)}`
       : `${esc(d.productName)} · 제조번호 ${esc(d.lot)} · 제조일 ${esc(d.mfgDate)} · 제조량 ${esc(d.batch)} · ${esc(d.testNo)} · ${(d.rows || []).length}항목${d.ocr ? ' <span class="pill">글자 인식</span>' : ''}`;
     const st = f.status === '완료' ? chip('완료', 'good') : f.status === '오류' ? chip('오류', 'bad') : chip(f.status, 'warn');
     const tr = el(`<tr><td>${esc(f.name)}</td><td></td><td></td><td>${st}</td><td style="font-size:12px">${sum}</td><td></td></tr>`);
