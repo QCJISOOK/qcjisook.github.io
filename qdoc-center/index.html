@@ -1368,14 +1368,14 @@ async function viewIssue(x) {
     const cur = p ? null : prod(x.pid) || S.products.find(q => q.psNo === x.docNo) || S.products.find(q => q.nameKo === x.product);
     if (!p && !cur) { notify('이 발행본의 내용이 남아 있지 않습니다 (제품이 지워짐).', 'warn'); return; }
     const d = p || cur;
-    preview(p ? ttl : ttl + old, psDoc(d, await uploadPages(d)), null);
+    preview(p ? ttl : ttl + old, psDoc(d, await uploadPages(d)), null, psFileBase(d));
   } else {
     let c = x.snap ? JSON.parse(JSON.stringify(x.snap)) : null;
     if (c) fixCoa(c);
     const cur = c ? null : S.coas.find(q => q.id === x.cid) || S.coas.find(q => q.testNo && q.testNo === x.docNo);
     if (!c && !cur) { notify('이 발행본의 내용이 남아 있지 않습니다 (성적서가 지워짐).', 'warn'); return; }
     const d = c || cur;
-    preview(c ? ttl : ttl + old, coaDoc(d, x.psnap || prod(d.productId)), null);
+    preview(c ? ttl : ttl + old, coaDoc(d, x.psnap || prod(d.productId)), null, coaFileBase(d, x.psnap || prod(d.productId)));
   }
 }
 const snap = o => JSON.parse(JSON.stringify(o));
@@ -1680,9 +1680,15 @@ function paginate(root) {
   }
 }
 function number(root) { const pgs = [...root.querySelectorAll('.page')]; pgs.forEach((pg, i) => { const pn = pg.querySelector('.pn'); if (pn) pn.textContent = `${i + 1} / ${pgs.length}`; }); return pgs.length; }
-function preview(title, html, onIssue) {
+/* 발행 파일 이름 (사용자 지정 2026-11-16): [완제품성적서]_제품명_로트_사용기한 / [제품표준서]_제품명_제정일자
+   인쇄(PDF로 저장)는 문서 제목이 기본 파일 이름이라, 인쇄하는 동안 제목을 이 이름으로 바꿈. 파일 이름에 못 쓰는 글자(/ 등)는 - 로 */
+const safeFile = s => String(s || '').replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
+const coaFileBase = (c, p) => safeFile(['[완제품성적서]', p?.nameKo || '', (c.lots || []).map(l => l.lot).filter(Boolean).join('+'), c.expiry].filter(Boolean).join('_'));
+const psFileBase = p => safeFile(['[제품표준서]', p.nameKo, enactDate(p)].filter(Boolean).join('_'));
+function preview(title, html, onIssue, fileBase) {
   $('#preview')?.remove();
-  const ART = Cloud.art;
+  const ART = Cloud.art, fname = ext => fileBase ? `${fileBase}.${ext}` : docFileName(title, ext);
+  const t0 = document.title, back = () => { document.title = t0; };
   const ov = el(`<div id="preview"><div class="pbar"><b>${esc(title)}</b><span class="hint" id="pvInfo" style="color:#c3cfe3"></span>${ART
     ? '<button class="btn" id="pvPrint" title="쪽마다 그림으로 만든 PDF를 받습니다">발행 (PDF 받기)</button><button class="btn ghost" id="pvHtml" title="글자를 고를 수 있는 원본 화질: 받은 파일을 열고 Ctrl+P → PDF로 저장">HTML 받기</button>'
     : '<button class="btn" id="pvPrint">발행 (인쇄 / PDF 저장)</button><button class="btn ghost" id="pvHtml" title="쪽 나눔이 끝난 문서를 HTML 한 파일로 저장">HTML 저장</button>'}<button class="btn ghost" id="pvClose">닫기</button></div><div class="doc" id="doc">${html}</div></div>`);
@@ -1692,23 +1698,24 @@ function preview(title, html, onIssue) {
   let ran = false; const once = () => { if (ran) return; ran = true; setTimeout(run, 30); };
   const imgs = [...ov.querySelectorAll('img')]; Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(once);
   setTimeout(once, 3000);
-  $('#pvClose').onclick = () => { ov.remove(); document.body.style.overflow = ''; };
+  $('#pvClose').onclick = () => { ov.remove(); document.body.style.overflow = ''; back(); };
   $('#pvPrint').onclick = async () => {
-    if (!ART) { onIssue && onIssue(); window.print(); return; }
+    if (!ART) { onIssue && onIssue(); if (fileBase) { document.title = fileBase; window.addEventListener('afterprint', back, { once: true }); } window.print(); return; }
     const b = $('#pvPrint'); if (b.disabled) return; b.disabled = true; const info = $('#pvInfo'), keep = info.textContent;
-    try { const ok = await pagesToPdf([...$('#doc').querySelectorAll('.page')], docFileName(title, 'pdf'), (i, n) => { info.textContent = `PDF 만드는 중 ${i} / ${n}쪽`; }); if (ok) { onIssue && onIssue(); notify('PDF를 받았습니다. 발행 이력에 남겼습니다.', 'good'); } }
+    try { const ok = await pagesToPdf([...$('#doc').querySelectorAll('.page')], fname('pdf'), (i, n) => { info.textContent = `PDF 만드는 중 ${i} / ${n}쪽`; }); if (ok) { onIssue && onIssue(); notify('PDF를 받았습니다. 발행 이력에 남겼습니다.', 'good'); } }
     catch (e) { console.error(e); notify('PDF를 만들지 못했습니다: ' + e.message + '\n「HTML 받기」로 받아 Ctrl+P로 PDF 저장해 주세요.', 'bad', 9000); }
     finally { b.disabled = false; info.textContent = keep; }
   };
-  $('#pvHtml').onclick = () => exportDoc(title);
+  $('#pvHtml').onclick = () => exportDoc(title, fileBase);
 }
 const docFileName = (title, ext) => (title.split(' — ')[0] + ' ' + (title.split(' — ')[1] || '')).replace(/\s*\(.*\)\s*$/, '').replace(/[\\/:*?"<>|]/g, '_').trim() + '.' + ext;
-async function exportDoc(title) {
+async function exportDoc(title, fileBase) {
   const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
   const box = document.createElement('div'); box.innerHTML = $('#doc').innerHTML;
   if (Cloud.art) await inlineImages(box);
-  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${css}\n#preview{position:static;overflow:visible}</style></head><body><div id="preview"><div class="doc">${box.innerHTML}</div></div></body></html>`;
-  const name = docFileName(title, 'html');
+  // 받은 HTML을 Ctrl+P로 PDF 저장할 때도 같은 파일 이름이 나오게 제목도 파일 이름으로
+  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(fileBase || title)}</title><style>${css}\n#preview{position:static;overflow:visible}</style></head><body><div id="preview"><div class="doc">${box.innerHTML}</div></div></body></html>`;
+  const name = fileBase ? `${fileBase}.html` : docFileName(title, 'html');
   if (!Cloud.art && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
     try { const r = await fetch('save?name=' + encodeURIComponent(name), { method: 'POST', body: html }); if (r.ok) { notify(`내보내기 폴더에 저장했습니다: ${name}`, 'good'); return; } } catch (e) { }
   }
@@ -1731,11 +1738,11 @@ function previewBlankCoa() {
 async function previewPS(p) {
   const req = psChecks(p).filter(x => x.lvl === '필수' && !x.ok).length;
   const extra = await uploadPages(p);
-  preview(`제품표준서 ${p.psNo} Rev.${p.rev} — ${p.nameKo}${req ? ` (CGMP 필수 ${req}건 미충족)` : ''}`, psDoc(p, extra), () => logIssue({ type: '제품표준서', pid: p.id, docNo: p.psNo, product: p.nameKo, ref: 'Rev.' + p.rev, state: req ? `필수 ${req}건 미충족 상태로 발행` : 'CGMP 필수 충족', snap: snap(p) }));
+  preview(`제품표준서 ${p.psNo} Rev.${p.rev} — ${p.nameKo}${req ? ` (CGMP 필수 ${req}건 미충족)` : ''}`, psDoc(p, extra), () => logIssue({ type: '제품표준서', pid: p.id, docNo: p.psNo, product: p.nameKo, ref: 'Rev.' + p.rev, state: req ? `필수 ${req}건 미충족 상태로 발행` : 'CGMP 필수 충족', snap: snap(p) }), psFileBase(p));
 }
 function previewCoa(c) {
   const p = prod(c.productId), s = coaStatus(c);
-  preview(`완제품시험성적서 ${c.testNo} — ${p?.nameKo || ''} (${s[0]})`, coaDoc(c), () => logIssue({ type: '완제품성적서', pid: c.productId, cid: c.id, docNo: c.testNo, product: p?.nameKo || '', ref: c.lots.map(l => l.lot).join(', '), state: s[0], snap: snap(c), psnap: p ? { nameKo: p.nameKo, nameSub: p.nameSub || '', code: p.code, psNo: p.psNo, rev: p.rev } : null }));
+  preview(`완제품시험성적서 ${c.testNo} — ${p?.nameKo || ''} (${s[0]})`, coaDoc(c), () => logIssue({ type: '완제품성적서', pid: c.productId, cid: c.id, docNo: c.testNo, product: p?.nameKo || '', ref: c.lots.map(l => l.lot).join(', '), state: s[0], snap: snap(c), psnap: p ? { nameKo: p.nameKo, nameSub: p.nameSub || '', code: p.code, psNo: p.psNo, rev: p.rev } : null }), coaFileBase(c, p));
 }
 
 /* ================= 백업 ================= */
