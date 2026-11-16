@@ -375,6 +375,8 @@ function parseMicroReport(pages) {
     productName: m(/시료\s*1\s*[:：]\s*([^\[\n]+?)(?:\s*\[|\n|$)/).trim(),
     lot: m(/제조번호[^:：\n]*[:：]\s*([A-Za-z0-9-]+)/), exp: normDate(m(/제조번호\s*\/\s*(?:유통|사용)기한\s*[:：]\s*[A-Za-z0-9-]+\s*\/\s*(20\d\d[.\-/]\d{1,2}[.\-/]\d{1,2})/)),
     testerName: m(/시\s*험\s*자\s*[:：]\s*([가-힣]\s?[가-힣]\s?[가-힣]?)/).replace(/\s/g, ''),
+    dil: m(/희석\s*배수\s*(?:는|은)?\s*[:：]?\s*([\d,]+)/).replace(/,/g, ''), // 「*주) 희석배수는 100 이다」 → 성적서 비고 (사용자 요청 2026-11-16)
+    mv: 2, // 읽는 방식 판 — 예전에 읽은 파일은 다시 읽음
     rows: []
   };
   const seen = new Set();
@@ -384,7 +386,7 @@ function parseMicroReport(pages) {
     const nm = (t.match(/(총\s*호기성\s*생균수(?:\s*\((?:세균|진균)\))?|대장균|녹농균|황색\s*포도상구균)/) || [])[1]; if (!nm) return;
     const item = nm.replace(/\s+/g, ' ').replace('총 호기성 생균수', '총호기성생균수').replace(/\s*\(/, '(');
     if (seen.has(item)) return; seen.add(item);
-    const rest = cells.filter(c => !c.includes(nm.split(/\s/)[0]) || c.length > nm.length + 2).join(' ').replace(nm, '').trim();
+    const rest = t.replace(nm, '').trim(); // 항목 이름만 뺌 — 예전엔 「총」으로 시작하는 기준 칸(「총 1,000 이하」)까지 빠져 기준이 비었음
     const crit = (rest.match(/(총\s*[\d,]+\s*이하|[\d,]+\s*(?:개|cfu)?[^\s]*\s*이하|불검출)/i) || [])[1] || (/균$/.test(item) ? '불검출' : '');
     const result = (rest.replace(crit, '').match(/(불검출|검출|음성|양성|[<≤]?\s*[\d,]+)/) || [])[1] || '';
     r.rows.push({ item, result: result.trim(), crit: crit.trim() });
@@ -831,7 +833,14 @@ function makeCoa(p, M, mk, mkName, single, mo) {
       // 외부 미생물시험성적서가 있으면 미생물·특정세균은 그것을 우선
       const mic = comp?.micro || M.find(k => k.micro)?.micro;
       const mrows = mic ? (isTotal ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : isSpec ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
-      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); r.remark = `${/KATRI/i.test(mic.lab || '') ? 'KATRI' : (mic.lab || '외부 시험기관').replace(/시험연구원$|연구원$/, '')} 외부 시험`; return; }
+      if (mrows.length) {
+        r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim();
+        // 시험기준은 외부 시험기관(KATRI) 성적서의 기준 (예: 총 1,000 이하 → 총호기성생균수 : 1,000 cfu/g 이하), 비고에 희석배수 (사용자 요청 2026-11-16)
+        const lim = isTotal ? ((mrows[0].crit || '').match(/([\d,]+)/) || [])[1] : '';
+        if (lim) r.criterion = `총호기성생균수 : ${lim} cfu/g 이하`;
+        r.remark = `${/KATRI/i.test(mic.lab || '') ? 'KATRI' : (mic.lab || '외부 시험기관').replace(/시험연구원$|연구원$/, '')} 외부 시험${mic.dil ? `\n* 희석배수 : ${mic.dil}배` : ''}`;
+        return;
+      }
       if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; r.remark = r.remark || '벌크시험성적서로 부터 연계'; }
     });
     // 같은 제품·같은 제조번호(LOT)로 다시 발급하면 직전 성적서에 적어 둔 시험결과·비고를 그대로 (사용자 요청 2026-11-16 「설정한 그대로 다시 적용」)
@@ -886,8 +895,20 @@ function fileTable() {
   });
   return t;
 }
+/* 예전 방식으로 읽은 미생물시험성적서는 원본(이 브라우저에 저장된 파일)으로 다시 읽음 — 시험기준(총 1,000 이하)·희석배수가 빠져 있어서 */
+const microBusy = new Set();
+async function refreshMicro(f) {
+  if (microBusy.has(f.id)) return; microBusy.add(f.id);
+  try {
+    const r = await IDB.get(f.id); if (!r?.blob) return;
+    const lib = await pdfjs(); const doc = await lib.getDocument({ data: new Uint8Array(await r.blob.arrayBuffer()) }).promise;
+    const pages = []; for (let i = 1; i <= Math.min(doc.numPages, 20); i++) pages.push(await visualLines(await doc.getPage(i)));
+    f.data = parseMicroReport(pages); save(); draw();
+  } catch (e) { console.warn('미생물시험성적서 다시 읽기', e); }
+}
 function renderIngest(m) {
   const I = ing(), M = model(), mk = maker();
+  I.files.filter(f => f.kind === '미생물시험성적서' && f.status === '완료' && f.data && f.data.mv !== 2).forEach(f => refreshMicro(f));
   const tb = el('<div class="toolbar"><div class="ttl">자료로 작성<small>반제품성적서 · 미생물시험성적서(외부) · 기능성 보고서를 넣으면 제품표준서·완제품성적서 초안을 만듭니다 (전성분표·제조지시 및 공정 기록서는 있을 때만)</small></div></div>');
   tb.appendChild(button('새로 시작', async () => { if (I.files.length && !await askConfirm('올린 자료와 입력값을 비우고 새로 시작할까요? 이미 만든 제품표준서는 남습니다.', { ok: '새로 시작' })) return; for (const f of I.files) await IDB.del(f.id); S.ingest = null; save(); draw(); }, 'btn'));
   m.appendChild(tb);

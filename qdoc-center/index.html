@@ -504,6 +504,7 @@ function carryResults(c, prev) {
     const res = String(o.result || '').trim(), rem = String(o.remark || '').trim(); if (!res && !rem) return;
     if (res) { r.result = o.result; r.judge = o.judge || r.judge; r.tester = o.tester || r.tester; r.method = o.method || r.method; r.note = o.note || r.note; r.date = o.date || r.date || ''; }
     if (rem) r.remark = o.remark;
+    if (/^외부 시험/.test(o.note || '') && String(o.criterion || '').trim()) r.criterion = o.criterion; // 외부 시험기관 기준 그대로
     n++;
   });
   return n;
@@ -644,7 +645,7 @@ function coaChecks(c) {
   const p = prod(c.productId);
   if (p) {
     const fs = p.finishedSpecs || [];
-    const diff = c.results.filter(r => { if (r.src === 'bulk' || r.src === 'std' || /벌크시험성적서로/.test(r.remark || '')) return false; const f = fs.find(f => sameRow(f, r)); return !f || f.criterion !== r.criterion; }).length;
+    const diff = c.results.filter(r => { if (r.src === 'bulk' || r.src === 'std' || /벌크시험성적서로/.test(r.remark || '') || /^외부 시험/.test(r.note || '')) return false; /* 외부 미생물 시험은 그 기관 기준으로 적음 (사용자 요청) */ const f = fs.find(f => sameRow(f, r)); return !f || f.criterion !== r.criterion; }).length;
     add('권장', !diff, '제품표준서 완제품시험기준서와 일치', diff ? `${diff}항목이 표준서와 다름` : '');
   }
   return R;
@@ -1210,7 +1211,7 @@ function renderCoa(m) {
     c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
   }), button('시험결과 빈칸 모두 적합', () => { c.results.forEach(r => { if (!String(r.result || '').trim()) { r.result = '적합'; r.judge = '적합'; } }); changed(); rt.rerender(); }));
   A(bar);
-  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'result', label: '시험결과', w: '14%' }, { k: 'remark', label: '비고', w: '18%' }]); // 판정 칸 없음 (사용자 요청) // 시험일자 칸 없음 · 시험방법 대신 시험결과 (사용자 요청)
+  rt = tedit(c.results, [{ k: 'item', label: '시험항목', w: '20%' }, { k: 'sub', label: '구분', w: '7%' }, { k: 'criterion', label: '시험기준', ta: 1 }, { k: 'result', label: '시험결과', w: '14%' }, { k: 'remark', label: '비고', w: '18%', ta: 1 }]); // 판정 칸 없음 (사용자 요청) // 시험일자 칸 없음 · 시험방법 대신 시험결과 (사용자 요청)
   A(rt);
   A(subh('특이사항'));
   A(inp(c, 'remarks', { rows: 2, ph: '예) 제조사 성적서 시험번호' }));
@@ -1616,7 +1617,7 @@ function coaDoc(c, pp) {
    <tr><th>제조원</th><td>${per('maker')}</td><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit" style="--rh:${rowH}px"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
    <thead><tr>${cols.map(([t]) => `<th>${t}</th>`).join('')}</tr></thead>
-   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td style="font-size:7.2pt">${esc(r.remark || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
+   <tbody class="data">${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td>${multi ? `<td>${esc(r.sub)}</td>` : ''}<td>${esc(r.criterion)}</td><td>${esc(r.result)}</td><td style="font-size:7.2pt">${nl(r.remark || '')}</td></tr>`).join('')}${Array(padN).fill('<tr class="pad">' + '<td></td>'.repeat(cols.length) + '</tr>').join('')}</tbody></table>`)}
   ${B(`<table class="box mt"><colgroup><col style="width:13%"><col></colgroup><tr><th style="height:44px">특이사항</th><td class="left">${nl(c.remarks)}</td></tr></table>`)}
   ${B(`<table class="sign box mt"><colgroup><col style="width:33.3%"><col style="width:33.3%"><col></colgroup>
    <tr><th>작 성</th><th>검 토</th><th>승 인<br><span style="font-weight:400;font-size:7pt">(품질관리 책임자)</span></th></tr>
@@ -1744,7 +1745,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=0579cf82"></script>
+<script src="js/ingest.js?v=d16e10cd"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>
