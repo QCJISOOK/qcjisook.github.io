@@ -526,7 +526,7 @@ function build(withCoa) {
     const en = (c.single?.single || []).map(x => String(x.en || '').trim());
     if (en.some(Boolean)) k.fullIngredientsEn = en;
     k.composition = (c.single?.single || []).map(x => ({ ko: x.ko, pct: x.pct }));
-    k.bulkSpecs = (b?.rows || []).map(x => ({ item: x.item, criterion: x.crit, method: cleanMethod(x.method), basis: (String(x.method || '').match(/「[^」]+」/) || [''])[0] || (/미생물|세균/.test(x.item) ? '화장품 안전기준 등에 관한 규정' : ''), specType: '자가 규격', freq: '매 배치', note: '' }));
+    k.bulkSpecs = (b?.rows || []).map(x => ({ item: x.item, criterion: x.crit, method: ownStd(cleanMethod(x.method), makerShort(mk) || mkName), basis: (String(x.method || '').match(/「[^」]+」/) || [''])[0] || (/미생물|세균/.test(x.item) ? '화장품 안전기준 등에 관한 규정' : ''), specType: '자가 규격', freq: '매 배치', note: '' }));
     (r?.actives || []).forEach(a => { if (!k.bulkSpecs.some(x => N(x.item).includes(N(a.name)))) { const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4); k.bulkSpecs.push({ item: `${a.name} 확인시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: '주피크의 유지시간은 표준품과 같다', basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }, { item: `${a.name} 함량시험`, method: `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`, criterion: `표시량의 90.0% 이상 (${pct}%)`, basis: '기능성 보고서', specType: '허가 규격', freq: '매 배치', note: '반제품성적서에 없음 — 제조사 요청' }); } });
     return k;
   });
@@ -570,7 +570,7 @@ function build(withCoa) {
   M.forEach(c => {
     const sub = single ? '' : c.key, br = c.bulk?.rows || [], r = c.report;
     const pick = re => br.find(x => re.test(x.item));
-    const push = (item, crit, method) => fs.push({ item, sub, criterion: crit, method: cleanMethod(method), note: '' });
+    const push = (item, crit, method) => fs.push({ item, sub, criterion: crit, method: ownStd(cleanMethod(method), makerShort(mk) || mkName), note: '' });
     // 시험방법은 제조사 반제품시험성적서에 적힌 방법 우선. 미생물을 외부 시험기관이 했으면 시험방법 = 그 기관 이름 (예: KATRI시험연구원)
     const mic = c.micro || M.find(k => k.micro)?.micro, lab = mic ? (mic.lab || '외부 시험기관') : '';
     const micHas = re => !!mic && (mic.rows || []).some(x => re.test(x.item));
@@ -644,7 +644,7 @@ function build(withCoa) {
       const mic = comp?.micro || M.find(k => k.micro)?.micro;
       const mrows = mic ? (/^미생물/.test(r.item) ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : /특정세균/.test(r.item) ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
       if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
-      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = cleanMethod(hit.method); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
+      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
     const mics = M.filter(k => k.micro).map(k => k.micro);
     c.remarks = [M.some(k => k.bulk) ? `반제품(벌크) 시험성적서 인용: ${M.filter(k => k.bulk).map(k => `${single ? '' : k.key + ' '}${k.bulk.testNo} (제조번호 ${k.bulk.lot}${k.bulk.verdict ? ', ' + k.bulk.verdict : ''})`).join(' / ')}` : '',

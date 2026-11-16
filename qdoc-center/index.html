@@ -206,6 +206,9 @@ const nl = s => esc(s).replace(/\n/g, '<br>');
 /* 시험방법에서 제조사 시험 코드 빼기 (사용자 요청): 「자사기준(관능시험법)-CMIS C-003」→「자사기준(관능시험법)」, 「자사 미생물시험법 : CMIS F- 002(1)」→「자사 미생물시험법」
    끝에 붙은 「- 또는 : + 영문 대문자 코드(숫자 포함)」만 뺌 — 「- HPLC」처럼 숫자 없는 것은 그대로 */
 const cleanMethod = s => { const t = String(s ?? ''); const m = t.match(/\s*[-:：]\s*[A-Z][A-Z0-9]*(?:[\s-]+[A-Z0-9().]+)*\s*$/); return m && /\d/.test(m[0]) ? t.slice(0, m.index).trim() : t; };
+/* 시험방법의 「자사」는 제조사 입장 표현 → 제조사 이름으로 (사용자 요청): 자사기준(관능시험법) → 코스맥스 기준(관능시험법), 자사 미생물시험법 → 코스맥스 미생물시험법 */
+const shortMaker = s => String(s || '').replace(/\(주\)|㈜|주식회사|\(유\)|유한회사/g, '').trim();
+const ownStd = (s, maker) => { const m = shortMaker(maker), t = String(s ?? ''); return m ? t.replace(/자사\s*(?=기준|미생물|시험|규격|관능)/g, m + ' ') : t; };
 const uid = p => p + '-' + Math.random().toString(36).slice(2, 9);
 const norm = s => String(s || '').replace(/[^0-9A-Za-z가-힣]/g, '').toLowerCase();
 const num = s => { const v = parseFloat(String(s ?? '').replace(/,/g, '')); return isNaN(v) ? null : v; };
@@ -243,7 +246,9 @@ function fixProduct(p) {
   funcLinks(p).forEach(it => { if (!it.missing) p.funcCache[it.seq] = it; });
   if (needUp) upgradeV2(p);
   if (p.toc) for (const k in p.toc) if (p.toc[k] === '제조사 자료 필요') p.toc[k] = ''; // 예전 자동 작성 문구는 참조 문서가 아님
-  (p.finishedSpecs || []).forEach(f => { f.method = cleanMethod(f.method); }); (p.components || []).forEach(c => (c.bulkSpecs || []).forEach(b => { b.method = cleanMethod(b.method); }));
+  { const mk0 = (p.makers || [])[0]?.name || (p.components || [])[0]?.maker || '', mkOf = sub => ((p.components || []).find(c => c.label === sub) || {}).maker || mk0;
+    (p.finishedSpecs || []).forEach(f => { f.method = ownStd(cleanMethod(f.method), mkOf(f.sub)); });
+    (p.components || []).forEach(c => (c.bulkSpecs || []).forEach(b => { b.method = ownStd(cleanMethod(b.method), c.maker || mk0); })); }
   // 처음 제정 줄: 개정 내용 '신규 제정'만 (자동으로 넣던 근거 문구·개정 사유·개정자는 빈칸 — 사용자 요청 2026-11-16)
   (p.revisions || []).forEach(r => { if (/^신규 제정 \(근거: [^)]*\)$/.test(r.content || '')) r.content = '신규 제정'; if (String(r.rev) === '0' && r.content === '신규 제정') { if (r.reason === '신규 제정') r.reason = ''; if (r.author === '품질관리팀') r.author = ''; } });
 }
@@ -276,7 +281,7 @@ function upgradeV2(p) {
 }
 const typeLine = p => [p.typeDiv, p.typeClass, p.typeSub].filter(Boolean).join(' / ') || String(p.type || '').split('\n')[0];
 function fixCoa(c) {
-  c.lots = c.lots || []; c.results = c.results || []; c.results.forEach(r => { r.method = cleanMethod(r.method); }); c.retain = c.retain || { qty: '', location: '', until: '', mode: '사용기한' };
+  c.lots = c.lots || []; c.results = c.results || []; c.results.forEach(r => { const lot = c.lots.find(l => (l.label || '') === (r.sub || '')) || c.lots[0] || {}; r.method = ownStd(cleanMethod(r.method), lot.maker); }); c.retain = c.retain || { qty: '', location: '', until: '', mode: '사용기한' };
   c.sign = c.sign || { writer: '', reviewer: '', approver: '' }; c.release = c.release || { status: '', approver: '', date: '' }; c.psRef = c.psRef || { no: '', rev: '' };
 }
 let saveT;
