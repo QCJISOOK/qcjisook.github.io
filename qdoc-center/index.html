@@ -203,6 +203,7 @@ table.ed td.act .btn{padding:1px 6px}
 <script src="data/items.js?v=a2a00f03"></script>
 <script src="data/funcdocs.js?v=728ca51a"></script>
 <script src="data/rawreports.js?v=58bda395"></script>
+<script src="data/signs.js?v=4610c8a8"></script>
 <script>
 'use strict';
 /* ================= 기본 도구 ================= */
@@ -1387,7 +1388,7 @@ const hdr = (p, title, sub = '') =>
   `<table class="ph"><colgroup><col style="width:17%"><col></colgroup><tr><td rowspan="${sub ? 2 : 1}" class="phl">제품표준서<br>Product Standard</td><td class="pht">${title}</td></tr>${sub ? `<tr><td class="phs">${esc(sub)}</td></tr>` : ''}<tr><td class="phl">제 품 명</td><td class="phn">${esc(p.nameKo)}</td></tr></table>`;
 // 검토 및 승인: 한글 머리, 이름·서명·날짜는 손으로 쓸 수 있게 넉넉히
 /* 담당자 서명 (data/signs.js — 「서명」 폴더 → _tool/build_signs.py). 작성·검토·승인 칸에 등록된 이름을 적으면 문서에 서명 그림 (사용자 요청 2026-11-16)
-   실제 서명이라 이 PC 버전·Artifact에서만 — 공개 사이트에는 signs.js 를 올리지 않아 이름만 나옴 */
+   이 PC 버전·Artifact·공개 사이트 모두 (공개 사이트는 2026-11-16 사용자 결정) */
 const signOf = name => { const all = window.SIGNS || {}, n = String(name || '').replace(/\s/g, ''); if (!n) return null; const k = Object.keys(all).find(k => n.includes(k)); return k ? all[k] : null; };
 const signImg = name => { const s = signOf(name); return s ? `<img class="sgn ${s.kind === 'seal' ? 'seal' : 'sign'}" src="${s.src}" alt="${esc(name)} 서명">` : ''; };
 const signCell = name => { const img = signImg(name); return img ? `<div class="sgc"><span>${esc(name)}</span>${img}</div>` : esc(name); };
