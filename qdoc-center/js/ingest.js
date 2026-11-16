@@ -290,6 +290,7 @@ const microOk = x => !/^(검출|양성)$/.test(x.result) && !(/^[\d,]+$/.test(x.
 
 /* ---------- 파일 처리 ---------- */
 function ing() { if (!S.ingest) S.ingest = { info: { nameKo: '', nameEn: '', code: '', type: '기초화장용 제품류', shelfMonths: '', packUnit: '', weights: {}, makerName: '' }, files: [] }; return S.ingest; }
+const SPECIFIC = /대장균|녹농균|황색포도상|특정세균|병원성/; // 특정세균 항목 (외부 미생물성적서의 '세균'·'진균' 수는 총호기성생균수 쪽)
 const MFGK = '제조지시 및 공정 기록서'; // 선택 자료: 있으면 제품표준서 별첨2로
 function kindByName(n) { return /제조지시|공정\s*기록|제조\s*기록|BMR/i.test(n) ? MFGK : /미생물/.test(n) ? '미생물시험성적서' : /기능성|보고서|심사/.test(n) ? '기능성보고서' : /\.xlsx?$/i.test(n) || /전성분/.test(n) ? '전성분표' : /성적서|coa|시험/i.test(n) ? '반제품성적서' : ''; }
 async function processRec(rec, blob, forceKind) {
@@ -479,14 +480,25 @@ function build(withCoa) {
     const sub = single ? '' : c.key, br = c.bulk?.rows || [], r = c.report;
     const pick = re => br.find(x => re.test(x.item));
     const push = (item, crit, method) => fs.push({ item, sub, criterion: crit, method, note: '' });
+    // 시험방법은 제조사 반제품시험성적서에 적힌 방법 우선. 미생물을 외부 시험기관이 했으면 시험방법 = 그 기관 이름 (예: KATRI시험연구원)
+    const mic = c.micro || M.find(k => k.micro)?.micro, lab = mic ? (mic.lab || '외부 시험기관') : '';
+    const micHas = re => !!mic && (mic.rows || []).some(x => re.test(x.item));
     const sx = pick(/성상/); push('성상', sx?.crit || '표준품과 동일', sx?.method || '표준품과 비교 및 육안확인');
     const hx = pick(/향/); push('향취', hx?.crit || '표준품과 동일', hx?.method || '표준품과 비교');
     const px = pick(/^pH\b/i); push('pH', px?.crit || (r?.ph ? `${r.ph} ± 1.00` : ''), px?.method || '「기능성화장품 기준 및 시험방법」 pH 측정법');
     const vx = pick(/점도/); if (vx) push('점도', vx.crit, vx.method);
     const gx = pick(/비중/); if (gx) push('비중', gx.crit, gx.method);
-    (r?.actives || []).forEach(a => { const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4); push(`${a.name} 확인시험`, '주피크의 유지시간은 표준품과 같다', `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`); push(`${a.name} 함량시험`, `표시량의 90.0% 이상 (${pct}%)`, `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`); });
-    const mx = pick(/미생물/); push('미생물한도 (총호기성생균수)', mx?.crit || '1,000 cfu/g(mL) 이하', '「화장품 안전기준 등에 관한 규정」 유통화장품 안전관리 기준');
-    push('특정세균 (대장균·녹농균·황색포도상구균)', '불검출', '「화장품 안전기준 등에 관한 규정」 유통화장품 안전관리 기준');
+    (r?.actives || []).forEach(a => {
+      const pct = +(a.amount / (r.baseAmount || 100) * 100).toFixed(4), def = `「기능성화장품 기준 및 시험방법」 ${r.standard || ''}`;
+      const ax = kind => br.find(x => N(x.item).includes(N(a.name)) && x.item.includes(kind));
+      push(`${a.name} 확인시험`, '주피크의 유지시간은 표준품과 같다', ax('확인')?.method || def);
+      push(`${a.name} 함량시험`, `표시량의 90.0% 이상 (${pct}%)`, ax('함량')?.method || def);
+    });
+    const SAFE = '「화장품 안전기준 등에 관한 규정」 유통화장품 안전관리 기준';
+    const mx = br.find(x => /총호기성|미생물/.test(N(x.item)));
+    push('미생물한도 (총호기성생균수)', mx?.crit || '1,000 cfu/g(mL) 이하', micHas(/^총호기성생균수$/) ? lab : mx?.method || SAFE);
+    const px2 = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
+    push('특정세균 (대장균·녹농균·황색포도상구균)', '불검출', micHas(SPECIFIC) ? lab : px2?.method || SAFE);
     push('내용량', '표기량의 97% 이상 (3개 평균)', '「화장품 안전기준 등에 관한 규정」 유통화장품 안전관리 기준');
     const ix = pick(/이물/); push('이물', ix?.crit || '이물질이 없어야 함', ix?.method || '육안 측정');
   });
@@ -531,9 +543,9 @@ function build(withCoa) {
       if (!hit && /특정세균/.test(r.item)) hit = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
       // 외부 미생물시험성적서가 있으면 미생물·특정세균은 그것을 우선
       const mic = comp?.micro || M.find(k => k.micro)?.micro;
-      const mrows = mic ? (/^미생물/.test(r.item) ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : /특정세균/.test(r.item) ? mic.rows.filter(x => /균$/.test(x.item) && !/생균수/.test(x.item)) : []) : [];
-      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
-      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
+      const mrows = mic ? (/^미생물/.test(r.item) ? mic.rows.filter(x => /^총호기성생균수$/.test(x.item)) : /특정세균/.test(r.item) ? mic.rows.filter(x => SPECIFIC.test(x.item)) : []) : [];
+      if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); return; }
+      if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = hit.method; r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; }
     });
     const mics = M.filter(k => k.micro).map(k => k.micro);
     c.remarks = [M.some(k => k.bulk) ? `반제품(벌크) 시험성적서 인용: ${M.filter(k => k.bulk).map(k => `${single ? '' : k.key + ' '}${k.bulk.testNo} (제조번호 ${k.bulk.lot}${k.bulk.verdict ? ', ' + k.bulk.verdict : ''})`).join(' / ')}` : '',
