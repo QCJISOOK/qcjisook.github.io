@@ -610,7 +610,7 @@ const FEAS = M => {
     ['완제품성적서', '관능·이화학 결과', A(b, '자동', '입력'), '반제품성적서 결과 인용 (시험자=제조사)'],
     ['완제품성적서', '미생물 (미생물한도·특정세균)', A(has('micro'), '자동', '입력'), '외부 미생물시험성적서(KATRI 등) 결과만 — 제조사 자체 미생물 시험은 넣지 않음'],
     ['완제품성적서', '기능성 주성분 함량 결과', A(b && M.every(c => !c.report || c.report.actives.every(a => c.bulk?.rows.some(x => N(x.item + x.crit).includes(N(a.name))))), '자동', '제조사 요청'), '반제품성적서에 있어야 함'],
-    ['완제품성적서', '표시기재사항·외관·포장사양·내용량·이물', '입력', '입고검사(자사) 결과 — 시험자 칸은 「자사 (입고검사)」로 미리 채움'],
+    ['완제품성적서', '외관·내용량·표기사항·이물확인', '자동', '입고검사(자사) — 시험결과 「적합」, 비고 육안검사·화장품 안전기준 등에 관한 규정·화장품법·외관검사로 미리 채움'],
     ['완제품성적서', '판정·출고 승인', '입력', '품질관리 책임자']
   ];
 };
@@ -621,7 +621,7 @@ const FCHIP = { '자동': 'good', '템플릿': 'warn', '입력': 'mute', '제조
 function findExistingPS(info) {
   const nk = norm(String(info.nameKo || '').replace(/\s*\d\s*제$/, ''));
   return S.products.map((p, i) => [p, i]).filter(([p]) => (info.code && p.code === info.code) || (nk && norm(String(p.nameKo || '').replace(/\s*\d\s*제$/, '')) === nk))
-    .sort((a, b) => String(b[0].date || '').localeCompare(String(a[0].date || '')) || b[1] - a[1])[0]?.[0] || null; // 같은 날이면 나중에 만든 것
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || null; // 가장 나중에 만든 것 — 제정일자(제조일 전날)는 만든 순서가 아니라서 쓰지 않음
 }
 function build(withCoa, coaOnly = false) {
   const I = ing(), M = model(), mk = maker(), info = I.info;
@@ -630,7 +630,17 @@ function build(withCoa, coaOnly = false) {
   const single = M.length === 1 && M[0].key === '단품';
   if (coaOnly) { // 완제품성적서만: 등록된 제품표준서가 있으면 거기에 이번 LOT 성적서만 추가
     const ex = findExistingPS(info);
-    if (ex) { const mk0 = mk ? (mk.company || mk.label || mk.name) : ''; const c = makeCoa(ex, M, mk, mk0, single, num(info.shelfMonths) || num(ex.shelfLife?.months)); S.coas.push(c); save(); return { p: ex, c, existing: true }; }
+    if (ex) {
+      const mk0 = mk ? (mk.company || mk.label || mk.name) : '';
+      // 예전에 만든 표준서라 벌크 기준이 없으면, 이번에 올린 제조사 벌크시험기준서·반제품성적서로 성적서의 벌크 줄을 만듦 (등록된 표준서는 그대로 둠)
+      const mpsX = I.files.find(f => f.kind === PSK && f.status === '완료')?.data;
+      const px = (ex.components || []).some(k => (k.bulkSpecs || []).length) ? ex : { ...ex, components: (ex.components || []).map((k, i) => {
+        const cm = M.find(m => m.key === k.label) || M[i] || M[0];
+        const src = M.length === 1 && (mpsX?.specs?.bulk || []).length ? mpsX.specs.bulk.map(x => ({ item: x.item, crit: x.spec, method: x.basis })) : (cm?.bulk?.rows || []);
+        return { ...k, bulkSpecs: src.map(x => ({ item: cleanItem(x.item), criterion: x.crit, method: ownStd(cleanMethod(x.method), makerShort(mk) || mk0) })) };
+      }) };
+      const c = makeCoa(px, M, mk, mk0, single, num(info.shelfMonths) || num(ex.shelfLife?.months)); S.coas.push(c); save(); return { p: ex, c, existing: true };
+    }
   }
   const site = (() => { const ra = roadKey(M.find(c => c.report)?.report?.makers?.[0]?.address); return (mk?.sites || []).find(s => roadKey(s) === ra) || (mk?.sites || [])[0] || ''; })();
   const mkName = mk ? (mk.company || mk.label || mk.name) : (M.find(c => c.report)?.report?.makers?.[0]?.name || '');
@@ -734,14 +744,18 @@ function build(withCoa, coaOnly = false) {
     push('미생물한도 (총호기성생균수)', mx?.crit || '1,000 cfu/g(mL) 이하', micHas(/^총호기성생균수$/) ? lab : mx?.method || SAFE);
     const px2 = br.find(x => /병원성|특정세균|대장균/.test(N(x.item + x.crit)));
     push('특정세균 (대장균·녹농균·황색포도상구균)', '불검출', micHas(SPECIFIC) ? lab : px2?.method || SAFE);
+    push('외관', '표준품과 동일', '육안검사');
     push('내용량', '표기량의 97% 이상 (3개 평균)', '「화장품 안전기준 등에 관한 규정」 유통화장품 안전관리 기준');
-    const ix = pick(/이물/); push('이물', ix?.crit || '이물질이 없어야 함', ix?.method || '육안 측정');
+    push('표기사항', '표시기재사항에 준함', '「화장품법」 제10조');
+    const ix = pick(/이물/); push('이물확인', ix?.crit || '이물질이 없어야 함', ix?.method || '육안검사');
   });
   fs.forEach(f => { if (/미생물|특정세균/.test(f.item)) f.basis = '화장품 안전기준 등에 관한 규정'; });
   p.finishedSpecs = fs;
   if ((mps0?.specs?.finished || []).length) { // 제조사 제품표준서가 있으면 완제품 기준(성적서 시험항목)은 그 「완제품시험기준서」 항목·관리규격 그대로 (사용자 요청)
     const mkS = makerShort(mk) || mkName;
-    p.finishedSpecs = mps0.specs.finished.filter(r => !/^외관/.test(r.item)) /* 외관은 뺌 (사용자 요청) */.map(r => ({ item: r.item, sub: '', stage: '완제품', criterion: r.spec, method: ownStd(cleanMethod(r.basis), mkS), basis: '', apply: /미생물|병원성|세균/.test(r.item) ? '위탁시험 / 제조사' : '입고검사', note: r.note || '' }));
+    // 외관: 시험기준 「표준품과 동일」, 육안검사 (사용자 지정 2026-11-16 — 성적서 순서 벌크 → 외관·내용량·표기사항·이물확인 → 미생물1)
+    p.finishedSpecs = mps0.specs.finished.map(r => { const ap = /^외관/.test(String(r.item || '').trim()); return { item: ap ? '외관' : r.item, sub: '', stage: '완제품', criterion: ap ? '표준품과 동일' : r.spec, method: ap ? '육안검사' : ownStd(cleanMethod(r.basis), mkS), basis: '', apply: /미생물|병원성|세균/.test(r.item) ? '위탁시험 / 제조사' : '입고검사', note: r.note || '' }; });
+    if (!p.finishedSpecs.some(f => /^외관/.test(f.item))) p.finishedSpecs.unshift({ item: '외관', sub: '', stage: '완제품', criterion: '표준품과 동일', method: '육안검사', basis: '', apply: '입고검사', note: '' });
   }
   p.packMethod = { lotExp: '제조번호(LOT)·사용기한은 1차 용기와 2차 포장(단상자)에 표시 — 위치는 자재 표준품 기준', primary: '', secondary: '', outbox: '' };
   p.storage = [{ type: '원자재', target: '원료 및 자재', condition: '지정된 보관구역에서 원료·자재별 규격서에 정한 조건으로 보관', maxStorage: '', note: '선입선출' },
@@ -800,6 +814,9 @@ function makeCoa(p, M, mk, mkName, single, mo) {
       if (mrows.length) { r.result = mrows.map(x => x.result).join(' / '); r.judge = mrows.every(microOk) ? '적합' : '부적합'; r.tester = mic.lab || '외부 시험기관'; r.method = mic.lab || '외부 시험기관'; r.date = mic.issueDate || ''; r.note = `외부 시험 ${mic.lab || ''} ${mic.reportNo || ''}`.trim(); r.remark = `${/KATRI/i.test(mic.lab || '') ? 'KATRI' : (mic.lab || '외부 시험기관').replace(/시험연구원$|연구원$/, '')} 외부 시험`; return; }
       if (hit && r.apply !== '입고검사') { r.result = hit.result; r.judge = hit.judge || ''; if (String(hit.method || '').trim()) r.method = ownStd(cleanMethod(hit.method), makerShort(mk) || mkName); r.tester = makerShort(mk) || '제조사'; r.date = hit.date || ''; r.note = `벌크 시험자료 적용 (반제품 ${comp.bulk.testNo})`; r.remark = r.remark || '벌크시험성적서로 부터 연계'; }
     });
+    // 같은 제품·같은 제조번호(LOT)로 다시 발급하면 직전 성적서에 적어 둔 시험결과·비고를 그대로 (사용자 요청 2026-11-16 「설정한 그대로 다시 적용」)
+    const prev = typeof lastCoaOf === 'function' ? lastCoaOf(p.id) : null;
+    if (prev && c.lots.some(l => l.lot && (prev.lots || []).some(q => norm(q.lot) === norm(l.lot)))) carryResults(c, prev);
     // 미생물(미생물한도·특정세균)은 외부 시험기관 결과로 채운 줄만 남김 — 제조사(코스맥스 등) 자체 미생물 시험·빈 줄은 넣지 않음 (사용자 요청 2026-11-16)
     c.results = c.results.filter(r => !isMicroRow(r) || /^외부 시험/.test(r.note || ''));
     c.remarks = String(ing().info.coaRemarks || '').trim(); // 특이사항은 「3. 만들기」에 쓴 내용만 (자동 문구 없음 — 사용자 요청)

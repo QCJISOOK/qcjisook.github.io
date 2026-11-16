@@ -455,24 +455,57 @@ function coaRowFrom(p, f) {
   const inbound = f.apply === '입고검사';
   return { item: f.item, sub: f.sub, criterion: f.criterion, result: inbound ? '적합' : '', judge: inbound ? '적합' : '', method: f.method, tester, apply: f.apply || '', note: f.apply === '벌크 시험자료 적용' ? '벌크 시험자료 적용' : '', remark: finRemark(f.item) };
 }
-/* 입고검사 항목 비고 = 근거 (사용자 지정 2026-11-16): 내용량 → 화장품 안전기준 등에 관한 규정, 표기사항 → 화장품법, 이물확인 → 외관검사 */
-const finRemark = item => { const t = String(item || ''); return /내용량/.test(t) ? '화장품 안전기준 등에 관한 규정' : /표기|표시기재/.test(t) ? '화장품법' : /이물/.test(t) ? '외관검사' : ''; };
+/* 입고검사 항목 비고 = 근거 (사용자 지정 2026-11-16): 외관 → 육안검사, 내용량 → 화장품 안전기준 등에 관한 규정, 표기사항 → 화장품법, 이물확인 → 외관검사 */
+const finRemark = item => { const t = String(item || '').trim(); return /^외관/.test(t) ? '육안검사' : /내용량/.test(t) ? '화장품 안전기준 등에 관한 규정' : /표기|표시기재/.test(t) ? '화장품법' : /이물/.test(t) ? '외관검사' : ''; };
 /* 시험항목 이름 비교용: -RSSC·(KFCC)·-CSTM·-허가사항·* 떼고 */
 const cleanItem = s => String(s || '').replace(/[-\s]*\(?\b(RSSC|KFCC|CSTM)\b\)?/g, '').replace(/-?\s*허가사항\s*\*?/g, '').replace(/\s*\*+\s*$/, '').trim();
 const isSpecificRow = r => /특정세균|병원성|대장균|녹농균|황색포도상/.test(String(r?.item || ''));
-/* 완제품성적서 시험항목 (사용자 요청 2026-11-16):
-   ① 제품표준서 완제품 기준(미생물 제외) → ② 벌크(반제품) 기준 항목(관리규격, 비고 「벌크시험성적서로 부터 연계」) → ③ 미생물은 총호기성생균수(미생물1)만 */
+/* 완제품성적서 시험항목 순서 (사용자 지정 2026-11-16, 모든 성적서):
+   ① 벌크시험성적서(코스맥스 등 반제품) 항목 — 관리규격, 비고 「벌크시험성적서로 부터 연계」 (성상·색상·향취 맨 위)
+   ② 외관 · 내용량 · 표기사항 · 이물확인 — 입고검사, 시험결과 「적합」, 비고 = 근거 (외관: 기준 「표준품과 동일」, 비고 「육안검사」)
+   ③ 미생물1 (총호기성생균수) — 외부 시험기관 결과
+   벌크 항목이 없을 때만(벌크 자료 없음) ① 자리에 제품표준서 완제품 기준의 나머지 항목 */
+const COA_FIXED = [
+  { re: /^외관/, item: '외관', criterion: '표준품과 동일', method: '육안검사', force: true },
+  { re: /내용량/, item: '내용량', criterion: '표기량의 97% 이상 (3개 평균)', method: '「화장품 안전기준 등에 관한 규정」' },
+  { re: /표기|표시기재/, item: '표기사항', criterion: '표시기재사항에 준함', method: '「화장품법」 제10조' },
+  { re: /이물/, item: '이물확인', criterion: '이물질이 없어야 함', method: '육안검사' }
+];
+const fixedOf = r => COA_FIXED.find(x => x.re.test(String(r?.item || '').trim()));
+const isTotalMicro = r => isMicroRow(r) && !isSpecificRow(r);
+/* 같은 시험항목인지 (이름이 조금 달라도: 이물 = 이물확인, 외관 (자재 이상 유무) = 외관, 미생물한도 = 미생물1) */
+const sameRow = (a, b) => (a.sub || '') === (b.sub || '') && (norm(cleanItem(a.item)) === norm(cleanItem(b.item)) || (!!fixedOf(a) && fixedOf(a) === fixedOf(b)) || (isTotalMicro(a) && isTotalMicro(b)));
 function coaRowsFor(p) {
-  const fin = (p.finishedSpecs || []).filter(f => !isSpecificRow(f) && !/^외관/.test(String(f.item || '').trim())).map(f => coaRowFrom(p, f)); // 외관은 시험항목에서 뺌 (사용자 요청)
-  const have = new Set(fin.map(r => norm(cleanItem(r.item)) + '|' + (r.sub || '')));
-  const multi = (p.components || []).length > 1;
-  const bulk = (p.components || []).flatMap(k => (k.bulkSpecs || []).filter(s => !isMicroRow(s) && !have.has(norm(cleanItem(s.item)) + '|' + (multi ? k.label : '')))
-    .map(s => ({ item: cleanItem(s.item), sub: multi ? k.label : '', criterion: s.criterion, result: '', judge: '', method: s.method, tester: k.maker || '제조사', apply: '벌크 시험자료 적용', note: '', remark: '벌크시험성적서로 부터 연계', src: 'bulk' })));
-  const micro = fin.filter(r => isMicroRow(r)), other = fin.filter(r => !isMicroRow(r));
-  // 성상·색상·향취는 맨 위 (내용량 위, 사용자 요청)
-  const all = [...other, ...bulk, ...micro], SENSE = ['성상', '색상', '향취'];
-  const rank = r => { const i = SENSE.findIndex(k => cleanItem(r.item).startsWith(k)); return i < 0 ? SENSE.length : i; };
-  return all.map((r, i) => [r, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
+  const comps = p.components || [], multi = comps.length > 1;
+  const fs = (p.finishedSpecs || []).filter(f => !isSpecificRow(f));
+  const SENSE = ['성상', '색상', '향취'], rank = r => { const i = SENSE.findIndex(k => cleanItem(r.item).startsWith(k)); return i < 0 ? SENSE.length : i; };
+  const senseFirst = rs => rs.map((r, i) => [r, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
+  const seen = new Set();
+  const bulk = comps.flatMap(k => (k.bulkSpecs || []).filter(s => !isMicroRow(s) && !fixedOf(s))
+    .map(s => ({ item: cleanItem(s.item), sub: multi ? k.label : '', criterion: s.criterion, result: '', judge: '', method: s.method, tester: k.maker || '제조사', apply: '벌크 시험자료 적용', note: '', remark: '벌크시험성적서로 부터 연계', src: 'bulk' })))
+    .filter(r => { const k = norm(r.item) + '|' + r.sub; if (seen.has(k)) return false; seen.add(k); return true; });
+  const first = bulk.length ? bulk : fs.filter(f => !isMicroRow(f) && !fixedOf(f)).map(f => coaRowFrom(p, f));
+  const fixed = COA_FIXED.flatMap(x => {
+    const hits = fs.filter(f => !isMicroRow(f) && fixedOf(f) === x);
+    return (hits.length ? hits : [{ item: x.item, sub: '', criterion: x.criterion, method: x.method }]).map(f => ({
+      ...coaRowFrom(p, { ...f, apply: '입고검사' }), item: x.item, criterion: x.force || !String(f.criterion || '').trim() ? x.criterion : f.criterion,
+      remark: finRemark(x.item), ...(hits.length && !x.force && f.item === x.item ? {} : { src: 'std' }) }));
+  });
+  const micro = fs.filter(isTotalMicro).map(f => coaRowFrom(p, f));
+  return [...senseFirst(first), ...fixed, ...micro];
+}
+/* 새로 발급하는 성적서: 같은 제품의 직전 성적서에 적어 둔 시험결과·비고를 그대로 (사용자 요청 2026-11-16 「설정한 그대로 다시 적용」) */
+const lastCoaOf = (pid, skip) => S.coas.filter(x => x.productId === pid && x !== skip).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''))).pop() || null;
+function carryResults(c, prev) {
+  if (!prev) return 0; let n = 0;
+  c.results.forEach(r => {
+    const o = (prev.results || []).find(x => sameRow(x, r)); if (!o) return;
+    const res = String(o.result || '').trim(), rem = String(o.remark || '').trim(); if (!res && !rem) return;
+    if (res) { r.result = o.result; r.judge = o.judge || r.judge; r.tester = o.tester || r.tester; r.method = o.method || r.method; r.note = o.note || r.note; r.date = o.date || r.date || ''; }
+    if (rem) r.remark = o.remark;
+    n++;
+  });
+  return n;
 }
 function newCoa(p) {
   return {
@@ -610,7 +643,7 @@ function coaChecks(c) {
   const p = prod(c.productId);
   if (p) {
     const fs = p.finishedSpecs || [];
-    const diff = c.results.filter(r => { if (r.src === 'bulk' || /벌크시험성적서로/.test(r.remark || '')) return false; const f = fs.find(f => f.item === r.item && (f.sub || '') === (r.sub || '')); return !f || f.criterion !== r.criterion; }).length;
+    const diff = c.results.filter(r => { if (r.src === 'bulk' || r.src === 'std' || /벌크시험성적서로/.test(r.remark || '')) return false; const f = fs.find(f => sameRow(f, r)); return !f || f.criterion !== r.criterion; }).length;
     add('권장', !diff, '제품표준서 완제품시험기준서와 일치', diff ? `${diff}항목이 표준서와 다름` : '');
   }
   return R;
@@ -1172,7 +1205,7 @@ function renderCoa(m) {
   let rt;
   const bar = inl(button('표준서 기준 다시 불러오기', async () => {
     if (!p) return; if (!await askConfirm('제품표준서 완제품·벌크 기준으로 시험항목을 다시 맞춥니다. 같은 항목의 결과·판정은 유지됩니다.', { ok: '다시 맞추기' })) return;
-    c.results = coaRowsFor(p).map(d => { const o = c.results.find(r => norm(cleanItem(r.item)) === norm(cleanItem(d.item)) && (r.sub || '') === (d.sub || '')) || {}; return { ...d, result: o.result || '', judge: o.judge || '', tester: o.tester || d.tester, note: o.note || d.note, remark: o.remark || d.remark || '' }; });
+    c.results = coaRowsFor(p).map(d => { const o = c.results.find(r => sameRow(r, d)) || {}; return { ...d, result: o.result || d.result || '', judge: o.judge || d.judge || '', tester: o.tester || d.tester, method: o.method || d.method, note: o.note || d.note, remark: o.remark || d.remark || '' }; });
     c.psRef = { no: p.psNo, rev: p.rev }; changed(); go('coa', { cid: c.id });
   }), button('시험결과 빈칸 모두 적합', () => { c.results.forEach(r => { if (!String(r.result || '').trim()) { r.result = '적합'; r.judge = '적합'; } }); changed(); rt.rerender(); }));
   A(bar);
@@ -1212,7 +1245,10 @@ function newCoaDialog(m) {
   m.appendChild(card);
   const t = card.querySelector('.toolbar');
   t.appendChild(button('취소', () => go('coa', { cid: null }), 'btn'));
-  t.appendChild(button('만들기', () => { const p = prod(card.querySelector('#np').value); const c = newCoa(p); dropMakerMicro(c); S.coas.push(c); save(); go('coa', { cid: c.id }); }, 'btn pri'));
+  t.appendChild(button('만들기', () => {
+    const p = prod(card.querySelector('#np').value); const c = newCoa(p), prev = lastCoaOf(p.id), n = carryResults(c, prev); dropMakerMicro(c); S.coas.push(c); save(); go('coa', { cid: c.id });
+    if (n) notify(`직전 성적서(${prev.testNo || prev.createdAt || ''})에 적어 둔 시험결과·비고 ${n}항목을 그대로 가져왔습니다. 제조번호(LOT)가 다르면 결과를 고쳐 주세요.`, 'info', 8000);
+  }, 'btn pri'));
 }
 
 /* ================= 기능성 자료 탭 ================= */
@@ -1679,7 +1715,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=e045c602"></script>
+<script src="js/ingest.js?v=8f9613b1"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>
