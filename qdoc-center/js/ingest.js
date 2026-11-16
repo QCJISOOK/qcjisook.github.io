@@ -529,6 +529,12 @@ function fixIngredientNames() {
   });
   return n;
 }
+/* 같은 제품의 ERP 품번들 (예: 릴리프스팟크림 = SB1817 코스맥스 · SB2018 에스엔제이 생산) — 「2. 제품 정보」 품번 고르기용 */
+function sameProductCodes(name) {
+  const q = koRead(cleanName(name)); if (norm(q).length < 4) return [];
+  return ITEMS.map(it => ({ it, sc: dice(koRead(`${it.b || ''}${cleanName(it.n)}`), q) })).filter(x => x.sc >= 0.85)
+    .sort((a, b) => b.sc - a.sc || String(a.it.c).localeCompare(String(b.it.c))).slice(0, 6).map(x => x.it);
+}
 /* 벌크(반제품)시험성적서 품목명 → 원료목록 보고 제품명 (사용자 요청 2026-11-16) — 영문 약자는 한글 읽기로도 비교 */
 function bestRaw(cands) {
   const items = (window.RAW_REPORTS || {}).items || []; let best = null;
@@ -653,7 +659,7 @@ const FCHIP = { '자동': 'good', '템플릿': 'warn', '입력': 'mute', '제조
 function findExistingPS(info) {
   const nk = norm(String(info.nameKo || '').replace(/\s*\d\s*제$/, ''));
   return S.products.map((p, i) => [p, i]).filter(([p]) => (info.code && p.code === info.code) || (nk && norm(String(p.nameKo || '').replace(/\s*\d\s*제$/, '')) === nk))
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || null; // 가장 나중에 만든 것 — 제정일자(제조일 전날)는 만든 순서가 아니라서 쓰지 않음
+    .sort((a, b) => (info.code ? (b[0].code === info.code) - (a[0].code === info.code) : 0) || b[1] - a[1])[0]?.[0] || null; // 품번이 같은 것 먼저, 그다음 가장 나중에 만든 것 — 제정일자(제조일 전날)는 만든 순서가 아니라서 쓰지 않음
 }
 function build(withCoa, coaOnly = false) {
   const I = ing(), M = model(), mk = maker(), info = I.info;
@@ -865,6 +871,7 @@ function makeCoa(p, M, mk, mkName, single, mo) {
     const micExp = M.map(micOf).find(x => x?.exp)?.exp;
     const ds = c.lots.map(l => l.mfgDate).filter(Boolean).sort(); if (micExp) c.expiry = micExp; else if (ds[0] && mo) c.expiry = addMonths(ds[0], mo);
     c.requestDate = ''; c.receiptDate = today(); c.samplingDate = c.receiptDate; // 채취일은 입고일과 같은 날로 시작 (고칠 수 있음)
+    { const ic = String(ing().info.code || '').trim(); if (ic && ic !== p.code) c.code = ic; } // 「2. 제품 정보」 품번이 표준서 제품코드와 다르면 이 성적서 품번으로 (예: SB2018)
     return c;
 }
 
@@ -942,14 +949,19 @@ function renderIngest(m) {
   const nk = inp(I.info, 'nameKo', { ph: '기능성·원료목록 보고 제품명 일부 — 예) 들깨', onch: v => { I.info.nameAuto = false; const it = FDmap.get((I.info.pickedSeqs || [])[0]); if (it && norm(String(it.name).replace(/\s*\d\s*제$/, '')) !== norm(v)) I.info.pickedSeqs = []; } });
   const nkBox = document.createElement('div'); nkBox.appendChild(nk);
   suggest(nk, o => { I.info.nameAuto = false; I.info.pickedSeqs = o.seqs || []; I.info.typeAuto = I.info.typeAuto ?? true; applyRaw(I.info); save(); draw(); }, { mode: 'func' }); // 제품명은 기능성 자료(의약품안전나라 보고 품목)에서
-  c2.appendChild(form([['제품명', nkBox, true], ['화장품 유형', inp(I.info, 'type', { onch: () => { I.info.typeAuto = false; } })],    ['사용기한 (개월)', inp(I.info, 'shelfMonths', { type: 'number', ph: '예) 30' })], ['개봉 후 사용기간 (개월)', inp(I.info, 'openMonths', { type: 'number', ph: '예) 12' })], ['포장단위', inp(I.info, 'packUnit', { ph: '예) 1제 30ml + 2제 30ml / 1세트' })], ['제조업체', sel]]));
-  { const fd = (I.info.pickedSeqs || []).map(q => FDmap.get(q)).filter(Boolean), it = I.info.code ? ITEMS.find(x => x.c === I.info.code) : null, ri = rawFor(I.info.nameKo);
+  // 품번 (사용자 요청 2026-11-16 「여기도 품번 넣어줘」): 자료에서 읽은 ERP 품번이 먼저 들어가고 직접 고칠 수 있음. 같은 제품의 다른 품번(제조사별 등)은 눌러서 바꿈
+  const codeBox = document.createElement('div');
+  const ci = el('<input placeholder="예) SB1817 — ERP 품번">'); ci.value = I.info.code || '';
+  ci.onchange = () => { I.info.code = ci.value.trim().toUpperCase(); save(); draw(); };
+  codeBox.appendChild(ci);
+  { const itC = I.info.code ? ITEMS.find(x => x.c === I.info.code) : null, others = sameProductCodes(I.info.nameKo).filter(x => x.c !== I.info.code);
+    codeBox.appendChild(el(`<div class="hint" style="margin-top:4px">${I.info.code ? (itC ? `ERP: ${esc(itC.n)}${itC.v ? ' · 구매처 ' + esc(itC.v) : ''} — 제품표준서·성적서 품번 칸에 들어갑니다` : 'ERP 품목조회에 없는 품번 — 그대로 들어갑니다') : '비워 두면 제품표준서·성적서 품번 칸이 빈칸'}</div>`));
+    if (others.length) { const row = el('<div class="hint" style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">같은 제품 다른 품번:</div>'); others.forEach(x => { const b = button(`${esc(x.c)}${x.v ? ' · ' + esc(x.v) : ''}`, () => { I.info.code = x.c; save(); draw(); }, 'btn sm'); b.title = x.n; row.appendChild(b); }); codeBox.appendChild(row); } }
+  c2.appendChild(form([['제품명', nkBox, true], ['화장품 유형', inp(I.info, 'type', { onch: () => { I.info.typeAuto = false; } })],    ['사용기한 (개월)', inp(I.info, 'shelfMonths', { type: 'number', ph: '예) 30' })], ['개봉 후 사용기간 (개월)', inp(I.info, 'openMonths', { type: 'number', ph: '예) 12' })], ['포장단위', inp(I.info, 'packUnit', { ph: '예) 1제 30ml + 2제 30ml / 1세트' })], ['제조업체', sel], ['품번', codeBox]]));
+  { const fd = (I.info.pickedSeqs || []).map(q => FDmap.get(q)).filter(Boolean), ri = rawFor(I.info.nameKo);
     if (ri) c2.appendChild(el(`<div class="hint" style="margin-top:6px">원료목록 보고: <b>${esc(ri.name)}</b> · 유형 ${esc(ri.type || '-')}${typeOf(ri.type)?.sub ? ' ' + esc(typeOf(ri.type).sub.replace(/\s*\(.*\)$/, '')) : ''} · 제조업자 ${esc(ri.maker || '-')} · 원료 ${(ri.ings || []).length}종${ri.func ? ' · 기능성 ' + esc(ri.func) : ''}</div>`));
-    if (fd.length || I.info.code) {
-      const h = el(`<div class="hint" style="margin-top:6px;line-height:1.7">${fd.length ? `기능성 자료: <b>${esc(fd[0].name.replace(/\s*\d\s*제$/, ''))}</b> · 보고일련번호 ${esc(fd.map(x => x.seq).join(', '))} · ${esc(fd[0].date || '')} <span class="pill">효능·용법·주의사항에 씀</span>` : ''}${fd.length && I.info.code ? '<br>' : ''}${I.info.code ? `읽은 품번: <b>${esc(I.info.code)}</b>${it ? ' ' + esc(it.n) : ''} — 제품표준서·성적서 제품코드 칸에 들어갑니다 ` : ''}</div>`);
-      if (I.info.code) h.appendChild(button('품번 빼기', () => { I.info.code = ''; save(); draw(); }, 'btn sm'));
-      c2.appendChild(h);
-    } }
+    if (fd.length) c2.appendChild(el(`<div class="hint" style="margin-top:6px;line-height:1.7">기능성 자료: <b>${esc(fd[0].name.replace(/\s*\d\s*제$/, ''))}</b> · 보고일련번호 ${esc(fd.map(x => x.seq).join(', '))} · ${esc(fd[0].date || '')} <span class="pill">효능·용법·주의사항에 씀</span></div>`)); // 품번은 위 「품번」 칸으로
+  }
   if (mk) c2.appendChild(el(`<div class="funcbox" style="margin-top:8px"><b>${esc(mk.company || mk.label)}</b> · 화장품 제조업 등록필증 ${esc(mk.regNo || '번호 판독 불가')} · 대표자 ${esc(mk.ceo || '-')} · ${esc(mk.issuer || '')}<br>소재지: ${esc((mk.sites || []).join(' / ') || '-')}<br>영업 범위: ${esc((mk.scope || []).join(' / ') || '-')} <span class="hint">· 판독 신뢰도 ${esc(mk.confidence || '-')}${mk.note ? ' · ' + esc(mk.note) : ''}</span>${mk.fileId ? ` · <a href="https://drive.google.com/file/d/${esc(mk.fileId)}/view" target="_blank" rel="noopener">필증 원본</a>` : ''}</div>`));
   if (M.length) { const w = el('<div class="form" style="margin-top:8px"></div>'); I.info.weights = I.info.weights || {}; M.forEach(c => { w.appendChild(el(`<label>표시용량 ${esc(c.key)}</label>`)); const d = document.createElement('div'); d.appendChild(inp(I.info.weights, c.key, { ph: '예) 30ml' })); w.appendChild(d); }); c2.appendChild(w); }
   m.appendChild(c2);

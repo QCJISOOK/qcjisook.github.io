@@ -1210,7 +1210,7 @@ function renderCoa(m) {
     ['표시용량', inp(c, 'labelQty')],
     ['관리 번호', inl(tn, button('자동', () => { c.testNo = nextTestNo(); tn.value = c.testNo; changed(); }))], ['', el('<span class="hint">목록·파일 이름에만 쓰고 성적서에는 인쇄 안 됨</span>')]]));
   // 성적서 머리표: 품번 · 채취일 · 입고일 · 검체수량 · 제조일 (사용자 요청 2026-11-16) — 품번은 제품표준서 제품코드
-  A(form([['채취일', inp(c, 'samplingDate', { type: 'date' })], ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['검체수량', inp(c, 'sampleQty', { ph: '예) 3 ea' })], ['품번', el(`<div class="hint" style="padding-top:8px">${esc(p?.code || '제품표준서에 제품코드 없음')} — 제품표준서 제품코드</div>`)]]));
+  A(form([['채취일', inp(c, 'samplingDate', { type: 'date' })], ['입고일', inp(c, 'receiptDate', { type: 'date' })], ['검체수량', inp(c, 'sampleQty', { ph: '예) 3 ea' })], ['품번', inp(c, 'code', { ph: p?.code ? `비우면 제품표준서 제품코드 ${p.code}` : '예) SB1817' })]]));
   A(subh('구성품별 제조번호(LOT) <span class="hint">제조일은 성적서에 찍히고 사용기한 자동 계산에도 씀</span>'));
   const ex = inp(c, 'expiry', { type: 'date' });
   A(tedit(c.lots, [{ k: 'label', label: '구성품', w: '14%' }, { k: 'lot', label: '제조번호(LOT)', w: '22%' }, { k: 'maker', label: '제조사', w: '24%' }, { k: 'mfgDate', label: '제조일', type: 'date' }], { numbered: false }));
@@ -1637,7 +1637,7 @@ function coaDoc(c, pp) {
   ${B(`<div class="head"><div class="logo"><div class="l1" style="font-size:23pt;letter-spacing:5px">OLIVE</div><div class="l2" style="font-size:7pt;letter-spacing:4px">INTERNATIONAL</div></div><div class="title">완제품시험성적서</div></div>
   <table class="info box"><colgroup><col style="width:13%"><col style="width:21%"><col style="width:13%"><col style="width:20%"><col style="width:13%"><col></colgroup>
    <tr><th>제품명</th><td colspan="5" class="left" style="height:30px"><b>${esc(p.nameKo)}</b>${p.nameSub ? '<br>' + nl(p.nameSub) : ''}</td></tr>
-   <tr><th>품번</th><td>${esc(p.code || '')}</td><th>제조원</th><td>${per('maker')}</td><th>표시용량</th><td>${esc(c.labelQty)}</td></tr>
+   <tr><th>품번</th><td>${esc(c.code || p.code || '')}</td><th>제조원</th><td>${per('maker')}</td><th>표시용량</th><td>${esc(c.labelQty)}</td></tr>
    <tr><th>제조번호 (LOT)</th><td>${per('lot')}</td><th>제조일</th><td>${per('mfgDate')}</td><th>사용기한</th><td>${esc(c.expiry)}</td></tr>
    <tr><th>채취일</th><td>${esc(c.samplingDate || '')}</td><th>입고일</th><td>${esc(c.receiptDate || '')}</td><th>검체수량</th><td>${esc(c.sampleQty || '')}</td></tr></table>`)}
   ${B(`<table class="tests box mt dsplit" style="--rh:${rowH}px"><colgroup>${cols.map(([, w]) => `<col${w ? ` style="width:${w}%"` : ''}>`).join('')}</colgroup>
@@ -1777,7 +1777,7 @@ if (!Cloud.art) save();
 render();
 Cloud.start(cloudHooks());
 </script>
-<script src="js/ingest.js?v=a657e8c8"></script>
+<script src="js/ingest.js?v=ca9edec2"></script>
 <script src="js/cgmp.js?v=f5a44482"></script>
 </body>
 </html>
